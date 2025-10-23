@@ -95,7 +95,9 @@ checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}   # TRI
 algorithm:
   algorithm_type: grpo
   repeat_times: 8
-
+  optimizer:
+    lr: 1e-6
+    warmup_style: constant
   # 以下参数为可选
   # 若未指定，将根据 `algorithm_type` 自动设置
   sample_strategy: "default"
@@ -107,6 +109,9 @@ algorithm:
 
 - `algorithm_type`: 强化学习算法类型。支持类型：`ppo`、`grpo`、`opmd`、`dpo`、`sft`、`mix`。
 - `repeat_times`: 每个任务重复的次数。默认为 `1`。在 `dpo` 中自动设为 `2`。某些算法如 GRPO 和 OPMD 要求 `repeat_times` > 1。
+- `optimizer`: Actor 优化器的参数。
+  - `lr`: 优化器的学习率。
+  - `warmup_style`: 学习率的预热策略。
 - `sample_strategy`: 从 experience buffer 加载 experience 时使用的采样策略。
 - `advantage_fn`: 用于计算优势值的函数。
 - `kl_penalty_fn`: 用于在奖励中计算 KL 惩罚的函数。
@@ -160,7 +165,7 @@ model:
 
 - `model_path`: 被训练模型的路径。
 - `critic_model_path`: 可选的独立 critic 模型路径。若为空，则默认为 `model_path`。
-- `max_model_len`: 该模型所支持的单个序列最大 token 数。
+- `max_model_len`: 表示模型所支持的单个序列最大 token 数。如未指定，系统会尝试将其设为 `max_prompt_tokens` + `max_response_tokens`。但前提是这两个值都必须已设置，否则将引发错误。
 - `max_prompt_tokens`: 输入 prompt 中允许的最大 token 数。仅对 `InferenceModel` 中的 `chat` 和 `generate` 方法生效。
 - `max_response_tokens`: 模型生成的回复中允许的最大 token 数。仅对 `InferenceModel` 中的 `chat` 和 `generate` 方法生效。
 - `min_response_tokens`: 模型生成的回复中允许的最小 token 数。仅对 `InferenceModel` 中的 `chat` 和 `generate` 方法生效。
@@ -209,9 +214,6 @@ buffer:
         ...
       buffer_2:
         ...
-
-  default_workflow_type: 'math_workflow'
-  default_reward_fn_type: 'countdown_reward'
 ```
 
 - `batch_size`: 每个训练步骤使用的任务数。*请勿手动将此值乘以 `algorithm.repeat_times`*。
@@ -226,6 +228,9 @@ buffer:
 ```yaml
 buffer:
   explorer_input:
+    default_workflow_type: 'math_workflow'
+    default_eval_workflow_type: 'math_workflow'
+    default_reward_fn_type: 'countdown_reward'
     taskset:
       name: countdown_train
       storage_type: file
@@ -251,13 +256,14 @@ buffer:
         response_key: 'answer'
       rollout_args:
         temperature: 0.1
-      default_workflow_type: 'math_workflow'
-      default_reward_fn_type: 'countdown_reward'
     ...
 ```
 
 - `buffer.explorer_input.taskset`: 用于训练探索策略的任务数据集。
-- `buffer.explorer_input.eval_taskset`: 用于评估的任务数据集列表。
+- `buffer.explorer_input.eval_tasksets`: 用于评测的任务数据集列表。
+- `buffer.explorer_input.default_workflow_type`: 若未在数据集级别指定，则为所有任务数据集设置默认的工作流类型。
+- `buffer.explorer_input.default_eval_workflow_type`: 若未在数据集级别指定，则为所有评测任务数据集设置默认的工作流类型。
+- `buffer.explorer_input.default_reward_fn_type`: 若未在数据集级别指定，则为所有任务数据集设置默认的奖励类型。
 
 每个任务数据集的配置定义如下：
 
@@ -405,16 +411,28 @@ trainer:
   trainer_type: 'verl'
   save_interval: 100
   total_steps: 1000
+  save_strategy: "unrestricted"
+  grad_clip: 1.0
+  use_dynamic_bsz: true
+  max_token_len_per_gpu: 16384
+  ulysses_sequence_parallel_size: 1
   trainer_config: null
-  trainer_config_path: ''
 ```
 
 - `name`: trainer 的名称。该名称将用作 Ray actor 的名称，因此必须唯一。
 - `trainer_type`: trainer 后端实现。目前仅支持 `verl`。
 - `save_interval`: 保存模型检查点的频率（步）。
 - `total_steps`: 总训练步数。
+- `save_strategy`: 模型保存时的并行策略。默认值为`unrestricted`。可选值如下：
+  - `single_thread`：整个系统中，仅允许一个线程进行模型保存，不同保存线程之间串行执行。
+  - `single_process`：整个系统中，仅允许一个进程执行保存，该进程内的多个线程可以并行处理保存任务，不同进程之间串行执行。
+  - `single_node`：整个系统中，仅允许一个计算节点执行保存，该节点内的进程和线程可并行工作，不同节点的保存串行执行。
+  - `unrestricted`：不限制保存操作，允许多个节点、进程或线程同时保存模型。
+- `grad_clip`: 梯度裁剪阈值。
+- `use_dynamic_bsz`: 是否使用动态批量大小。
+- `max_token_len_per_gpu`: 训练过程中，每个 GPU 最大 token 长度; 当 `use_dynamic_bsz=true` 时生效。
+- `ulysses_sequence_parallel_size`: 序列并行的并行度，即用于分割单个序列的 GPU 数量。
 - `trainer_config`: 内联提供的 trainer 配置。
-- `trainer_config_path`: trainer 配置文件的路径。`trainer_config_path` 和 `trainer_config` 只能指定其一。
 
 ---
 

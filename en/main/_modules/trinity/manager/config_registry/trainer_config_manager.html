@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>trinity.manager.config_registry.trainer_config_manager &#8212; Trinity-RFT 0.3.1.dev0 documentation</title>
+    <title>trinity.manager.config_registry.trainer_config_manager &#8212; Trinity-RFT 0.4.0.dev0 documentation</title>
   
   
   
@@ -35,7 +35,7 @@
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
   <script src="../../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
-    <script src="../../../../_static/documentation_options.js?v=3106ee94"></script>
+    <script src="../../../../_static/documentation_options.js?v=299b8a96"></script>
     <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
@@ -143,8 +143,8 @@ window.addEventListener("load", () => mermaid.run());
       
     
     
-    <img src="../../../../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.3.1.dev0 documentation - Home"/>
-    <script>document.write(`<img src="../../../../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.3.1.dev0 documentation - Home"/>`);</script>
+    <img src="../../../../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.4.0.dev0 documentation - Home"/>
+    <script>document.write(`<img src="../../../../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.4.0.dev0 documentation - Home"/>`);</script>
   
   
 </a></div>
@@ -370,6 +370,7 @@ window.addEventListener("load", () => mermaid.run());
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.html">trinity.common.workflows package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.agentscope.html">trinity.common.workflows.agentscope package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.agentscope_workflow.html">trinity.common.workflows.agentscope_workflow module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.customized_math_workflows.html">trinity.common.workflows.customized_math_workflows module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.customized_toolcall_workflows.html">trinity.common.workflows.customized_toolcall_workflows module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.eval_workflow.html">trinity.common.workflows.eval_workflow module</a></li>
@@ -552,6 +553,20 @@ document.write(`
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.manager.config_registry.config_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">CONFIG_GENERATORS</span>
 
 
+<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_trainer_gpu_num_display</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.manager.config_registry.model_config_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_trainer_gpu_num</span>
+
+    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span>
+        <span class="s2">&quot;Trainer GPU Num&quot;</span><span class="p">,</span>
+        <span class="n">disabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">on_change</span><span class="o">=</span><span class="n">set_trainer_gpu_num</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Automatically calculated based on total GPU number and Explorer configurations&quot;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
 <div class="viewcode-block" id="use_critic">
 <a class="viewcode-back" href="../../../../build_api/trinity.manager.config_registry.trainer_config_manager.html#trinity.manager.config_registry.trainer_config_manager.use_critic">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">use_critic</span><span class="p">():</span>
@@ -576,7 +591,7 @@ document.write(`
 
 <span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_enable_preview</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">checkbox</span><span class="p">(</span><span class="s2">&quot;Enable Preview&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">checkbox</span><span class="p">(</span><span class="s2">&quot;Enable Experience Preview&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
@@ -781,11 +796,6 @@ document.write(`
 
 
 <span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">set_total_training_steps</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">&quot;Total Training Steps&quot;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-
-<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_default_hdfs_dir</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Default HDFS Dir&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -846,7 +856,11 @@ document.write(`
     <span class="n">max_value</span> <span class="o">=</span> <span class="n">get_train_batch_size_per_gpu</span><span class="p">()</span>
     <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">max_value</span><span class="p">)</span>
     <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span>
-        <span class="s2">&quot;Micro Batch Size Per GPU :blue-badge[(Actor)]&quot;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="n">max_value</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="s2">&quot;Micro Batch Size Per GPU :blue-badge[(Actor)]&quot;</span><span class="p">,</span>
+        <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">max_value</span><span class="o">=</span><span class="n">max_value</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Micro batch size per GPU; effective when `use_dynamic_bsz` is False&quot;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span>
 
 
@@ -857,6 +871,16 @@ document.write(`
     <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">max_value</span><span class="p">)</span>
     <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span>
         <span class="s2">&quot;Micro Batch Size Per GPU :blue-badge[(Ref)]&quot;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="n">max_value</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+
+
+<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="mi">16384</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_actor_ppo_max_token_len_per_gpu</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span>
+        <span class="s2">&quot;Max Token Len Per GPU :blue-badge[(Actor)]&quot;</span><span class="p">,</span>
+        <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Max token length per GPU for actor model; effective when `use_dynamic_bsz` is True&quot;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span>
 
 
@@ -935,6 +959,7 @@ document.write(`
         <span class="n">min_value</span><span class="o">=</span><span class="mf">1e-7</span><span class="p">,</span>
         <span class="n">max_value</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
         <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.1e</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Effective only when using PPO algorithm&quot;</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span>
 

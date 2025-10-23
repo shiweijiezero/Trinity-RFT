@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>trinity.common.constants &#8212; Trinity-RFT 0.3.1.dev0 documentation</title>
+    <title>trinity.common.constants &#8212; Trinity-RFT 0.4.0.dev0 documentation</title>
   
   
   
@@ -35,7 +35,7 @@
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
   <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
-    <script src="../../../_static/documentation_options.js?v=3106ee94"></script>
+    <script src="../../../_static/documentation_options.js?v=299b8a96"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
@@ -143,8 +143,8 @@ window.addEventListener("load", () => mermaid.run());
       
     
     
-    <img src="../../../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.3.1.dev0 documentation - Home"/>
-    <script>document.write(`<img src="../../../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.3.1.dev0 documentation - Home"/>`);</script>
+    <img src="../../../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.4.0.dev0 documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.4.0.dev0 documentation - Home"/>`);</script>
   
   
 </a></div>
@@ -370,6 +370,7 @@ window.addEventListener("load", () => mermaid.run());
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.common.workflows.html">trinity.common.workflows package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.agentscope.html">trinity.common.workflows.agentscope package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.agentscope_workflow.html">trinity.common.workflows.agentscope_workflow module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.customized_math_workflows.html">trinity.common.workflows.customized_math_workflows module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.customized_toolcall_workflows.html">trinity.common.workflows.customized_toolcall_workflows module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.eval_workflow.html">trinity.common.workflows.eval_workflow module</a></li>
@@ -675,6 +676,16 @@ document.write(`
     <span class="n">FIXED</span> <span class="o">=</span> <span class="s2">&quot;fixed&quot;</span>
     <span class="n">DYNAMIC_BY_TRAINER</span> <span class="o">=</span> <span class="s2">&quot;dynamic_by_trainer&quot;</span>
     <span class="n">DYNAMIC_BY_EXPLORER</span> <span class="o">=</span> <span class="s2">&quot;dynamic_by_explorer&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="SaveStrategy">
+<a class="viewcode-back" href="../../../build_api/trinity.common.constants.html#trinity.common.constants.SaveStrategy">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SaveStrategy</span><span class="p">(</span><span class="n">CaseInsensitiveEnum</span><span class="p">):</span>
+    <span class="n">SINGLE_THREAD</span> <span class="o">=</span> <span class="s2">&quot;single_thread&quot;</span>
+    <span class="n">SINGLE_PROCESS</span> <span class="o">=</span> <span class="s2">&quot;single_process&quot;</span>
+    <span class="n">SINGLE_NODE</span> <span class="o">=</span> <span class="s2">&quot;single_node&quot;</span>
+    <span class="n">UNRESTRICTED</span> <span class="o">=</span> <span class="s2">&quot;unrestricted&quot;</span></div>
 
 </pre></div>
 

@@ -39,14 +39,14 @@ buffer:
         response_key: 'answer'
       rollout_args:
         temperature: 1.0
-    default_workflow_type: 'math_workflow'
+      default_workflow_type: 'math_workflow'
   trainer_input:
     experience_buffer:
       name: gsm8k_buffer
       storage_type: queue
       path: 'sqlite:///gsm8k.db'
 explorer:
-  runner_num: 32
+  runner_per_model: 16
   rollout_model:
     engine_num: 4
 synchronizer:
@@ -65,6 +65,8 @@ checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
 algorithm:
   algorithm_type: grpo
   repeat_times: 8
+  optimizer:
+    lr: 1e-6
 model:
   model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-1.5B-Instruct}
 cluster:
@@ -84,7 +86,7 @@ buffer:
         response_key: 'answer'
       rollout_args:
         temperature: 1.0
-    default_workflow_type: 'math_workflow'
+      default_workflow_type: 'math_workflow'
   trainer_input:
     experience_buffer:
       name: gsm8k_buffer
@@ -94,20 +96,10 @@ synchronizer:
   sync_method: 'checkpoint'
   sync_interval: 10
 trainer:
-  trainer_config:
-    actor_rollout_ref:
-      model:
-        use_remove_padding: true
-      actor:
-        use_dynamic_bsz: true
-        ppo_max_token_len_per_gpu: 16384
-        ulysses_sequence_parallel_size: 1
-        optim:
-          lr: 1e-6
-      ref:
-        log_prob_use_dynamic_bsz: ${trainer.trainer_config.actor_rollout_ref.actor.use_dynamic_bsz}
-        log_prob_max_token_len_per_gpu: ${trainer.trainer_config.actor_rollout_ref.actor.ppo_max_token_len_per_gpu}
-        ulysses_sequence_parallel_size: ${trainer.trainer_config.actor_rollout_ref.actor.ulysses_sequence_parallel_size} # sp size
+  grad_clip: 1.0
+  use_dynamic_bsz: true
+  max_token_len_per_gpu: 16384
+  ulysses_sequence_parallel_size: 1
 ```
 
 你可以使用以下命令运行此示例：
@@ -141,7 +133,7 @@ cluster:  # important
   gpu_per_node: 8
 explorer:
   name: 'explorer_new'  # important
-  runner_num: 64
+  runner_per_model: 8
   rollout_model:
     engine_num: 8
 buffer:
@@ -158,7 +150,7 @@ buffer:
         response_key: 'answer'
       rollout_args:
         temperature: 1.0
-    default_workflow_type: 'math_workflow'
+      default_workflow_type: 'math_workflow'
   trainer_input:
     experience_buffer:
       name: gsm8k_buffer

@@ -95,7 +95,9 @@ Specifies the algorithm type and its related hyperparameters.
 algorithm:
   algorithm_type: grpo
   repeat_times: 8
-
+  optimizer:
+    lr: 1e-6
+    warmup_style: "warmup"
   # The following parameters are optional
   # If not specified, they will automatically be set based on the `algorithm_type`
   sample_strategy: "default"
@@ -107,6 +109,9 @@ algorithm:
 
 - `algorithm_type`: Type of reinforcement learning algorithm. Supported types: `ppo`, `grpo`, `opmd`, `dpo`, `sft`, `mix`.
 - `repeat_times`: Number of times each task is repeated. Default is `1`. In `dpo`, this is automatically set to `2`. Some algorithms such as GRPO and OPMD require `repeat_times` > 1.
+- `optimizer`: Optimizer configuration for actor.
+  - `lr`: Learning rate for actor.
+  - `warmup_style`: Warmup style for actor's learning rate.
 - `sample_strategy`: The sampling strategy used for loading experiences from experience buffer.
 - `advantage_fn`: The advantage function used for computing advantages.
 - `kl_penalty_fn`: The KL penalty function used for computing KL penalty applied in reward.
@@ -160,7 +165,7 @@ model:
 
 - `model_path`: Path to the model being trained.
 - `critic_model_path`: Optional path to a separate critic model. If empty, defaults to `model_path`.
-- `max_model_len`: Maximum number of tokens in a sequence. It is recommended to set this value manually. If not set, it will be inferred from the model configuration.
+- `max_model_len`: Maximum number of tokens in a sequence. It is recommended to set this value manually. If not specified, the system will attempt to set it to `max_prompt_tokens` + `max_response_tokens`. However, this requires both values to be already set; otherwise, an error will be raised.
 - `max_response_tokens`: Maximum number of tokens allowed in generated responses. Only for `chat` and `generate` methods in `InferenceModel`.
 - `max_prompt_tokens`: Maximum number of tokens allowed in prompts. Only for `chat` and `generate` methods in `InferenceModel`.
 - `min_response_tokens`: Minimum number of tokens allowed in generated responses. Only for `chat` and `generate` methods in `InferenceModel`. Default is `1`. It must be less than `max_response_tokens`.
@@ -195,6 +200,7 @@ buffer:
   batch_size: 32
   train_batch_size: 256
   total_epochs: 100
+  total_steps: null
 
   explorer_input:
     taskset:
@@ -209,9 +215,6 @@ buffer:
         ...
       buffer_2:
         ...
-
-  default_workflow_type: 'math_workflow'
-  default_reward_fn_type: 'countdown_reward'
 ```
 
 - `batch_size`: Number of tasks used per training step. *Please do not multiply this value by the `algorithm.repeat_times` manually*.
@@ -226,6 +229,9 @@ Defines the dataset(s) used by the explorer for training and evaluation.
 ```yaml
 buffer:
   explorer_input:
+    default_workflow_type: 'math_workflow'
+    default_eval_workflow_type: 'math_workflow'
+    default_reward_fn_type: 'countdown_reward'
     taskset:
       name: countdown_train
       storage_type: file
@@ -257,7 +263,10 @@ buffer:
 ```
 
 - `buffer.explorer_input.taskset`: Task dataset used for training exploration policies.
-- `buffer.explorer_input.eval_taskset`: List of task datasets used for evaluation.
+- `buffer.explorer_input.eval_tasksets`: List of task datasets used for evaluation.
+- `buffer.explorer_input.default_workflow_type`: Default workflow type for all task datasets under `explorer_input` if not specified at the dataset level.
+- `buffer.explorer_input.default_eval_workflow_type`: Default evaluation workflow type for all eval task datasets under `explorer_input` if not specified at the dataset level.
+- `buffer.explorer_input.default_reward_fn_type`: Default reward function type for all task datasets under `explorer_input` if not specified at the dataset level.
 
 The configuration for each task dataset is defined as follows:
 
@@ -405,17 +414,28 @@ trainer:
   trainer_type: 'verl'
   save_interval: 100
   total_steps: 1000
+  save_strategy: "unrestricted"
+  grad_clip: 1.0
+  use_dynamic_bsz: true
+  max_token_len_per_gpu: 16384
+  ulysses_sequence_parallel_size: 1
   trainer_config: null
-  trainer_config_path: ''
 ```
 
 - `name`: Name of the trainer. This name will be used as the Ray actor's name, so it must be unique.
 - `trainer_type`: Trainer backend implementation. Currently only supports `verl`.
 - `save_interval`: Frequency (in steps) at which to save model checkpoints.
 - `total_steps`: Total number of training steps.
+- `save_strategy`: The parallel strategy used when saving the model. Defaults to `unrestricted`. The available options are as follows:
+  - `single_thread`: Only one thread across the entire system is allowed to save the model; saving tasks from different threads are executed sequentially.
+  - `single_process`: Only one process across the entire system is allowed to perform saving; multiple threads within that process can handle saving tasks in parallel, while saving operations across different processes are executed sequentially.
+  - `single_node`: Only one compute node across the entire system is allowed to perform saving; processes and threads within that node can work in parallel, while saving operations across different nodes are executed sequentially.
+  - `unrestricted`: No restrictions on saving operations; multiple nodes, processes, or threads are allowed to save the model simultaneously.
+- `grad_clip`: Gradient clipping for updates.
+- `use_dynamic_bsz`: Whether to use dynamic batch size.
+- `max_token_len_per_gpu`:  The maximum number of tokens to be processed in forward and backward when updating the policy. Effective when `use_dynamic_bsz=true`.
+- `ulysses_sequence_parallel_size`: Sequence parallel size.
 - `trainer_config`: The trainer configuration provided inline.
-- `trainer_config_path`: The path to the trainer configuration file. Only one of `trainer_config_path` and `trainer_config` should be specified.
-
 ---
 
 ## Service Configuration

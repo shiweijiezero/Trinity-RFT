@@ -55,6 +55,8 @@ checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
 algorithm:
   algorithm_type: grpo
   repeat_times: 8
+  optimizer:
+    lr: 1e-5
 model:
   model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-1.5B-Instruct}
 cluster:
@@ -75,6 +77,7 @@ buffer:
         response_key: 'answer'
       rollout_args:
         temperature: 1.0
+      default_workflow_type: 'math_workflow'
     eval_tasksets:
     - name: gsm8k-eval
       storage_type: file
@@ -84,7 +87,7 @@ buffer:
       format:
         prompt_key: 'question'
         response_key: 'answer'
-    default_workflow_type: 'math_workflow'
+      default_workflow_type: 'math_workflow'
   trainer_input:
     experience_buffer:
       name: gsm8k_buffer
@@ -92,7 +95,7 @@ buffer:
       path: 'sqlite:///gsm8k.db'
 explorer:
   eval_interval: 50
-  runner_num: 16
+  runner_per_model: 16
   rollout_model:
     engine_num: 1
 synchronizer:
@@ -100,11 +103,6 @@ synchronizer:
   sync_interval: 1
 trainer:
   save_interval: 100
-  trainer_config:
-    actor_rollout_ref:
-      actor:
-        optim:
-          lr: 1e-5
 ```
 
 
@@ -120,7 +118,7 @@ trinity run --config examples/grpo_gsm8k/gsm8k.yaml
 
 ## 进阶选项：带 SFT warmup 的 RFT
 
-在进行 RFT 之前，我们可以先使用 SFT 作为预热步骤。Trinity-RFT 支持通过在配置文件中设置 `stages` 来添加 SFT 预热阶段。`sft_warmup_dataset` 指定用于 SFT warmup 的数据集，`sft_warmup_steps` 指定 SFT warmup 的训练步数。
+在进行 RFT 之前，我们可以先使用 SFT 作为预热步骤。Trinity-RFT 支持通过在配置文件中设置 `stages` 来添加 SFT 预热阶段。`experience_buffer` 指定用于 SFT warmup 的数据集，`total_steps` 指定 SFT warmup 的训练步数。
 
 ```yaml
 # 在 gsm8k.yaml 中正确添加以下配置

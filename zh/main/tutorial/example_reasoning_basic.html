@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>快速上手 &#8212; Trinity-RFT 0.3.1.dev0 文档</title>
+    <title>快速上手 &#8212; Trinity-RFT 0.4.0.dev0 文档</title>
   
   
   
@@ -36,7 +36,7 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
   <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
-    <script src="../_static/documentation_options.js?v=855ea54a"></script>
+    <script src="../_static/documentation_options.js?v=09f53066"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
@@ -137,8 +137,8 @@
       
     
     
-    <img src="../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.3.1.dev0 文档 - Home"/>
-    <script>document.write(`<img src="../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.3.1.dev0 文档 - Home"/>`);</script>
+    <img src="../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.4.0.dev0 文档 - Home"/>
+    <script>document.write(`<img src="../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.4.0.dev0 文档 - Home"/>`);</script>
   
   
 </a></div>
@@ -364,6 +364,7 @@
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.workflows.html">trinity.common.workflows package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.agentscope.html">trinity.common.workflows.agentscope package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.agentscope_workflow.html">trinity.common.workflows.agentscope_workflow module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.customized_math_workflows.html">trinity.common.workflows.customized_math_workflows module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.customized_toolcall_workflows.html">trinity.common.workflows.customized_toolcall_workflows module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.eval_workflow.html">trinity.common.workflows.eval_workflow module</a></li>
@@ -647,6 +648,8 @@ huggingface-cli<span class="w"> </span>download<span class="w"> </span>openai/gs
 <span class="nt">algorithm</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">algorithm_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">grpo</span>
 <span class="w">  </span><span class="nt">repeat_times</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="w">  </span><span class="nt">optimizer</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">lr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e-5</span>
 <span class="nt">model</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">model_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-1.5B-Instruct}</span>
 <span class="nt">cluster</span><span class="p">:</span>
@@ -667,6 +670,7 @@ huggingface-cli<span class="w"> </span>download<span class="w"> </span>openai/gs
 <span class="w">        </span><span class="nt">response_key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;answer&#39;</span>
 <span class="w">      </span><span class="nt">rollout_args</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">      </span><span class="nt">default_workflow_type</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;math_workflow&#39;</span>
 <span class="w">    </span><span class="nt">eval_tasksets</span><span class="p">:</span>
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gsm8k-eval</span>
 <span class="w">      </span><span class="nt">storage_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">file</span>
@@ -676,7 +680,7 @@ huggingface-cli<span class="w"> </span>download<span class="w"> </span>openai/gs
 <span class="w">      </span><span class="nt">format</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">prompt_key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;question&#39;</span>
 <span class="w">        </span><span class="nt">response_key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;answer&#39;</span>
-<span class="w">    </span><span class="nt">default_workflow_type</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;math_workflow&#39;</span>
+<span class="w">      </span><span class="nt">default_workflow_type</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;math_workflow&#39;</span>
 <span class="w">  </span><span class="nt">trainer_input</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">experience_buffer</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gsm8k_buffer</span>
@@ -684,7 +688,7 @@ huggingface-cli<span class="w"> </span>download<span class="w"> </span>openai/gs
 <span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;sqlite:///gsm8k.db&#39;</span>
 <span class="nt">explorer</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">eval_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50</span>
-<span class="w">  </span><span class="nt">runner_num</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16</span>
+<span class="w">  </span><span class="nt">runner_per_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16</span>
 <span class="w">  </span><span class="nt">rollout_model</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">engine_num</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="nt">synchronizer</span><span class="p">:</span>
@@ -692,11 +696,6 @@ huggingface-cli<span class="w"> </span>download<span class="w"> </span>openai/gs
 <span class="w">  </span><span class="nt">sync_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="nt">trainer</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">save_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
-<span class="w">  </span><span class="nt">trainer_config</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">actor_rollout_ref</span><span class="p">:</span>
-<span class="w">      </span><span class="nt">actor</span><span class="p">:</span>
-<span class="w">        </span><span class="nt">optim</span><span class="p">:</span>
-<span class="w">          </span><span class="nt">lr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e-5</span>
 </pre></div>
 </div>
 </section>
@@ -710,7 +709,7 @@ huggingface-cli<span class="w"> </span>download<span class="w"> </span>openai/gs
 </section>
 <section id="sft-warmup-rft">
 <h2>进阶选项：带 SFT warmup 的 RFT<a class="headerlink" href="#sft-warmup-rft" title="Link to this heading">#</a></h2>
-<p>在进行 RFT 之前，我们可以先使用 SFT 作为预热步骤。Trinity-RFT 支持通过在配置文件中设置 <code class="docutils literal notranslate"><span class="pre">stages</span></code> 来添加 SFT 预热阶段。<code class="docutils literal notranslate"><span class="pre">sft_warmup_dataset</span></code> 指定用于 SFT warmup 的数据集，<code class="docutils literal notranslate"><span class="pre">sft_warmup_steps</span></code> 指定 SFT warmup 的训练步数。</p>
+<p>在进行 RFT 之前，我们可以先使用 SFT 作为预热步骤。Trinity-RFT 支持通过在配置文件中设置 <code class="docutils literal notranslate"><span class="pre">stages</span></code> 来添加 SFT 预热阶段。<code class="docutils literal notranslate"><span class="pre">experience_buffer</span></code> 指定用于 SFT warmup 的数据集，<code class="docutils literal notranslate"><span class="pre">total_steps</span></code> 指定 SFT warmup 的训练步数。</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># 在 gsm8k.yaml 中正确添加以下配置</span>
 <span class="nt">stages</span><span class="p">:</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">stage_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sft_warmup</span>
