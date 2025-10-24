@@ -136,6 +136,28 @@ class OPMDAlgorithm(AlgorithmType):
             "entropy_loss_fn": "default",
         }
 
+@ALGORITHM_TYPE.register_module("opmd_reweight_adv")
+class OPMDReweightAdvAlgorithm(AlgorithmType):
+    """OPMD with reweighting advantage algorithm."""
+
+    use_critic: bool = False
+    # use_reference: bool = True
+    use_reference: bool = True
+    compute_advantage_in_trainer: bool = False
+    can_balance_batch: bool = True
+    schema: type = "experience"
+
+    @classmethod
+    def default_config(cls) -> Dict:
+        return {
+            "repeat_times": 2,
+            "advantage_fn": "opmd_reweight_adv",
+            "sample_strategy": "default",
+            "policy_loss_fn": "opmd",
+            "kl_penalty_fn": "none",
+            "kl_loss_fn": "k2",
+            "entropy_loss_fn": "default",
+        }
 
 @ALGORITHM_TYPE.register_module("asymre")
 class AsymREAlgorithm(AlgorithmType):

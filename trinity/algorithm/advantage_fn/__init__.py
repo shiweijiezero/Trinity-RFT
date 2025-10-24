@@ -14,6 +14,7 @@ from trinity.algorithm.advantage_fn.multi_step_grpo_advantage import (
 from trinity.algorithm.advantage_fn.opmd_advantage import (
     OPMDAdvantageFn,
     OPMDGroupAdvantage,
+    OPMDReweightAdvGroupAdvantage,
 )
 from trinity.algorithm.advantage_fn.ppo_advantage import PPOAdvantageFn
 from trinity.algorithm.advantage_fn.rec_advantage import RECGroupedAdvantage
@@ -37,6 +38,7 @@ __all__ = [
     "RLOOAdvantageFn",
     "OPMDAdvantageFn",
     "OPMDGroupAdvantage",
+    "OPMDReweightAdvGroupAdvantage",
     "REINFORCEGroupAdvantage",
     "ASYMREAdvantageFn",
     "RECGroupedAdvantage",
