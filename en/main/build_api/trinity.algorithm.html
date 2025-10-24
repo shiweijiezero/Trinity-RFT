@@ -669,6 +669,7 @@ document.write(`
 <li class="toctree-l3"><a class="reference internal" href="trinity.algorithm.advantage_fn.opmd_advantage.html">trinity.algorithm.advantage_fn.opmd_advantage module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="trinity.algorithm.advantage_fn.opmd_advantage.html#trinity.algorithm.advantage_fn.opmd_advantage.OPMDAdvantageFn"><code class="docutils literal notranslate"><span class="pre">OPMDAdvantageFn</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="trinity.algorithm.advantage_fn.opmd_advantage.html#trinity.algorithm.advantage_fn.opmd_advantage.OPMDGroupAdvantage"><code class="docutils literal notranslate"><span class="pre">OPMDGroupAdvantage</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="trinity.algorithm.advantage_fn.opmd_advantage.html#trinity.algorithm.advantage_fn.opmd_advantage.OPMDReweightAdvGroupAdvantage"><code class="docutils literal notranslate"><span class="pre">OPMDReweightAdvGroupAdvantage</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="trinity.algorithm.advantage_fn.ppo_advantage.html">trinity.algorithm.advantage_fn.ppo_advantage module</a><ul>
@@ -762,6 +763,13 @@ document.write(`
 <li class="toctree-l4"><a class="reference internal" href="trinity.algorithm.advantage_fn.html#trinity.algorithm.advantage_fn.OPMDGroupAdvantage.group_experiences"><code class="docutils literal notranslate"><span class="pre">OPMDGroupAdvantage.group_experiences()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="trinity.algorithm.advantage_fn.html#trinity.algorithm.advantage_fn.OPMDGroupAdvantage.calculate_group_advantage"><code class="docutils literal notranslate"><span class="pre">OPMDGroupAdvantage.calculate_group_advantage()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="trinity.algorithm.advantage_fn.html#trinity.algorithm.advantage_fn.OPMDGroupAdvantage.default_args"><code class="docutils literal notranslate"><span class="pre">OPMDGroupAdvantage.default_args()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="trinity.algorithm.advantage_fn.html#trinity.algorithm.advantage_fn.OPMDReweightAdvGroupAdvantage"><code class="docutils literal notranslate"><span class="pre">OPMDReweightAdvGroupAdvantage</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="trinity.algorithm.advantage_fn.html#trinity.algorithm.advantage_fn.OPMDReweightAdvGroupAdvantage.__init__"><code class="docutils literal notranslate"><span class="pre">OPMDReweightAdvGroupAdvantage.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="trinity.algorithm.advantage_fn.html#trinity.algorithm.advantage_fn.OPMDReweightAdvGroupAdvantage.group_experiences"><code class="docutils literal notranslate"><span class="pre">OPMDReweightAdvGroupAdvantage.group_experiences()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="trinity.algorithm.advantage_fn.html#trinity.algorithm.advantage_fn.OPMDReweightAdvGroupAdvantage.calculate_group_advantage"><code class="docutils literal notranslate"><span class="pre">OPMDReweightAdvGroupAdvantage.calculate_group_advantage()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="trinity.algorithm.advantage_fn.html#trinity.algorithm.advantage_fn.OPMDReweightAdvGroupAdvantage.default_args"><code class="docutils literal notranslate"><span class="pre">OPMDReweightAdvGroupAdvantage.default_args()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="trinity.algorithm.advantage_fn.html#trinity.algorithm.advantage_fn.REINFORCEGroupAdvantage"><code class="docutils literal notranslate"><span class="pre">REINFORCEGroupAdvantage</span></code></a><ul>
@@ -1078,6 +1086,15 @@ document.write(`
 <li class="toctree-l3"><a class="reference internal" href="trinity.algorithm.algorithm.html#trinity.algorithm.algorithm.OPMDAlgorithm.can_balance_batch"><code class="docutils literal notranslate"><span class="pre">OPMDAlgorithm.can_balance_batch</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="trinity.algorithm.algorithm.html#trinity.algorithm.algorithm.OPMDAlgorithm.schema"><code class="docutils literal notranslate"><span class="pre">OPMDAlgorithm.schema</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="trinity.algorithm.algorithm.html#trinity.algorithm.algorithm.OPMDAlgorithm.default_config"><code class="docutils literal notranslate"><span class="pre">OPMDAlgorithm.default_config()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="trinity.algorithm.algorithm.html#trinity.algorithm.algorithm.OPMDReweightAdvAlgorithm"><code class="docutils literal notranslate"><span class="pre">OPMDReweightAdvAlgorithm</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="trinity.algorithm.algorithm.html#trinity.algorithm.algorithm.OPMDReweightAdvAlgorithm.use_critic"><code class="docutils literal notranslate"><span class="pre">OPMDReweightAdvAlgorithm.use_critic</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trinity.algorithm.algorithm.html#trinity.algorithm.algorithm.OPMDReweightAdvAlgorithm.use_reference"><code class="docutils literal notranslate"><span class="pre">OPMDReweightAdvAlgorithm.use_reference</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trinity.algorithm.algorithm.html#trinity.algorithm.algorithm.OPMDReweightAdvAlgorithm.compute_advantage_in_trainer"><code class="docutils literal notranslate"><span class="pre">OPMDReweightAdvAlgorithm.compute_advantage_in_trainer</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trinity.algorithm.algorithm.html#trinity.algorithm.algorithm.OPMDReweightAdvAlgorithm.can_balance_batch"><code class="docutils literal notranslate"><span class="pre">OPMDReweightAdvAlgorithm.can_balance_batch</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trinity.algorithm.algorithm.html#trinity.algorithm.algorithm.OPMDReweightAdvAlgorithm.schema"><code class="docutils literal notranslate"><span class="pre">OPMDReweightAdvAlgorithm.schema</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trinity.algorithm.algorithm.html#trinity.algorithm.algorithm.OPMDReweightAdvAlgorithm.default_config"><code class="docutils literal notranslate"><span class="pre">OPMDReweightAdvAlgorithm.default_config()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="trinity.algorithm.algorithm.html#trinity.algorithm.algorithm.AsymREAlgorithm"><code class="docutils literal notranslate"><span class="pre">AsymREAlgorithm</span></code></a><ul>
