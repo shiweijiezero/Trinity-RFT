@@ -31,6 +31,57 @@ from trinity.common.workflows.envs.alfworld.RAFT_reflect_alfworld_workflow impor
 from trinity.common.workflows.envs.email_searcher.workflow import EmailSearchWorkflow
 from trinity.common.workflows.envs.sciworld.sciworld_workflow import SciWorldWorkflow
 from trinity.common.workflows.envs.webshop.webshop_workflow import WebShopWorkflow
+from trinity.common.workflows.envs.R3L.webshop.R3L_workflow import (
+    R3LWebshopWorkflow,
+)
+from trinity.common.workflows.envs.R3L.webshop.grpo_workflow import (
+    GRPOBaselineWebshopWorkflow,
+)
+from trinity.common.workflows.envs.R3L.webshop.opmd_workflow import (
+    OPMDBaselineWebshopWorkflow,
+)
+from trinity.common.workflows.envs.R3L.webshop.raft_workflow import (
+    RAFTBaselineWebshopWorkflow,
+)
+# Alfworld R3L workflows
+from trinity.common.workflows.envs.R3L.alfworld.R3L_workflow import (
+    R3LAlfworldWorkflow,
+)
+from trinity.common.workflows.envs.R3L.alfworld.grpo_workflow import (
+    GRPOBaselineAlfworldWorkflow,
+)
+from trinity.common.workflows.envs.R3L.alfworld.opmd_workflow import (
+    OPMDBaselineAlfworldWorkflow,
+)
+from trinity.common.workflows.envs.R3L.alfworld.raft_workflow import (
+    RAFTBaselineAlfworldWorkflow,
+)
+# DAPO R3L workflows
+from trinity.common.workflows.envs.R3L.dapo.R3L_workflow import (
+    R3LDapoWorkflow,
+)
+from trinity.common.workflows.envs.R3L.dapo.grpo_workflow import (
+    GRPOBaselineDapoWorkflow,
+)
+from trinity.common.workflows.envs.R3L.dapo.opmd_workflow import (
+    OPMDBaselineDapoWorkflow,
+)
+from trinity.common.workflows.envs.R3L.dapo.raft_workflow import (
+    RAFTBaselineDapoWorkflow,
+)
+# ScienceWorld R3L workflows
+from trinity.common.workflows.envs.R3L.scienceworld.R3L_workflow import (
+    R3LScienceWorldWorkflow,
+)
+from trinity.common.workflows.envs.R3L.scienceworld.grpo_workflow import (
+    GRPOBaselineScienceWorldWorkflow,
+)
+from trinity.common.workflows.envs.R3L.scienceworld.opmd_workflow import (
+    OPMDBaselineScienceWorldWorkflow,
+)
+from trinity.common.workflows.envs.R3L.scienceworld.raft_workflow import (
+    RAFTBaselineScienceWorldWorkflow,
+)
 from trinity.common.workflows.eval_workflow import (
     AsyncMathEvalWorkflow,
     MathEvalWorkflow,
@@ -70,6 +121,26 @@ __all__ = [
     "AsyncMathWorkflow",
     "MathWorkflow",
     "WebShopWorkflow",
+    "R3LWebshopWorkflow",
+    "GRPOBaselineWebshopWorkflow",
+    "OPMDBaselineWebshopWorkflow",
+    "RAFTBaselineWebshopWorkflow",
+    # Alfworld R3L workflows
+    "R3LAlfworldWorkflow",
+    "GRPOBaselineAlfworldWorkflow",
+    "OPMDBaselineAlfworldWorkflow",
+    "RAFTBaselineAlfworldWorkflow",
+    # DAPO R3L workflows
+    "R3LDapoWorkflow",
+    "GRPOBaselineDapoWorkflow",
+    "OPMDBaselineDapoWorkflow",
+    "RAFTBaselineDapoWorkflow",
+    # ScienceWorld R3L workflows
+    "R3LScienceWorldWorkflow",
+    "GRPOBaselineScienceWorldWorkflow",
+    "OPMDBaselineScienceWorldWorkflow",
+    "RAFTBaselineScienceWorldWorkflow",
+    # Original workflows
     "AlfworldWorkflow",
     "StepWiseAlfworldWorkflow",
     "RAFTAlfworldWorkflow",

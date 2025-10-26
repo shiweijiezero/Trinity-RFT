@@ -10,29 +10,26 @@ import torch
 from trinity.common.experience import Experience
 
 
-def first_rollout(self, env, session_id) -> tuple[List[Dict[str, str]], float, bool, int, bool]:
-    """Run a single rollout"""
-    # print(f"About to reset env with session_id: {session_id}")
-    env.reset(session=session_id)
-    observation = env.observation
+def first_rollout(self, env) -> tuple[List[Dict[str, str]], float, bool, int, bool]:
+    """Run a single rollout in Alfworld environment"""
+    observation, info = env.reset()
     trajectory = []
     action_history = []  # Track last 3 actions for repetition detection
 
-    system_prompt = self.webshop_system_template.render()
+    system_prompt = self.alfworld_system_template.render()
     trajectory.append({"role": "system", "content": system_prompt})
 
-    default_reward = -0.1
+    default_reward = 0.0
     reward = default_reward
     valid_format = True
     step = 0
 
     for step in range(self.max_env_steps):
-        available_actions = env.get_available_actions()
         trajectory.append(
-            {"role": "user", "content": format_observation(observation, available_actions)}
+            {"role": "user", "content": format_observation(observation)}
         )
 
-        # Get model response with experience guidance
+        # Get model response
         responses = self.model.chat(
             trajectory,
             n=1,
@@ -42,64 +39,58 @@ def first_rollout(self, env, session_id) -> tuple[List[Dict[str, str]], float, b
         response_text = responses[0].response_text.strip()
         trajectory.append({"role": "assistant", "content": response_text})
 
-        # Parse the three components for action execution
+        # Parse the response components
         think, action = parse_response(response_text)
-        if action is None:
+        if think is None or action is None:
             valid_format = False
             feedback = "Invalid response format, missing valid <think> or <action> tags, please ensure to follow the output format strictly: <think>...</think> <action>...</action>"
             trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
-            # print(f"Terminating due to invalid response format: {response_text}")
             return trajectory, default_reward, False, step + 1, valid_format
 
         # Check for consecutive action repetition
         action_history.append(action)
-        if len(action_history) > 2:
+        if len(action_history) > 3:
             action_history.pop(0)
 
-        # If last 2 actions are the same, terminate with failure
-        if len(action_history) >= 2 and all(
+        # If last 3 actions are the same, terminate with failure
+        if len(action_history) >= 3 and all(
                 action == action_history[0] for action in action_history
-        ) and "next" not in action.lower() and "prev" not in action.lower() and "search" not in action.lower():
-            feedback = f"Repeated invalid action {action} multiple times, shopping task failed"
+        ):
+            feedback = f"Repeated invalid action {action} multiple times, task failed"
             trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
-            # print(f"Terminating due to 5 consecutive identical actions: {action_text}")
             valid_format = False
             return trajectory, default_reward, False, step + 1, valid_format
 
-        # Validate and execute action in environment
-        action_valid, error_msg = validate_action(action, available_actions)
-        if action_valid:
-            observation, reward, done, info = env.step(action)
-        else:
-            observation, reward, done = error_msg, default_reward, False
+        # Execute action in environment
+        observation, reward, done, info = env.step(action)
 
         if done:
             break
 
-    # Generate timeout feedback
+    # Generate feedback
     if reward >= 1.0 and step + 1 < self.max_env_steps:
-        feedback = f"Shopping task completed successfully (reward: {reward}/1.0), and satisfying the step limit ({step + 1}/{self.max_env_steps} steps)"
+        feedback = f"Task completed successfully (reward: {reward}/1.0), and satisfying the step limit ({step + 1}/{self.max_env_steps} steps)"
     elif reward >= 1.0 and step + 1 >= self.max_env_steps:
         feedback = (
-            f"Shopping task completed successfully (reward: {reward}/1.0), but exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
+            f"Task completed successfully (reward: {reward}/1.0), but exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
         )
     elif reward < 1.0 and step + 1 < self.max_env_steps:
         feedback = (
-            f"Shopping task not completed (reward: {reward}/1.0), but within the step limit ({step + 1}/{self.max_env_steps} steps). It may not satisfy the Attribute Matching, Option Matching, or Price Matching requirements, please you carefully check and ensure all requirements are satisfied."
+            f"Task not completed (reward: {reward}/1.0), but within the step limit ({step + 1}/{self.max_env_steps} steps)"
         )
     else:
         feedback = (
-            f"Shopping task not completed (reward: {reward}/1.0), and exceeded the step limit ({step + 1}/{self.max_env_steps} steps). It may not satisfy the Attribute Matching, Option Matching, or Price Matching requirements, please you carefully check and ensure all requirements are satisfied."
+            f"Task not completed (reward: {reward}/1.0), and exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
         )
 
-    # Add timeout feedback to trajectory
+    # Add feedback to trajectory
     trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
     return trajectory, reward, False, step + 1, valid_format
+
 
 def second_rollout(
         self,
         env,
-        session_id: int,
         guidance_prompt: str,
         first_trajectory: List[Dict[str, str]],
         retry_step: int = 0,
@@ -109,7 +100,6 @@ def second_rollout(
 
     Args:
         env: The environment instance.
-        session_id: The ID for the current task session.
         guidance_prompt: The pre-generated guidance from reflection.
         first_trajectory: The full log of the initial attempt.
         retry_step: The step to start retry from (0-based, 0 means from beginning).
@@ -120,16 +110,15 @@ def second_rollout(
     """
 
     # Reset environment to start fresh
-    env.reset(session=session_id)
-    observation = env.observation
+    observation, info = env.reset()
     trajectory = []
     distill_trajectory = []
     action_history = []  # Track last 3 actions for repetition detection
 
     # Prepare system prompts
-    original_system_prompt = self.webshop_system_template.render()
+    original_system_prompt = self.alfworld_system_template.render()
 
-    default_reward = -0.1
+    default_reward = 0.0
     reward = default_reward
     valid_format = True
 
@@ -156,16 +145,10 @@ def second_rollout(
                     # Execute the action to restore environment state
                     think, action = parse_response(msg["content"])
                     if think is not None and action is not None:
-                        action_valid, error_msg = validate_action(action, env.get_available_actions())
-                        if action_valid:
-                            observation, reward, done, info = env.step(action)
-                            action_history.append(action)
-                            if len(action_history) > 2:
-                                action_history.pop(0)
-                        else:
-                            # If action becomes invalid during replay, start from beginning
-                            retry_step = 0
-                            break
+                        observation, reward, done, info = env.step(action)
+                        action_history.append(action)
+                        if len(action_history) > 3:
+                            action_history.pop(0)
                     first_step += 1
                     step = first_step
 
@@ -187,12 +170,11 @@ def second_rollout(
         distill_trajectory.append({"role": "system", "content": original_system_prompt})
 
     for step in range(step, self.max_env_steps):
-        available_actions = env.get_available_actions()
         trajectory.append(
-            {"role": "user", "content": format_observation(observation, available_actions)}
+            {"role": "user", "content": format_observation(observation)}
         )
         distill_trajectory.append(
-            {"role": "user", "content": format_observation(observation, available_actions)}
+            {"role": "user", "content": format_observation(observation)}
         )
 
         # Get model response with guidance
@@ -217,58 +199,54 @@ def second_rollout(
 
         # Check for consecutive action repetition
         action_history.append(action)
-        if len(action_history) > 2:
+        if len(action_history) > 3:
             action_history.pop(0)
 
-        # If last 2 actions are the same, terminate with failure
-        if len(action_history) >= 2 and all(
+        # If last 3 actions are the same, terminate with failure
+        if len(action_history) >= 3 and all(
                 action == action_history[0] for action in action_history
-        ) and "next" not in action.lower() and "prev" not in action.lower() and "search" not in action.lower():
-            feedback = f"Repeated invalid action {action} multiple times, shopping task failed"
+        ):
+            feedback = f"Repeated invalid action {action} multiple times, task failed"
             trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             distill_trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             valid_format = False
             return distill_trajectory, trajectory, default_reward, False, step + 1, valid_format
 
-        # Validate and execute action in environment
-        action_valid, error_msg = validate_action(action, available_actions)
-        if action_valid:
-            observation, reward, done, info = env.step(action)
-        else:
-            observation, reward, done = error_msg, default_reward, False
+        # Execute action in environment
+        observation, reward, done, info = env.step(action)
 
         if done:
             break
 
     # Generate feedback
     if reward >= 1.0 and step + 1 < self.max_env_steps:
-        feedback = f"Shopping task completed successfully (reward: {reward}/1.0), and satisfying the step limit ({step + 1}/{self.max_env_steps} steps)"
+        feedback = f"Task completed successfully (reward: {reward}/1.0), and satisfying the step limit ({step + 1}/{self.max_env_steps} steps)"
     elif reward >= 1.0 and step + 1 >= self.max_env_steps:
         feedback = (
-            f"Shopping task completed successfully (reward: {reward}/1.0), but exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
+            f"Task completed successfully (reward: {reward}/1.0), but exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
         )
     elif reward < 1.0 and step + 1 < self.max_env_steps:
         feedback = (
-            f"Shopping task not completed (reward: {reward}/1.0), but within the step limit ({step + 1}/{self.max_env_steps} steps). It may not satisfy the Attribute Matching, Option Matching, or Price Matching requirements, please you carefully check and ensure all requirements are satisfied."
+            f"Task not completed (reward: {reward}/1.0), but within the step limit ({step + 1}/{self.max_env_steps} steps)"
         )
     else:
         feedback = (
-            f"Shopping task not completed (reward: {reward}/1.0), and exceeded the step limit ({step + 1}/{self.max_env_steps} steps). It may not satisfy the Attribute Matching, Option Matching, or Price Matching requirements, please you carefully check and ensure all requirements are satisfied."
+            f"Task not completed (reward: {reward}/1.0), and exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
         )
 
     # Add feedback to trajectory
     trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
     distill_trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
 
-    # For compatibility, return the same trajectory as both distill_trajectory and second_trajectory
-    # since we're starting fresh instead of resuming from a checkpoint
     return distill_trajectory, trajectory, reward, False, step + 1, valid_format
 
-def eval_webshop(self) -> List[Experience]:
-    """Evaluate a single webshop trajectory"""
+
+def eval_alfworld(self) -> List[Experience]:
+    """Evaluate a single alfworld trajectory"""
     try:
+        env = create_alfworld_environment(self.game_file_path)
         trajectory, reward, done, steps, valid_format = first_rollout(
-            self, self.env, self.session_id
+            self, env
         )
         exp = self.model.convert_messages_to_experience(trajectory[:-1])
         exp.reward = reward
@@ -296,7 +274,6 @@ def eval_webshop(self) -> List[Experience]:
             )
     except Exception as e:
         # logger.warning(f"Single rollout failed during eval: {e}")
-        task_id = f"{str(self.task.batch_id).replace('/', '_')}_{self.task.task_id}"
         exp = Experience(
             tokens=torch.tensor([0, 0], dtype=torch.long),
             prompt_length=1,
@@ -304,11 +281,12 @@ def eval_webshop(self) -> List[Experience]:
             logprobs=torch.tensor([0.0], dtype=torch.float),
             metrics={
                 "success": 0.0,
-                "reward": -0.1,
+                "reward": 0.0,
             }
         )
-        exp.reward = -0.1
+        exp.reward = 0.0
     return [exp]
+
 
 def _get_jinja_env():
     """Initialize Jinja2 environment for template loading."""
@@ -320,77 +298,57 @@ def _get_jinja_env():
     )
 
 
-def format_observation(observation: str, available_actions: dict):
-    return f"Environment Observation: {observation} \n Available Actions: {available_actions}"
+def format_observation(observation: str):
+    """Format observation string with additional guidance"""
+    if "Nothing happens." in observation:
+        observation = "Action Failed. Maybe your action is invalid or your current state do not support such action. You should strictly follow the action format without any extra words, please check if the action you take is valid or you have carefully followed the action format. And you can also review your current state to ensure the action is feasible.\n" + observation
+    return "Observation: " + observation
 
 
 def parse_response(response):
-    """Parse all three components from response with a single regex"""
-    think, action = None, None
+    """Parse think and action components from response"""
     try:
-        # Use single regex to extract all three components at once
-        pattern = r"<think>\s*(.*?)\s*</think>.*?<action>\s*(.*?)\s*</action>"
-        match = re.search(pattern, response, re.DOTALL)
+        # Use regex to extract think and action components
+        think_pattern = r"<think>\s*(.*?)\s*</think>"
+        action_pattern = r"<action>\s*(.*?)\s*</action>"
 
-        if match:
-            think, action = match.group(1).strip(), match.group(2).strip()
+        think_match = re.search(think_pattern, response, re.DOTALL)
+        action_match = re.search(action_pattern, response, re.DOTALL)
+
+        think = think_match.group(1).strip() if think_match else None
+        action = action_match.group(1).strip() if action_match else None
+
+        return think, action
     except Exception:
-        pass
-    return think, action
+        return None, None
 
 
-def validate_action(action, available_actions):
-    """Validate action format and availability"""
-    import re
-
-    # Parse action format: action_name[action_arg]
-    pattern = re.compile(r"(.+)\[(.+)\]")
-    m = re.match(pattern, action)
-    if m is None:
-        return (
-            False,
-            "Invalid action format. You should use format: action_name[action_arg], like search[query] or click[button].",
+def create_alfworld_environment(game_file):
+    """Create alfworld environment"""
+    try:
+        import textworld
+        import textworld.gym
+        from alfworld.agents.environment.alfred_tw_env import (
+            AlfredDemangler,
+            AlfredExpert,
+            AlfredExpertType,
         )
 
-    action_name, action_arg = m.groups()
-    action_name = action_name.strip()
-    action_arg = action_arg.strip()
+        expert = AlfredExpert(expert_type=AlfredExpertType.HANDCODED)
+        request_infos = textworld.EnvInfos(
+            description=True, inventory=True, admissible_commands=True
+        )
 
-    # Validate search action
-    if action_name == "search":
-        if not action_arg:
-            return (
-                False,
-                "Invalid search action, please type in the query you want to search in the square brackets.",
-            )
-        if not available_actions["has_search_bar"]:
-            return (
-                False,
-                "Cannot perform search action without search bar. Please click the Back to Search button first.",
-            )
-        return True, ""
+        env_id = textworld.gym.register_game(
+            game_file, request_infos, wrappers=[AlfredDemangler(), expert]
+        )
+        env = textworld.gym.make(env_id)
 
-    # Validate click action
-    elif action_name == "click":
-        if not action_arg:
-            return (
-                False,
-                "Invalid click action, please specify the button name in the square brackets.",
-            )
-        # Convert to lowercase for comparison (as clickables are typically lowercase)
-        action_arg_lower = action_arg.lower()
-        if action_arg_lower not in available_actions["clickables"]:
-            return (
-                False,
-                f"Button '{action_arg}' not found on current page. Available buttons: {available_actions['clickables']}",
-            )
-        return True, ""
-
-    # Unknown action
-    else:
-        return (
-            False,
-            f"Unknown action '{action_name}'. Only 'search' and 'click' actions are supported.",
+        return env
+    except ImportError as e:
+        raise ImportError(
+            f"Failed to import alfworld dependencies: {e}. "
+            "Please install alfworld following the instructions at https://github.com/alfworld/alfworld"
         )
 
 

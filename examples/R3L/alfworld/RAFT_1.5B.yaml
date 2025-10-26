@@ -54,6 +54,10 @@ explorer:
     seed: 42
     gpu_memory_utilization: 0.7
     enable_chunked_prefill: true
+data_processor:
+  experience_pipeline:
+    operators:
+      - name: "RAFT_filter"
 synchronizer:
   sync_method: 'nccl'
   sync_interval: 1
