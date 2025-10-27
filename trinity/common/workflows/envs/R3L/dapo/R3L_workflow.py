@@ -174,7 +174,7 @@ class R3LDapoWorkflow(Workflow):
         for i in range(self.n // 2):  # Half for rollout, half for reflection + retry
             try:
                 trajectory, reward, success, predicted_answer, ground_truth, attempts = utils.first_rollout(self)
-
+                print(f"[R3L] First rollout - reward: {reward}, attempts: {attempts}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
                 exp.metrics = {
@@ -210,6 +210,7 @@ class R3LDapoWorkflow(Workflow):
                 is_valid, is_perfect = utils.validate_reflect_report(reflect_checklist, attempts)
 
                 if not is_valid or is_perfect:
+                    print(f"Skip second rollout due to invalid ({not is_valid}) or perfect ({is_perfect}) reflection.")
                     # If first attempt reward is 1.0 and reflection gives perfect, record reflection exp
                     if reward >= 1.0 and is_perfect and reflect_exp is not None:
                         reflect_exp.reward = 1.0
@@ -255,6 +256,7 @@ class R3LDapoWorkflow(Workflow):
                             print(f"Retry rollout after invalid reflection failed: {e}")
 
                 else:
+                    print("[R3L] Valid reflection obtained, proceeding to second rollout...")
                     guidance_prompt = utils.reflect_report_to_guidance_prompt(reflect_checklist)
                     # Extract retry_step from validated reflection report
                     retry_step = reflect_checklist["analysis"]["retry_strategy"]["retry_step"] if "retry_strategy" in reflect_checklist.get("analysis", {}) else 0
@@ -271,7 +273,7 @@ class R3LDapoWorkflow(Workflow):
                         ) = utils.second_rollout(
                             self, guidance_prompt, trajectory, retry_step
                         )
-
+                        print(f"[R3L] Second rollout - reward: {second_reward}, attempts: {second_attempts}, improve: {second_reward > reward}")
                         second_exp = self.model.convert_messages_to_experience(distill_trajectory[:-1])
 
                         second_exp.reward = second_reward

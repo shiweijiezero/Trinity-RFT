@@ -13,8 +13,7 @@ class OPMDFilter(ExperienceOperator):
 
     def process(self, exps: List[Experience]) -> Tuple[List[Experience], dict]:
         # 过滤无效的经验
-        # 如果没有exp.info,默认为有效
-        filtered_exps = [exp for exp in exps if exp.reward is not None and exp.prompt_length > 2 and exp.info.get("valid", True)]
+        filtered_exps = [exp for exp in exps if exp.reward is not None and exp.prompt_length > 2]
         metrics = {"filtered_count": len(exps) - len(filtered_exps)}
         return filtered_exps, metrics
 

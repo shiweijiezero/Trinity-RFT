@@ -217,6 +217,7 @@ class R3LWebshopWorkflow(Workflow):
                 trajectory, reward, done, steps, format_valid = utils.first_rollout(
                     self, self.env, self.session_id
                 )
+                print(f"[R3L] First rollout - reward: {reward}, steps: {steps}")
 
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
@@ -316,7 +317,7 @@ class R3LWebshopWorkflow(Workflow):
                         ) = utils.second_rollout(
                             self, self.env, self.session_id, guidance_prompt, trajectory, retry_step
                         )
-
+                        print(f"[R3L] Second rollout - reward: {second_reward}, steps: {second_steps}, improve: {second_reward > reward}")
                         second_exp = self.model.convert_messages_to_experience(distill_trajectory[:-1])
 
                         # Adjust action_mask to exclude retry prefix from training

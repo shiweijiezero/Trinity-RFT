@@ -9,11 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import torch
 from jinja2 import Environment, FileSystemLoader
 
-try:
-    from math_verify import parse, verify
-except ImportError:
-    parse = None
-    verify = None
+from math_verify import parse, verify
 
 from trinity.common.experience import Experience
 
@@ -181,6 +177,7 @@ def eval_dapo(self) -> List[Experience]:
             "reward": reward,
             "attempts": attempts,
         }
+        print(f"[Dapo Eval] Reward: {reward}, Success: {success}, Attempts: {attempts}")
 
         if self.whether_save_data:
             # Save evaluation data
@@ -334,7 +331,7 @@ def validate_reflect_report(report: Dict[str, Any], total_steps: int) -> Tuple[b
             if not isinstance(retry_step, int) or retry_step < 0 or retry_step > total_steps:
                 print(f"Invalid retry_step: {retry_step} (total steps: {total_steps})")
                 return False, False
-
+    print(f"Reflect with outcome: {outcome}, is_perfect: {is_perfect}")
     return True, is_perfect
 
 

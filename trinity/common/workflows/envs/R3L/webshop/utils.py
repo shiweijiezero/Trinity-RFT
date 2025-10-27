@@ -277,6 +277,7 @@ def eval_webshop(self) -> List[Experience]:
             "steps": steps,
             "reward": reward,
         }
+        print(f"[WebShop Eval] Rollout - reward: {reward}, steps: {steps}, valid_format: {valid_format}")
 
         if self.whether_save_data:
             # Save evaluation data

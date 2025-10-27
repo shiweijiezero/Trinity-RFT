@@ -43,7 +43,7 @@ buffer:
       storage_type: queue
       path: 'sqlite:///webshop_opmd_reweight_adv_1.5B.db'
 explorer:
-  runner_per_model: 32
+  runner_per_model: 16
   eval_interval: 60
   rollout_model:
     engine_num: 2
@@ -59,12 +59,15 @@ data_processor:
     operators:
       - name: "OPMD_filter"
 synchronizer:
+  sync_style: dynamic_by_explorer
   sync_method: 'nccl'
   sync_interval: 1
-  sync_timeout: 12000
+  sync_timeout: 1200
 trainer:
   save_interval: 200
   grad_clip: 1.0
   use_dynamic_bsz: true
   max_token_len_per_gpu: 16384
   ulysses_sequence_parallel_size: 1
+monitor:
+  monitor_type: wandb

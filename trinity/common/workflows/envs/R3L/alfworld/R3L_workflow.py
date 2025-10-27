@@ -190,7 +190,7 @@ class R3LAlfworldWorkflow(Workflow):
                 trajectory, reward, done, steps, format_valid = utils.first_rollout(
                     self, env
                 )
-
+                print(f"[R3L] First rollout - reward: {reward}, steps: {steps}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
                 exp.metrics = {
@@ -288,7 +288,7 @@ class R3LAlfworldWorkflow(Workflow):
                         ) = utils.second_rollout(
                             self, second_env, guidance_prompt, trajectory, retry_step
                         )
-
+                        print(f"[R3L] Second rollout - reward: {second_reward}, steps: {second_steps}, improve: {second_reward > reward}")
                         second_exp = self.model.convert_messages_to_experience(distill_trajectory[:-1])
 
                         # Adjust action_mask to exclude retry prefix from training

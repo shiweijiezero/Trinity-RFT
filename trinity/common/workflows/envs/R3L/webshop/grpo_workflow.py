@@ -96,6 +96,7 @@ class GRPOBaselineWebshopWorkflow(Workflow):
                 trajectory, reward, done, steps, format_valid = utils.first_rollout(
                     self, self.env, self.session_id
                 )
+                print(f"[GRPO] First rollout - reward: {reward}, steps: {steps}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
                 exp.metrics = {

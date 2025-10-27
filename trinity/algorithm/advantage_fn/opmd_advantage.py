@@ -121,6 +121,7 @@ class OPMDGroupAdvantage(GroupAdvantage):
         with torch.no_grad():
             if len(exps) == 1:
                 group_baseline = torch.tensor(0.0)
+                group_rewards = torch.tensor([exps[0].reward], dtype=torch.float32)
             else:
                 group_rewards = torch.tensor([exp.reward for exp in exps], dtype=torch.float32)
                 if self.opmd_baseline == "mean":
@@ -162,6 +163,7 @@ class OPMDReweightAdvGroupAdvantage(GroupAdvantage):
         with torch.no_grad():
             if len(exps) == 1:
                 group_baseline = torch.tensor(0.0)
+                group_rewards = torch.tensor([exps[0].reward], dtype=torch.float32)
             else:
                 group_rewards = torch.tensor([exp.reward for exp in exps], dtype=torch.float32)
                 if self.opmd_baseline == "mean":

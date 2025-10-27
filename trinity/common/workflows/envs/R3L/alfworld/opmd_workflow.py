@@ -73,6 +73,7 @@ class OPMDBaselineAlfworldWorkflow(Workflow):
                 trajectory, reward, done, steps, format_valid = utils.first_rollout(
                     self, env
                 )
+                print(f"[OPMD] First rollout - reward: {reward}, steps: {steps}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
                 exp.metrics = {

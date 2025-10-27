@@ -99,6 +99,7 @@ class OPMDBaselineDapoWorkflow(Workflow):
         for i in range(self.n):
             try:
                 trajectory, reward, success, predicted_answer, ground_truth, attempts = utils.first_rollout(self)
+                print(f"[OPMD] First rollout - reward: {reward}, attempts: {attempts}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
                 exp.metrics = {

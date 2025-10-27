@@ -123,6 +123,7 @@ class RAFTBaselineWebshopWorkflow(Workflow):
                 trajectory, reward, done, steps, format_valid = utils.first_rollout(
                     self, self.env, self.session_id
                 )
+                print(f"[RAFT] First rollout - reward: {reward}, steps: {steps}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
                 exp.metrics = {

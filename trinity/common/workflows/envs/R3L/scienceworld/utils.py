@@ -279,6 +279,7 @@ def eval_sciworld(self) -> List[Experience]:
             "steps": steps,
             "reward": reward,
         }
+        print(f"[Eval] First rollout - reward: {reward}, steps: {steps}")
 
         if self.whether_save_data:
             # Save evaluation data

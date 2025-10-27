@@ -166,7 +166,7 @@ class StorageConfig:
     task_selector: TaskSelectorConfig = field(default_factory=TaskSelectorConfig)
 
     # enable progress bar (tqdm) for _HFBatchReader
-    enable_progress_bar: Optional[bool] = False
+    enable_progress_bar: Optional[bool] = True
 
     # get storage from existing experiment
     ray_namespace: Optional[str] = None
