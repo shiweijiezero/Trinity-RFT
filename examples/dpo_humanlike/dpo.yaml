@@ -37,7 +37,7 @@ buffer:
 synchronizer:
   sync_method: 'checkpoint'
   sync_interval: 30
-  sync_timeout: 1200
+  sync_timeout: 12000
 trainer:
   save_interval: 30
   total_steps: 200

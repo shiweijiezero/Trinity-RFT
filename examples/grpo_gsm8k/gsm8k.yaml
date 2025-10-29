@@ -56,7 +56,7 @@ explorer:
 synchronizer:
   sync_method: 'nccl'
   sync_interval: 1
-  sync_timeout: 1200
+  sync_timeout: 12000
 trainer:
   trainer_type: 'verl'
   save_interval: 100

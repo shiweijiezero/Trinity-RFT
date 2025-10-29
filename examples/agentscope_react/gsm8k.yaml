@@ -56,7 +56,7 @@ synchronizer:
   sync_style: dynamic_by_explorer
   sync_method: 'nccl'
   sync_interval: 2
-  sync_timeout: 1200
+  sync_timeout: 12000
 trainer:
   save_interval: 100
   grad_clip: 1.0

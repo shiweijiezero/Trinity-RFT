@@ -61,7 +61,7 @@ explorer:
 synchronizer:
   sync_method: nccl
   sync_interval: 20
-  sync_timeout: 1200
+  sync_timeout: 12000
   sync_offset: 0
 trainer:
   save_interval: 100
