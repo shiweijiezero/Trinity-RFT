@@ -32,6 +32,7 @@ from trinity.utils.annotations import Experimental
 from trinity.utils.log import get_logger
 from trinity.utils.monitor import MONITOR, gather_metrics
 from trinity.utils.plugin_loader import load_plugins
+from trinity.utils.timer import Timer
 
 
 class Explorer:
@@ -74,6 +75,8 @@ class Explorer:
         self.enable_lora = self.config.explorer.rollout_model.enable_lora
         self.model_version = -1
         self.last_sync_successful = True
+        self.eval_start_time = None
+        self.explore_start_time = None
         self.logger.info("Finished initializing Explorer.")
 
     async def setup_weight_sync_group(
@@ -147,12 +150,18 @@ class Explorer:
     async def prepare(self) -> None:
         """Preparation before running."""
         try:
+            # prepare experience pipeline
             await self.experience_pipeline.prepare.remote()
             self.logger.info("Experience pipeline is ready.")
             # make sure all rollout models are ready
-            model_ready_ref = [model.__ray_ready__.remote() for model in self.models]
-            await asyncio.gather(*model_ready_ref)
-            self.logger.info("All rollout models are ready.")
+            run_api_ref = [model.run_api_server.remote() for model in self.models]
+            run_api_ref.extend(
+                model.run_api_server.remote()
+                for models in self.auxiliary_models
+                for model in models
+            )
+            await asyncio.gather(*run_api_ref)
+            self.logger.info("All models are ready.")
 
             if not self.use_nccl_sync:
                 master_address, master_port = await self.models[0].get_available_address.remote()
@@ -205,6 +214,8 @@ class Explorer:
         return self.config.explorer.name
 
     async def explore_step(self) -> bool:
+        if self.explore_start_time is None:
+            self.explore_start_time = time.time()
         try:
             tasks = await self.taskset.read_async()
         except StopAsyncIteration:
@@ -250,6 +261,7 @@ class Explorer:
 
     async def eval(self):
         """Evaluation on all evaluation data samples."""
+        self.eval_start_time = time.time()
         if len(self.config.buffer.explorer_input.eval_tasksets) == 0:
             self.logger.warning("No evaluation data samples. Skip evaluation.")
             return
@@ -336,9 +348,16 @@ class Explorer:
             await self._finish_explore_step(step=step, model_version=model_version)
             await self._finish_eval_step(step=step)
 
+        # Record the time: read_task + explore_step (>=1) + eval (if any)
+        if self.explore_start_time is not None:
+            metric = {"time/explorer_sync_interval": time.time() - self.explore_start_time}
+            self.explore_start_time = None
+            self.monitor.log(metric, step=end_step)
+
     async def _finish_explore_step(self, step: int, model_version: int) -> None:
-        statuses, exps = await self.scheduler.get_results(batch_id=step)
         metric = {"rollout/model_version": model_version}
+        with Timer(metric, "time/wait_explore_step"):
+            statuses, exps = await self.scheduler.get_results(batch_id=step)
         pipeline_metrics = await self.experience_pipeline.process.remote(exps)
         self.taskset.update(pipeline_metrics)
         metric.update(pipeline_metrics)
@@ -350,7 +369,6 @@ class Explorer:
         if not self.pending_eval_tasks:
             return
         step = step or self.explore_step_num
-        st = time.time()
         metric = {}
         while self.pending_eval_tasks:
             eval_step, eval_task_name = self.pending_eval_tasks[0]
@@ -363,7 +381,9 @@ class Explorer:
                     [status.metric for status in eval_results], f"{prefix}/{eval_task_name}"
                 )
             )
-        metric[f"{prefix}/total_time"] = time.time() - st
+        if self.eval_start_time is not None:
+            metric.update({"time/eval": time.time() - self.eval_start_time})
+            self.eval_start_time = None
         self.monitor.log(metric, step)
 
     async def shutdown(self) -> None:
