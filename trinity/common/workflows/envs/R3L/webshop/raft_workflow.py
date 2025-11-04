@@ -20,10 +20,10 @@ class RAFTBaselineWebshopWorkflow(Workflow):
     """
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -33,7 +33,8 @@ class RAFTBaselineWebshopWorkflow(Workflow):
         # Initialize workflow parameters
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
         self.max_env_steps = 15
-        self.max_tokens = 4096
+        self.max_tokens = 512
+        self.max_reflect_tokens = 4096
         self.task = task
         self.is_eval = task.is_eval
         self.whether_save_data = False
@@ -41,6 +42,7 @@ class RAFTBaselineWebshopWorkflow(Workflow):
         # Initialize WebShop environment
         try:
             import sys
+
             sys.path.append("/home/wshiah/code/shiweijie/weijie/trinity/webshop")
             import gym
             from web_agent_site.envs import WebAgentTextEnv  # noqa: F401
@@ -72,9 +74,7 @@ class RAFTBaselineWebshopWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.webshop_system_template = self.jinja_env.get_template("webshop_system.j2")
 
-        print(
-            f"Initializing RAFTWebshopWorkflow, temperature={self.temperature}"
-        )
+        print(f"Initializing RAFTWebshopWorkflow, temperature={self.temperature}")
         self.reset(task)
 
         # Default experience for error cases
@@ -87,7 +87,7 @@ class RAFTBaselineWebshopWorkflow(Workflow):
                 "success": 0.0,
                 "reward": -0.1,
             },
-            reward=-0.1
+            reward=-0.1,
         )
 
     def reset(self, task: Task):
@@ -96,6 +96,7 @@ class RAFTBaselineWebshopWorkflow(Workflow):
         self.is_eval = task.is_eval
         self.task = task
         self.n = task.repeat_times
+        self.temperature = getattr(task.rollout_args, "temperature", 1.0)
 
     def run(self) -> List[Experience]:
         """Run the RAFT workflow and return experiences"""
@@ -131,9 +132,9 @@ class RAFTBaselineWebshopWorkflow(Workflow):
                     "steps": steps,
                     "reward": reward,
                 }
+                exp_lst.append(exp)
             except Exception:
-                exp = copy.deepcopy(self.default_exp)
-            exp_lst.append(exp)
+                pass
 
         return exp_lst
 

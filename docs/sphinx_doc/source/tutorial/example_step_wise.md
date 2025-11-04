@@ -139,7 +139,7 @@ explorer:
     enable_history: true
     engine_num: 2
     tensor_parallel_size: 2
-    enable_prefix_caching: false
+    enable_prefix_caching: true
     enforce_eager: true
     dtype: bfloat16
     seed: 42

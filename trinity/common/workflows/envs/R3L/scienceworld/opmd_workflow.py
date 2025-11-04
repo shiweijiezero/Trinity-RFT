@@ -18,10 +18,10 @@ class OPMDBaselineScienceWorldWorkflow(Workflow):
     """
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -31,7 +31,7 @@ class OPMDBaselineScienceWorldWorkflow(Workflow):
         # Initialize workflow parameters
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
         self.max_env_steps = 30
-        self.max_tokens = 16384
+        self.max_tokens = 512
         self.task = task
         self.is_eval = task.is_eval
         self.whether_save_data = False
@@ -47,9 +47,7 @@ class OPMDBaselineScienceWorldWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.sciworld_system_template = self.jinja_env.get_template("sciworld_system.j2")
 
-        print(
-            f"Initializing OPMDScienceWorldWorkflow, temperature={self.temperature}"
-        )
+        print(f"Initializing OPMDScienceWorldWorkflow, temperature={self.temperature}")
         self.reset(task)
 
     def reset(self, task: Task):
@@ -58,6 +56,7 @@ class OPMDBaselineScienceWorldWorkflow(Workflow):
         self.is_eval = task.is_eval
         self.task = task
         self.n = task.repeat_times
+        self.temperature = getattr(task.rollout_args, "temperature", 1.0)
 
     def run(self) -> List[Experience]:
         """Run the OPMD workflow and return experiences"""
@@ -70,9 +69,7 @@ class OPMDBaselineScienceWorldWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n):
             try:
-                trajectory, reward, done, steps, format_valid = utils.first_rollout(
-                    self, env
-                )
+                trajectory, reward, done, steps, format_valid = utils.first_rollout(self, env)
                 print(f"[OPMD] First rollout - reward: {reward}, steps: {steps}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward

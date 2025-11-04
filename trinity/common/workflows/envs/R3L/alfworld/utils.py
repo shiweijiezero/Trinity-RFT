@@ -5,8 +5,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from jinja2 import Environment, FileSystemLoader
 import torch
+from jinja2 import Environment, FileSystemLoader
+
 from trinity.common.experience import Experience
 
 
@@ -14,7 +15,7 @@ def first_rollout(self, env) -> tuple[List[Dict[str, str]], float, bool, int, bo
     """Run a single rollout in Alfworld environment"""
     observation, info = env.reset()
     trajectory = []
-    action_history = []  # Track last 3 actions for repetition detection
+    action_history = []  # Track all actions taken
 
     system_prompt = self.alfworld_system_template.render()
     trajectory.append({"role": "system", "content": system_prompt})
@@ -24,9 +25,24 @@ def first_rollout(self, env) -> tuple[List[Dict[str, str]], float, bool, int, bo
     valid_format = True
     step = 0
 
+    # Extract task description from the initial observation (only once at the beginning)
+    task_description = extract_task_description(observation)
+
     for step in range(self.max_env_steps):
+        # Extract admissible actions from info if available
+        admissible_actions = info.get("admissible_commands", []) if isinstance(info, dict) else []
+
         trajectory.append(
-            {"role": "user", "content": format_observation(observation)}
+            {
+                "role": "user",
+                "content": format_observation(
+                    current_observation=observation,
+                    task_description=task_description,
+                    current_step=step,
+                    action_history=action_history,
+                    admissible_actions=admissible_actions,
+                ),
+            }
         )
 
         # Get model response
@@ -36,6 +52,12 @@ def first_rollout(self, env) -> tuple[List[Dict[str, str]], float, bool, int, bo
             temperature=self.temperature,
             max_tokens=self.max_tokens,
         )
+
+        # Check if tokens exceed limit
+        if responses[0].tokens.shape[0] >= 20480 - 512:
+            # 由于 chat 内部 tokenizer 会做截断，所以只要>= 最长限制 就直接终止
+            return trajectory, default_reward, False, step + 1, False
+
         response_text = responses[0].response_text.strip()
         trajectory.append({"role": "assistant", "content": response_text})
 
@@ -47,22 +69,20 @@ def first_rollout(self, env) -> tuple[List[Dict[str, str]], float, bool, int, bo
             trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             return trajectory, default_reward, False, step + 1, valid_format
 
-        # Check for consecutive action repetition
-        action_history.append(action)
-        if len(action_history) > 3:
-            action_history.pop(0)
+        # Execute action in environment
+        observation, reward, done, info = env.step(action)
 
-        # If last 3 actions are the same, terminate with failure
+        # Track successfully executed actions for history
+        action_history.append(action)
+
+        # Check for consecutive action repetition (last 3 actions)
         if len(action_history) >= 3 and all(
-                action == action_history[0] for action in action_history
+            action == action_history[-1] for action in action_history[-3:]
         ):
             feedback = f"Repeated invalid action {action} multiple times, task failed"
             trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             valid_format = False
             return trajectory, default_reward, False, step + 1, valid_format
-
-        # Execute action in environment
-        observation, reward, done, info = env.step(action)
 
         if done:
             break
@@ -71,17 +91,11 @@ def first_rollout(self, env) -> tuple[List[Dict[str, str]], float, bool, int, bo
     if reward >= 1.0 and step + 1 < self.max_env_steps:
         feedback = f"Task completed successfully (reward: {reward}/1.0), and satisfying the step limit ({step + 1}/{self.max_env_steps} steps)"
     elif reward >= 1.0 and step + 1 >= self.max_env_steps:
-        feedback = (
-            f"Task completed successfully (reward: {reward}/1.0), but exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
-        )
+        feedback = f"Task completed successfully (reward: {reward}/1.0), but exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
     elif reward < 1.0 and step + 1 < self.max_env_steps:
-        feedback = (
-            f"Task not completed (reward: {reward}/1.0), but within the step limit ({step + 1}/{self.max_env_steps} steps)"
-        )
+        feedback = f"Task not completed (reward: {reward}/1.0), but within the step limit ({step + 1}/{self.max_env_steps} steps)"
     else:
-        feedback = (
-            f"Task not completed (reward: {reward}/1.0), and exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
-        )
+        feedback = f"Task not completed (reward: {reward}/1.0), and exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
 
     # Add feedback to trajectory
     trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
@@ -89,11 +103,11 @@ def first_rollout(self, env) -> tuple[List[Dict[str, str]], float, bool, int, bo
 
 
 def second_rollout(
-        self,
-        env,
-        guidance_prompt: str,
-        first_trajectory: List[Dict[str, str]],
-        retry_step: int = 0,
+    self,
+    env,
+    guidance_prompt: str,
+    first_trajectory: List[Dict[str, str]],
+    retry_step: int = 0,
 ) -> tuple[List[Dict[str, str]], List[Dict[str, str]], float, bool, int, bool]:
     """
     Performs rollout starting from a specific retry step, reusing previous responses.
@@ -113,7 +127,7 @@ def second_rollout(
     observation, info = env.reset()
     trajectory = []
     distill_trajectory = []
-    action_history = []  # Track last 3 actions for repetition detection
+    action_history = []  # Track all actions taken
 
     # Prepare system prompts
     original_system_prompt = self.alfworld_system_template.render()
@@ -121,6 +135,9 @@ def second_rollout(
     default_reward = 0.0
     reward = default_reward
     valid_format = True
+
+    # Extract task description from the initial observation (only once at the beginning)
+    task_description = extract_task_description(observation)
 
     # Copy responses from first trajectory up to retry_step
     step = 0
@@ -147,8 +164,6 @@ def second_rollout(
                     if think is not None and action is not None:
                         observation, reward, done, info = env.step(action)
                         action_history.append(action)
-                        if len(action_history) > 3:
-                            action_history.pop(0)
                     first_step += 1
                     step = first_step
 
@@ -159,23 +174,35 @@ def second_rollout(
                     break
 
         # Add guidance prompt as a separate system message before retry point
-        guidance_system_msg = {"role": "system", "content": f"# Previous Attempt Analysis & Guidance\n{guidance_prompt}"}
+        guidance_system_msg = {
+            "role": "system",
+            "content": f"# Previous Attempt Analysis & Guidance\n{guidance_prompt}",
+        }
         trajectory.append(guidance_system_msg)
         # Don't add guidance to distill_trajectory to keep it clean
 
     else:
         # Starting from beginning - add system prompt with guidance
-        merged_system_prompt = f"{original_system_prompt}\n\n# Previous Attempt Analysis & Guidance\n{guidance_prompt}"
+        merged_system_prompt = (
+            f"{original_system_prompt}\n\n# Previous Attempt Analysis & Guidance\n{guidance_prompt}"
+        )
         trajectory.append({"role": "system", "content": merged_system_prompt})
         distill_trajectory.append({"role": "system", "content": original_system_prompt})
 
     for step in range(step, self.max_env_steps):
-        trajectory.append(
-            {"role": "user", "content": format_observation(observation)}
+        # Extract admissible actions from info if available
+        admissible_actions = info.get("admissible_commands", []) if isinstance(info, dict) else []
+
+        formatted_obs = format_observation(
+            current_observation=observation,
+            task_description=task_description,
+            current_step=step,
+            action_history=action_history,
+            admissible_actions=admissible_actions,
         )
-        distill_trajectory.append(
-            {"role": "user", "content": format_observation(observation)}
-        )
+
+        trajectory.append({"role": "user", "content": formatted_obs})
+        distill_trajectory.append({"role": "user", "content": formatted_obs})
 
         # Get model response with guidance
         responses = self.model.chat(
@@ -184,6 +211,12 @@ def second_rollout(
             temperature=self.temperature,
             max_tokens=self.max_tokens,
         )
+
+        # Check if tokens exceed limit
+        if responses[0].tokens.shape[0] >= 20480 - 512:
+            # 由于 chat 内部 tokenizer 会做截断，所以只要>= 最长限制 就直接终止
+            return distill_trajectory, trajectory, default_reward, False, step + 1, False
+
         response_text = responses[0].response_text.strip()
         trajectory.append({"role": "assistant", "content": response_text})
         distill_trajectory.append({"role": "assistant", "content": response_text})
@@ -197,23 +230,21 @@ def second_rollout(
             distill_trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             return distill_trajectory, trajectory, default_reward, False, step + 1, valid_format
 
-        # Check for consecutive action repetition
-        action_history.append(action)
-        if len(action_history) > 3:
-            action_history.pop(0)
+        # Execute action in environment
+        observation, reward, done, info = env.step(action)
 
-        # If last 3 actions are the same, terminate with failure
+        # Track successfully executed actions for history
+        action_history.append(action)
+
+        # Check for consecutive action repetition (last 3 actions)
         if len(action_history) >= 3 and all(
-                action == action_history[0] for action in action_history
+            action == action_history[-1] for action in action_history[-3:]
         ):
             feedback = f"Repeated invalid action {action} multiple times, task failed"
             trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             distill_trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             valid_format = False
             return distill_trajectory, trajectory, default_reward, False, step + 1, valid_format
-
-        # Execute action in environment
-        observation, reward, done, info = env.step(action)
 
         if done:
             break
@@ -222,17 +253,11 @@ def second_rollout(
     if reward >= 1.0 and step + 1 < self.max_env_steps:
         feedback = f"Task completed successfully (reward: {reward}/1.0), and satisfying the step limit ({step + 1}/{self.max_env_steps} steps)"
     elif reward >= 1.0 and step + 1 >= self.max_env_steps:
-        feedback = (
-            f"Task completed successfully (reward: {reward}/1.0), but exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
-        )
+        feedback = f"Task completed successfully (reward: {reward}/1.0), but exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
     elif reward < 1.0 and step + 1 < self.max_env_steps:
-        feedback = (
-            f"Task not completed (reward: {reward}/1.0), but within the step limit ({step + 1}/{self.max_env_steps} steps)"
-        )
+        feedback = f"Task not completed (reward: {reward}/1.0), but within the step limit ({step + 1}/{self.max_env_steps} steps)"
     else:
-        feedback = (
-            f"Task not completed (reward: {reward}/1.0), and exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
-        )
+        feedback = f"Task not completed (reward: {reward}/1.0), and exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
 
     # Add feedback to trajectory
     trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
@@ -245,9 +270,7 @@ def eval_alfworld(self) -> List[Experience]:
     """Evaluate a single alfworld trajectory"""
     try:
         env = create_alfworld_environment(self.game_file_path)
-        trajectory, reward, done, steps, valid_format = first_rollout(
-            self, env
-        )
+        trajectory, reward, done, steps, valid_format = first_rollout(self, env)
         exp = self.model.convert_messages_to_experience(trajectory[:-1])
         exp.reward = reward
         exp.metrics = {
@@ -266,12 +289,10 @@ def eval_alfworld(self) -> List[Experience]:
                 reward=reward,
                 steps=steps,
                 success=reward >= 1.0,
-                attempt_type="evaluation"
+                attempt_type="evaluation",
             )
             save_experience_data(
-                task_id=f"{eval_task_id}_eval",
-                experience_data=eval_record,
-                data_dir=self.eval_dir
+                task_id=f"{eval_task_id}_eval", experience_data=eval_record, data_dir=self.eval_dir
             )
     except Exception as e:
         # logger.warning(f"Single rollout failed during eval: {e}")
@@ -283,7 +304,7 @@ def eval_alfworld(self) -> List[Experience]:
             metrics={
                 "success": 0.0,
                 "reward": 0.0,
-            }
+            },
         )
         exp.reward = 0.0
     return [exp]
@@ -299,11 +320,92 @@ def _get_jinja_env():
     )
 
 
-def format_observation(observation: str):
-    """Format observation string with additional guidance"""
-    if "Nothing happens." in observation:
-        observation = "Action Failed. Maybe your action is invalid or your current state do not support such action. You should strictly follow the action format without any extra words, please check if the action you take is valid or you have carefully followed the action format. And you can also review your current state to ensure the action is feasible.\n" + observation
-    return "Observation: " + observation
+def extract_task_description(observation: str) -> str:
+    """
+    Extract task description from the initial observation.
+    The task description is typically in the format: "Your task is to: ..."
+
+    Args:
+        observation: Initial observation from environment
+
+    Returns:
+        Extracted task description string
+    """
+    # Look for pattern "Your task is to: <task>"
+    match = re.search(r"Your task is to:\s*(.+?)(?:\n|$)", observation, re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    # Fallback: return a portion of the observation
+    return observation.split("\n")[-1] if "\n" in observation else observation
+
+
+def format_observation(
+    current_observation: str,
+    task_description: str = "",
+    current_step: int = 0,
+    action_history: List[str] = None,
+    admissible_actions: List[str] = None,
+    history_length: int = 4,
+):
+    """
+    Format observation string with task context and limited action history.
+
+    Args:
+        current_observation: Current observation from environment
+        task_description: Description of the task to complete
+        current_step: Current step number
+        action_history: List of all previous actions taken
+        admissible_actions: List of currently admissible actions
+        history_length: Maximum number of recent actions to display (default: 4)
+    """
+    if action_history is None:
+        action_history = []
+    if admissible_actions is None:
+        admissible_actions = []
+
+    # Format admissible actions as a list
+    admissible_actions_str = (
+        ", ".join(admissible_actions) if admissible_actions else "All standard actions available"
+    )
+
+    # Check if this is the first step (no history)
+    if current_step == 0 or not action_history:
+        # First step - no history version
+        prompt = f"""You are an expert agent operating in the ALFRED Embodied Environment.
+Your current observation is: {current_observation}
+Your admissible actions of the current situation are: [{admissible_actions_str}].
+
+Now it's your turn to take an action.
+You should first reason step-by-step about the current situation. This reasoning process MUST be enclosed within <think> </think> tags.
+Once you've finished your reasoning, you should choose an admissible action for current step and present it within <action> </action> tags."""
+    else:
+        # Limit action history to most recent history_length items
+        recent_actions = (
+            action_history[-history_length:]
+            if len(action_history) > history_length
+            else action_history
+        )
+
+        # Format action history as a structured list
+        action_history_str = "\n".join(
+            [
+                f"  Step {current_step - len(recent_actions) + i}: {action}"
+                for i, action in enumerate(recent_actions)
+            ]
+        )
+
+        # Create formatted prompt with limited history
+        prompt = f"""You are an expert agent operating in the ALFRED Embodied Environment. Your task is to: {task_description}
+Prior to this step, you have already taken {len(action_history)} step(s). Below are the most recent {len(recent_actions)} actions you took:
+{action_history_str}
+You are now at step {current_step} and your current observation is: {current_observation}
+Your admissible actions of the current situation are: [{admissible_actions_str}].
+
+Now it's your turn to take an action.
+You should first reason step-by-step about the current situation. This reasoning process MUST be enclosed within <think> </think> tags.
+Once you've finished your reasoning, you should choose an admissible action for current step and present it within <action> </action> tags."""
+
+    return prompt
 
 
 def parse_response(response):
@@ -324,8 +426,14 @@ def parse_response(response):
         return None, None
 
 
-def create_alfworld_environment(game_file):
-    """Create alfworld environment"""
+def create_alfworld_environment(game_file, max_episode_steps=25):
+    """
+    Create alfworld environment
+
+    Args:
+        game_file: Path to the game file
+        max_episode_steps: Maximum number of steps per episode (default: 50)
+    """
     try:
         import textworld
         import textworld.gym
@@ -341,7 +449,11 @@ def create_alfworld_environment(game_file):
         )
 
         env_id = textworld.gym.register_game(
-            game_file, request_infos, wrappers=[AlfredDemangler(), expert]
+            game_file,
+            request_infos,
+            max_episode_steps=max_episode_steps,
+            asynchronous=True,
+            wrappers=[AlfredDemangler(), expert],
         )
         env = textworld.gym.make(env_id)
 
@@ -397,9 +509,9 @@ def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tu
         - is_perfect: Whether the report indicates the trajectory is perfect (only meaningful if is_valid is True)
     """
     if (
-            not isinstance(report, dict)
-            or "outcome_assessment" not in report
-            or "analysis" not in report
+        not isinstance(report, dict)
+        or "outcome_assessment" not in report
+        or "analysis" not in report
     ):
         print("Validation failed: Report is not a dict or missing top-level keys.")
         return False, False
@@ -428,9 +540,12 @@ def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tu
             "Reasoning Flaw",
             "Execution Flaw",
             "Knowledge Gap",
-            "Inefficiency"
+            "Inefficiency",
         ]
-        if diagnosis.get("category") not in valid_categories and diagnosis.get("category") != "null":
+        if (
+            diagnosis.get("category") not in valid_categories
+            and diagnosis.get("category") != "null"
+        ):
             print(f"Validation failed: Invalid 'category'. Got: {diagnosis.get('category')}")
             return False, False
 
@@ -439,14 +554,15 @@ def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tu
         required_better_approach_keys = ["strategy", "key_differences", "projected_benefits"]
         for key in required_better_approach_keys:
             if key not in better_approach:
-                print(f"Validation failed: Missing '{key}' in better_approach. Got: {better_approach}")
+                print(
+                    f"Validation failed: Missing '{key}' in better_approach. Got: {better_approach}"
+                )
                 return False, False
 
         # Validate lessons_learned
         lessons_learned = analysis.get("lessons_learned", {})
         if not (
-                "corrective_principle" in lessons_learned
-                and "revised_action_plan" in lessons_learned
+            "corrective_principle" in lessons_learned and "revised_action_plan" in lessons_learned
         ):
             print(f"Validation failed: Invalid 'lessons_learned'. Got: {lessons_learned}")
             return False, False
@@ -467,17 +583,22 @@ def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tu
             try:
                 retry_step = int(retry_step)
             except (ValueError, TypeError):
-                print(f"Validation failed: 'retry_step' must be an integer or null. Got: {retry_step}")
+                print(
+                    f"Validation failed: 'retry_step' must be an integer or null. Got: {retry_step}"
+                )
                 return False, False
             if not isinstance(retry_step, int) or retry_step < 0:
-                print(f"Validation failed: 'retry_step' must be a non-negative integer or null. Got: {retry_step}")
+                print(
+                    f"Validation failed: 'retry_step' must be a non-negative integer or null. Got: {retry_step}"
+                )
                 return False, False
 
             # Check trajectory bounds if max_steps is provided
             if max_steps is not None:
                 if retry_step >= max_steps:
                     print(
-                        f"Validation failed: 'retry_step' ({retry_step}) exceeds trajectory bounds (0 to {max_steps - 1}).")
+                        f"Validation failed: 'retry_step' ({retry_step}) exceeds trajectory bounds (0 to {max_steps - 1})."
+                    )
                     return False, False
 
         # Validate retry_rationale
@@ -509,11 +630,7 @@ def reflect_report_to_guidance_prompt(report: Dict[str, Any]) -> str:
     return template.render(report=report_str)
 
 
-def save_experience_data(
-        task_id: str,
-        experience_data: Dict,
-        data_dir: str
-) -> str:
+def save_experience_data(task_id: str, experience_data: Dict, data_dir: str) -> str:
     """
     Save experience data including trajectory, rewards, and steps to a JSON file.
 
@@ -536,7 +653,7 @@ def save_experience_data(
     for key, value in experience_data.items():
         if isinstance(value, torch.Tensor):
             serializable_data[key] = value.tolist()
-        elif hasattr(value, '__dict__'):
+        elif hasattr(value, "__dict__"):
             # For complex objects, convert to dict representation
             serializable_data[key] = str(value)
         else:
@@ -547,7 +664,7 @@ def save_experience_data(
     serializable_data["task_id"] = task_id
 
     try:
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(serializable_data, f, indent=2, ensure_ascii=False)
         # print(f"Experience data saved to: {filepath}")
         return filepath
@@ -557,14 +674,14 @@ def save_experience_data(
 
 
 def create_experience_record(
-        task_id: str,
-        trajectory: List[Dict[str, str]],
-        reward: float,
-        steps: int,
-        success: bool,
-        attempt_type: str = "first",
-        reflection_data: Optional[Dict] = None,
-        additional_metrics: Optional[Dict] = None
+    task_id: str,
+    trajectory: List[Dict[str, str]],
+    reward: float,
+    steps: int,
+    success: bool,
+    attempt_type: str = "first",
+    reflection_data: Optional[Dict] = None,
+    additional_metrics: Optional[Dict] = None,
 ) -> Dict:
     """
     Create a structured experience record for saving.
@@ -590,9 +707,9 @@ def create_experience_record(
             "reward": reward,
             "steps": steps,
             "success": success,
-            "trajectory_length": len(trajectory)
+            "trajectory_length": len(trajectory),
         },
-        "created_at": datetime.now().isoformat()
+        "created_at": datetime.now().isoformat(),
     }
 
     if reflection_data:

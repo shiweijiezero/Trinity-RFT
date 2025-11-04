@@ -18,10 +18,10 @@ class OPMDBaselineWebshopWorkflow(Workflow):
     """
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -31,7 +31,8 @@ class OPMDBaselineWebshopWorkflow(Workflow):
         # Initialize workflow parameters
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
         self.max_env_steps = 15
-        self.max_tokens = 4096
+        self.max_tokens = 512
+        self.max_reflect_tokens = 4096
         self.task = task
         self.is_eval = task.is_eval
         self.whether_save_data = False
@@ -39,6 +40,7 @@ class OPMDBaselineWebshopWorkflow(Workflow):
         # Initialize WebShop environment
         try:
             import sys
+
             sys.path.append("/home/wshiah/code/shiweijie/weijie/trinity/webshop")
             import gym
             from web_agent_site.envs import WebAgentTextEnv  # noqa: F401
@@ -70,9 +72,7 @@ class OPMDBaselineWebshopWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.webshop_system_template = self.jinja_env.get_template("webshop_system.j2")
 
-        print(
-            f"Initializing OPMDWebshopWorkflow, temperature={self.temperature}"
-        )
+        print(f"Initializing OPMDWebshopWorkflow, temperature={self.temperature}")
         self.reset(task)
 
     def reset(self, task: Task):
@@ -81,6 +81,7 @@ class OPMDBaselineWebshopWorkflow(Workflow):
         self.is_eval = task.is_eval
         self.task = task
         self.n = task.repeat_times
+        self.temperature = getattr(task.rollout_args, "temperature", 1.0)
 
     def run(self) -> List[Experience]:
         """Run the OPMD workflow and return experiences"""

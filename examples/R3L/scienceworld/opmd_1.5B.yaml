@@ -3,12 +3,15 @@ name: "SCIENCEWORLD_RFT_Qwen_1.5B_OPMD_Baseline"
 checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
 algorithm:
   algorithm_type: opmd
+  kl_loss_fn: k3
+  kl_loss_fn_args:
+    kl_coef: 0.01
   repeat_times: 8
   optimizer:
     lr: 1e-6
 model:
   model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-1.5B-Instruct}
-  max_response_tokens: 4096
+  max_response_tokens: 512
   max_model_len: 20480
 cluster:
   node_num: 1
@@ -35,23 +38,26 @@ buffer:
         format:
           prompt_key: 'task_id'
         rollout_args:
-          temperature: 1.0
+          temperature: 0.4
     default_workflow_type: 'opmd_baseline_scienceworld_workflow'
   trainer_input:
     experience_buffer:
       name: scienceworld_opmd_baseline_1.5B_buffer
       storage_type: queue
+      replay_buffer:
+        enable: true
+        priority_fn: decay_limit_randomization
       path: 'sqlite:///scienceworld_opmd_baseline_1.5B.db'
 explorer:
   runner_per_model: 16
-  eval_interval: 60
+  eval_interval: 20
   rollout_model:
     engine_num: 2
     tensor_parallel_size: 1
     enable_prefix_caching: true
-    enforce_eager: true
+    enforce_eager: false
     dtype: bfloat16
-    seed: 42
+    seed: 0
     gpu_memory_utilization: 0.7
     enable_chunked_prefill: true
 data_processor:
@@ -64,7 +70,7 @@ synchronizer:
   sync_interval: 1
   sync_timeout: 12000
 trainer:
-  save_interval: 100
+  save_interval: 20
   grad_clip: 1.0
   use_dynamic_bsz: true
   max_token_len_per_gpu: 16384

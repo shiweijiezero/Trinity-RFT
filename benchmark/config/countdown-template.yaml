@@ -55,8 +55,8 @@ explorer:
     engine_num: 2
     tensor_parallel_size: 1
     enforce_eager: true
-    enable_prefix_caching: false
-    enable_chunked_prefill: false
+    enable_prefix_caching: true
+    enable_chunked_prefill: true
     gpu_memory_utilization: 0.9
     dtype: bfloat16
     seed: 42

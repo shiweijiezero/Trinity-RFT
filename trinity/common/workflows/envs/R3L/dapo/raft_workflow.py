@@ -20,10 +20,10 @@ class RAFTBaselineDapoWorkflow(Workflow):
     """
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -34,6 +34,7 @@ class RAFTBaselineDapoWorkflow(Workflow):
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
         self.max_attempts = 3
         self.max_tokens = 4096
+        self.max_reflect_tokens = 4096
         self.task = task
         self.is_eval = task.is_eval
         self.whether_save_data = False
@@ -49,9 +50,7 @@ class RAFTBaselineDapoWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.dapo_system_template = self.jinja_env.get_template("math_system.j2")
 
-        print(
-            f"Initializing RAFTDapoWorkflow, temperature={self.temperature}"
-        )
+        print(f"Initializing RAFTDapoWorkflow, temperature={self.temperature}")
         self.reset(task)
 
         # Default experience for error cases
@@ -64,7 +63,7 @@ class RAFTBaselineDapoWorkflow(Workflow):
                 "success": 0.0,
                 "reward": 0.0,
             },
-            reward=0.0
+            reward=0.0,
         )
 
     def reset(self, task: Task):
@@ -72,9 +71,10 @@ class RAFTBaselineDapoWorkflow(Workflow):
         self.is_eval = task.is_eval
         self.task = task
         self.n = task.repeat_times
+        self.temperature = getattr(task.rollout_args, "temperature", 1.0)
 
         # Extract prompt and ground truth from task
-        if hasattr(task, 'raw_task') and task.raw_task:
+        if hasattr(task, "raw_task") and task.raw_task:
             raw_task = task.raw_task
 
             # Format 1: prompt is a list (math_dapo format)
@@ -108,7 +108,14 @@ class RAFTBaselineDapoWorkflow(Workflow):
 
         if self.is_eval:
             try:
-                trajectory, reward, success, predicted_answer, ground_truth, attempts = utils.first_rollout(self)
+                (
+                    trajectory,
+                    reward,
+                    success,
+                    predicted_answer,
+                    ground_truth,
+                    attempts,
+                ) = utils.first_rollout(self)
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
                 exp.metrics = {
@@ -124,7 +131,14 @@ class RAFTBaselineDapoWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n):
             try:
-                trajectory, reward, success, predicted_answer, ground_truth, attempts = utils.first_rollout(self)
+                (
+                    trajectory,
+                    reward,
+                    success,
+                    predicted_answer,
+                    ground_truth,
+                    attempts,
+                ) = utils.first_rollout(self)
                 print(f"[RAFT] First rollout - reward: {reward}, attempts: {attempts}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
@@ -133,9 +147,9 @@ class RAFTBaselineDapoWorkflow(Workflow):
                     "reward": reward,
                     "attempts": attempts,
                 }
+                exp_lst.append(exp)
             except Exception:
-                exp = copy.deepcopy(self.default_exp)
-            exp_lst.append(exp)
+                pass
 
         return exp_lst
 

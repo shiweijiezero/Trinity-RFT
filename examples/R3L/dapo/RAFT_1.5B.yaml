@@ -15,7 +15,7 @@ cluster:
   gpu_per_node: 4
 buffer:
   total_epochs: 1
-  batch_size: 96
+  batch_size: 8
   explorer_input:
     taskset:
       name: dapo
@@ -37,7 +37,7 @@ buffer:
           prompt_key: 'prompt'
           response_key: 'reward_model'
         rollout_args:
-          temperature: 1.0
+          temperature: 0.4
       - name: math-aime24
         storage_type: file
         path: 'weijiezz/math-datasets-100k'
@@ -46,7 +46,7 @@ buffer:
           prompt_key: 'question'
           response_key: 'answer'
         rollout_args:
-          temperature: 1.0
+          temperature: 0.4
       - name: math-aime25
         storage_type: file
         path: 'weijiezz/math-datasets-100k'
@@ -55,7 +55,7 @@ buffer:
           prompt_key: 'question'
           response_key: 'answer'
         rollout_args:
-          temperature: 1.0
+          temperature: 0.4
       - name: math-amc23
         storage_type: file
         path: 'weijiezz/math-datasets-100k'
@@ -64,7 +64,7 @@ buffer:
           prompt_key: 'question'
           response_key: 'answer'
         rollout_args:
-          temperature: 1.0
+          temperature: 0.4
       - name: math-gsm8k
         storage_type: file
         path: 'weijiezz/math-datasets-100k'
@@ -73,7 +73,7 @@ buffer:
           prompt_key: 'question'
           response_key: 'answer'
         rollout_args:
-          temperature: 1.0
+          temperature: 0.4
       - name: math-math500
         storage_type: file
         path: 'weijiezz/math-datasets-100k'
@@ -82,7 +82,7 @@ buffer:
           prompt_key: 'question'
           response_key: 'answer'
         rollout_args:
-          temperature: 1.0
+          temperature: 0.4
       - name: math-minervamath
         storage_type: file
         path: 'weijiezz/math-datasets-100k'
@@ -91,7 +91,7 @@ buffer:
           prompt_key: 'question'
           response_key: 'answer'
         rollout_args:
-          temperature: 1.0
+          temperature: 0.4
       - name: math-olympiadbench
         storage_type: file
         path: 'weijiezz/math-datasets-100k'
@@ -100,23 +100,26 @@ buffer:
           prompt_key: 'question'
           response_key: 'answer'
         rollout_args:
-          temperature: 1.0
+          temperature: 0.4
     default_workflow_type: 'raft_baseline_dapo_workflow'
   trainer_input:
     experience_buffer:
       name: dapo_raft_baseline_1.5B_buffer
       storage_type: queue
+      replay_buffer:
+        enable: true
+        priority_fn: decay_limit_randomization
       path: 'sqlite:///dapo_raft_baseline_1.5B.db'
 explorer:
   runner_per_model: 16
-  eval_interval: 200
+  eval_interval: 20
   rollout_model:
     engine_num: 2
     tensor_parallel_size: 1
     enable_prefix_caching: true
-    enforce_eager: true
+    enforce_eager: false
     dtype: bfloat16
-    seed: 42
+    seed: 0
     gpu_memory_utilization: 0.7
     enable_chunked_prefill: true
 data_processor:
@@ -129,7 +132,7 @@ synchronizer:
   sync_interval: 1
   sync_timeout: 12000
 trainer:
-  save_interval: 100
+  save_interval: 20
   grad_clip: 1.0
   use_dynamic_bsz: true
   max_token_len_per_gpu: 16384

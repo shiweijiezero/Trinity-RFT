@@ -19,10 +19,10 @@ class GRPOBaselineAlfworldWorkflow(Workflow):
     """
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -32,7 +32,7 @@ class GRPOBaselineAlfworldWorkflow(Workflow):
         # Initialize workflow parameters
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
         self.max_env_steps = 25
-        self.max_tokens = 4096
+        self.max_tokens = 512
         self.task = task
         self.is_eval = task.is_eval
         self.whether_save_data = False
@@ -48,15 +48,14 @@ class GRPOBaselineAlfworldWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.alfworld_system_template = self.jinja_env.get_template("alfworld_system.j2")
 
-        print(
-            f"Initializing GRPOBaselineAlfworldWorkflow, temperature={self.temperature}"
-        )
+        print(f"Initializing GRPOBaselineAlfworldWorkflow, temperature={self.temperature}")
         self.reset(task)
 
     def reset(self, task: Task):
         """Reset the workflow with a new task"""
         self.game_file_path = task.task_desc or task.raw_task.get("game_file", "")
         self.is_eval = task.is_eval
+        self.temperature = getattr(task.rollout_args, "temperature", 1.0)
         self.task = task
         self.n = task.repeat_times
 
@@ -71,9 +70,7 @@ class GRPOBaselineAlfworldWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n):
             try:
-                trajectory, reward, done, steps, format_valid = utils.first_rollout(
-                    self, env
-                )
+                trajectory, reward, done, steps, format_valid = utils.first_rollout(self, env)
                 print(f"[GRPO] First rollout - reward: {reward}, steps: {steps}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
@@ -82,20 +79,9 @@ class GRPOBaselineAlfworldWorkflow(Workflow):
                     "steps": steps,
                     "reward": reward,
                 }
+                exp_lst.append(exp)
             except Exception:
-                exp = Experience(
-                    tokens=torch.tensor([0, 0], dtype=torch.long),
-                    prompt_length=1,
-                    action_mask=torch.tensor([False], dtype=torch.bool),
-                    logprobs=torch.tensor([0.0], dtype=torch.float),
-                    metrics={
-                        "success": 0.0,
-                        "reward": 0.0,
-                    }
-                )
-                exp.reward = 0.0
-            exp_lst.append(exp)
-
+                pass
         return exp_lst
 
     def resettable(self) -> bool:

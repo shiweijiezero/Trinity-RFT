@@ -19,10 +19,10 @@ class GRPOBaselineDapoWorkflow(Workflow):
     """
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -33,6 +33,7 @@ class GRPOBaselineDapoWorkflow(Workflow):
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
         self.max_attempts = 3
         self.max_tokens = 4096
+        self.max_reflect_tokens = 4096
         self.task = task
         self.is_eval = task.is_eval
         self.whether_save_data = False
@@ -48,9 +49,7 @@ class GRPOBaselineDapoWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.dapo_system_template = self.jinja_env.get_template("math_system.j2")
 
-        print(
-            f"Initializing GRPOBaselineDapoWorkflow, temperature={self.temperature}"
-        )
+        print(f"Initializing GRPOBaselineDapoWorkflow, temperature={self.temperature}")
         self.reset(task)
 
     def reset(self, task: Task):
@@ -58,9 +57,10 @@ class GRPOBaselineDapoWorkflow(Workflow):
         self.is_eval = task.is_eval
         self.task = task
         self.n = task.repeat_times
+        self.temperature = getattr(task.rollout_args, "temperature", 1.0)
 
         # Extract prompt and ground truth from task
-        if hasattr(task, 'raw_task') and task.raw_task:
+        if hasattr(task, "raw_task") and task.raw_task:
             raw_task = task.raw_task
 
             # Format 1: prompt is a list (math_dapo format)
@@ -99,7 +99,14 @@ class GRPOBaselineDapoWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n):
             try:
-                trajectory, reward, success, predicted_answer, ground_truth, attempts = utils.first_rollout(self)
+                (
+                    trajectory,
+                    reward,
+                    success,
+                    predicted_answer,
+                    ground_truth,
+                    attempts,
+                ) = utils.first_rollout(self)
                 print(f"[GRPO] First rollout - reward: {reward}, attempts: {attempts}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
@@ -108,19 +115,9 @@ class GRPOBaselineDapoWorkflow(Workflow):
                     "reward": reward,
                     "attempts": attempts,
                 }
+                exp_lst.append(exp)
             except Exception:
-                exp = Experience(
-                    tokens=torch.tensor([0, 0], dtype=torch.long),
-                    prompt_length=1,
-                    action_mask=torch.tensor([False], dtype=torch.bool),
-                    logprobs=torch.tensor([0.0], dtype=torch.float),
-                    metrics={
-                        "success": 0.0,
-                        "reward": 0.0,
-                    }
-                )
-                exp.reward = 0.0
-            exp_lst.append(exp)
+                pass
 
         return exp_lst
 

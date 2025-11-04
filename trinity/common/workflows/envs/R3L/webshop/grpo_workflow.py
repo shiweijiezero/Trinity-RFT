@@ -19,10 +19,10 @@ class GRPOBaselineWebshopWorkflow(Workflow):
     """
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -32,7 +32,8 @@ class GRPOBaselineWebshopWorkflow(Workflow):
         # Initialize workflow parameters
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
         self.max_env_steps = 15
-        self.max_tokens = 4096
+        self.max_tokens = 512
+        self.max_reflect_tokens = 4096
         self.task = task
         self.is_eval = task.is_eval
         self.whether_save_data = False
@@ -40,6 +41,7 @@ class GRPOBaselineWebshopWorkflow(Workflow):
         # Initialize WebShop environment
         try:
             import sys
+
             sys.path.append("/home/wshiah/code/shiweijie/weijie/trinity/webshop")
             import gym
             from web_agent_site.envs import WebAgentTextEnv  # noqa: F401
@@ -71,9 +73,7 @@ class GRPOBaselineWebshopWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.webshop_system_template = self.jinja_env.get_template("webshop_system.j2")
 
-        print(
-            f"Initializing GRPOBaselineWebshopWorkflow, temperature={self.temperature}"
-        )
+        print(f"Initializing GRPOBaselineWebshopWorkflow, temperature={self.temperature}")
         self.reset(task)
 
     def reset(self, task: Task):
@@ -82,6 +82,7 @@ class GRPOBaselineWebshopWorkflow(Workflow):
         self.is_eval = task.is_eval
         self.task = task
         self.n = task.repeat_times
+        self.temperature = getattr(task.rollout_args, "temperature", 1.0)
 
     def run(self) -> List[Experience]:
         """Run the GRPO baseline workflow and return experiences"""
@@ -104,19 +105,9 @@ class GRPOBaselineWebshopWorkflow(Workflow):
                     "steps": steps,
                     "reward": reward,
                 }
+                exp_lst.append(exp)
             except Exception:
-                exp = Experience(
-                    tokens=torch.tensor([0, 0], dtype=torch.long),
-                    prompt_length=1,
-                    action_mask=torch.tensor([False], dtype=torch.bool),
-                    logprobs=torch.tensor([0.0], dtype=torch.float),
-                    metrics={
-                        "success": 0.0,
-                        "reward": -0.1,
-                    }
-                )
-                exp.reward = -0.1
-            exp_lst.append(exp)
+                pass
 
         return exp_lst
 
