@@ -61,7 +61,7 @@ class TasksetScheduler:
         self.selectors = []
         for taskset_config, taskset_state in zip(taskset_configs, taskset_states):
             assert not taskset_config.is_eval  # assume drop last
-            taskset = get_buffer_reader(taskset_config, config.buffer)
+            taskset = get_buffer_reader(taskset_config)
             if not isinstance(taskset, TaskFileReader):
                 raise TypeError(
                     f"Taskset '{taskset_config.name}' has an unsupported type '{type(taskset).__name__}'."
@@ -190,7 +190,7 @@ class TasksetScheduler:
         """
         if SELECTOR_METRIC not in pipeline_metrics:
             return
-        selector_metric = pipeline_metrics[SELECTOR_METRIC]
+        selector_metric = pipeline_metrics.pop(SELECTOR_METRIC, {})
         for taskset_id, taskset_kwargs in selector_metric.items():
             selector = self.selectors[taskset_id]
             selector.update(**taskset_kwargs)

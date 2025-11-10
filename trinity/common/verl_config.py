@@ -136,6 +136,7 @@ class Actor:
     ppo_micro_batch_size_per_gpu: int = 1
     use_dynamic_bsz: Optional[bool] = None
     ppo_max_token_len_per_gpu: Optional[int] = None
+    fix_actor_microbatch_loss_scale: Optional[bool] = None  # EXPERIMENTAL
     grad_clip: Optional[float] = None
     ppo_epochs: int = 1
     shuffle: bool = False
@@ -413,9 +414,11 @@ class veRLConfig:
         self.actor_rollout_ref.model.custom_chat_template = config.model.custom_chat_template
         self.actor_rollout_ref.actor.optim.total_training_steps = self.trainer.total_training_steps
         self.actor_rollout_ref.actor.ppo_mini_batch_size = config.buffer.train_batch_size
-        self.actor_rollout_ref.rollout.temperature = config.buffer.explorer_input.tasksets[
-            0
-        ].rollout_args.temperature
+        self.actor_rollout_ref.rollout.temperature = (
+            config.buffer.explorer_input.tasksets[0].rollout_args.temperature
+            if config.buffer.explorer_input.tasksets
+            else 1.0
+        )
         self.actor_rollout_ref.rollout.n = config.algorithm.repeat_times
         if self.actor_rollout_ref.actor.grad_clip is None:
             self.actor_rollout_ref.actor.grad_clip = config.trainer.grad_clip
@@ -424,6 +427,10 @@ class veRLConfig:
         if self.actor_rollout_ref.actor.ppo_max_token_len_per_gpu is None:
             self.actor_rollout_ref.actor.ppo_max_token_len_per_gpu = (
                 config.trainer.max_token_len_per_gpu
+            )
+        if self.actor_rollout_ref.actor.fix_actor_microbatch_loss_scale is None:
+            self.actor_rollout_ref.actor.fix_actor_microbatch_loss_scale = (
+                config.trainer.fix_actor_microbatch_loss_scale
             )
         if self.actor_rollout_ref.actor.ulysses_sequence_parallel_size is None:
             self.actor_rollout_ref.actor.ulysses_sequence_parallel_size = (
