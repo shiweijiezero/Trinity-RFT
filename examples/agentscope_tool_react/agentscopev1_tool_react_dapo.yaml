@@ -21,7 +21,7 @@ buffer:
     taskset:
       name: dapo
       storage_type: file
-      path: open-r1/DAPO-Math-17k-Processed
+      path: ${oc.env:TRINITY_TASKSET_PATH,open-r1/DAPO-Math-17k-Processed}
       subset_name: en
       split: train
       format:
@@ -43,7 +43,7 @@ explorer:
   rollout_model:
     engine_num: 4
     tensor_parallel_size: 1
-    enable_prefix_caching: true
+    enable_prefix_caching: false
     enforce_eager: false
     enable_openai_api: true
     enable_history: true
@@ -55,7 +55,7 @@ synchronizer:
   sync_style: dynamic_by_explorer
   sync_method: 'nccl'
   sync_interval: 2
-  sync_timeout: 12000
+  sync_timeout: 1200
 trainer:
   save_interval: 100
   grad_clip: 1.0

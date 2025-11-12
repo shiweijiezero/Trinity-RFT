@@ -53,16 +53,23 @@ class vLLMRolloutModel(InferenceModel):
             os.environ["VLLM_ENABLE_V1_MULTIPROCESSING"] = "0"
         if get_vllm_version() >= parse_version("0.11.0"):
             os.environ["VLLM_ALLREDUCE_USE_SYMM_MEM"] = "0"
+        if not config.enforce_eager:
+            # To avoid torch compile conflicts when multiple model are started simultaneously.
+            # remove this when the following PR is released:
+            # https://github.com/vllm-project/vllm/pull/27616
+            os.environ["VLLM_CACHE_ROOT"] = os.path.expanduser(
+                f"~/.cache/vllm/{config.bundle_indices}"
+            )
         self.default_sampling_params = vllm.SamplingParams(
             n=1,
-            temperature=0.0,
+            temperature=config.temperature,
             max_tokens=config.max_response_tokens,
             min_tokens=config.min_response_tokens,
             truncate_prompt_tokens=config.max_prompt_tokens,
             skip_special_tokens=True,
             include_stop_str_in_output=False,
             output_kind=RequestOutputKind.FINAL_ONLY,
-            logprobs=0,
+            logprobs=config.logprobs,
             ignore_eos=config.ignore_eos,
         )
         self.enable_thinking = config.enable_thinking

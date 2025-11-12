@@ -67,7 +67,7 @@ explorer:
     tool_call_parser: hermes
     engine_num: 4
     tensor_parallel_size: 1
-    enable_prefix_caching: true
+    enable_prefix_caching: false
     enforce_eager: false
     dtype: bfloat16
     seed: 42
