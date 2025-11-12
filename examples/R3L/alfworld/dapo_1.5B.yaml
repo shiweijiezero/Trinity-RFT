@@ -38,7 +38,7 @@ buffer:
         enable_overlong_penalty: true
         penalty_factor: 1.0
         max_response_length: 512
-        cache_length: 300
+        cache_length: 400
     eval_tasksets:
       - name: alfworld-eval
         storage_type: file

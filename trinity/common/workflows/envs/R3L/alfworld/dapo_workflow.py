@@ -132,12 +132,14 @@ class DAPOAlfworldWorkflow(Workflow):
                 # Extract response tokens from experience
                 response_tokens = exp.tokens[exp.prompt_length:]
 
-                # Compute DAPO overlong penalty
-                length_penalty = self.compute_overlong_penalty(response_tokens)
+                # Compute DAPO overlong penalty (format score)
+                format_score = self.compute_overlong_penalty(response_tokens)
 
-                # Calculate total reward: env_reward + length_penalty
+                # Calculate accuracy score
                 accuracy_score = 1.0 if reward >= 1.0 else 0.0
-                total_reward = accuracy_score + length_penalty
+
+                # Total reward = accuracy + format_score
+                total_reward = accuracy_score + format_score
 
                 # Update experience reward and metrics
                 exp.reward = total_reward
@@ -146,7 +148,7 @@ class DAPOAlfworldWorkflow(Workflow):
                     "steps": steps,
                     "env_reward": reward,
                     "accuracy": accuracy_score,
-                    "length_penalty": length_penalty,
+                    "format_score": format_score,
                     "response_length": len(response_tokens),
                     "total_reward": total_reward,
                 }
