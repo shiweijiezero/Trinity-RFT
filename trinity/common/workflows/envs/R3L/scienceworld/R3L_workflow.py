@@ -20,11 +20,14 @@ class R3LScienceWorldWorkflow(Workflow):
     R3L workflow for scienceworld
     """
 
+    can_reset: bool = True
+    can_repeat: bool = True
+
     def __init__(
-        self,
-        model: ModelWrapper,
-        task: Task,
-        auxiliary_models: Optional[List] = None,
+            self,
+            model: ModelWrapper,
+            task: Task,
+            auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -34,8 +37,7 @@ class R3LScienceWorldWorkflow(Workflow):
         # Initialize workflow parameters
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
         self.max_env_steps = 30
-        self.max_tokens = 512
-        self.max_reflect_tokens = 4096
+        self.max_tokens = 16384
         self.task = task
         self.is_eval = task.is_eval
 
@@ -69,7 +71,7 @@ class R3LScienceWorldWorkflow(Workflow):
                 "success": 0.0,
                 "reward": 0.0,
             },
-            reward=0.0,
+            reward=0.0
         )
 
         self.default_second_exp = Experience(
@@ -81,7 +83,7 @@ class R3LScienceWorldWorkflow(Workflow):
                 "second_success": 0.0,
                 "second_reward": 0.0,
             },
-            reward=0.0,
+            reward=0.0
         )
 
         print(
@@ -97,9 +99,8 @@ class R3LScienceWorldWorkflow(Workflow):
         self.n = task.repeat_times
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
 
-    def get_reflect(
-        self, trajectory: List[Dict[str, str]]
-    ) -> tuple[Optional[Dict[str, Any]], Optional[str], Optional[Any]]:
+    def get_reflect(self, trajectory: List[Dict[str, str]]) -> tuple[
+        Optional[Dict[str, Any]], Optional[str], Optional[Any]]:
         """
         Generates a comprehensive reflection report using a single, unified self-interrogation prompt.
         """
@@ -114,12 +115,7 @@ class R3LScienceWorldWorkflow(Workflow):
             responses = self.model.chat(
                 [
                     {"role": "system", "content": reflect_prompt},
-                    {
-                        "role": "user",
-                        "content": "Here is last attempt trajectory log: \n\n"
-                        + formatted_trajectory
-                        + "\n\nPlease output in the specified JSON format.",
-                    },
+                    {"role": "user", "content": "Here is last attempt trajectory log: \n\n" + formatted_trajectory + "\n\nPlease output in the specified JSON format."}
                 ],
                 n=1,
                 temperature=self.temperature,
@@ -128,11 +124,11 @@ class R3LScienceWorldWorkflow(Workflow):
             reflection_text = responses[0].response_text.strip()
 
             # Find first '{' and last '}'
-            first_brace = reflection_text.find("{")
-            last_brace = reflection_text.rfind("}")
+            first_brace = reflection_text.find('{')
+            last_brace = reflection_text.rfind('}')
 
             if first_brace != -1 and last_brace != -1 and first_brace < last_brace:
-                json_str = reflection_text[first_brace : last_brace + 1]
+                json_str = reflection_text[first_brace:last_brace + 1]
             else:
                 json_str = reflection_text
 
@@ -187,7 +183,9 @@ class R3LScienceWorldWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n // 2):  # Half for rollout, half for reflection + retry
             try:
-                trajectory, reward, done, steps, format_valid = utils.first_rollout(self, env)
+                trajectory, reward, done, steps, format_valid = utils.first_rollout(
+                    self, env
+                )
                 print(f"[R3L] First rollout - reward: {reward}, steps: {steps}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
@@ -209,12 +207,12 @@ class R3LScienceWorldWorkflow(Workflow):
                         reward=reward,
                         steps=steps,
                         success=reward >= 1.0,
-                        attempt_type="first",
+                        attempt_type="first"
                     )
                     utils.save_experience_data(
                         task_id=f"{task_id}_attempt_{i}_first",
                         experience_data=first_record,
-                        data_dir=self.train_dir,
+                        data_dir=self.train_dir
                     )
 
                 # Reflect on first attempt
@@ -230,13 +228,9 @@ class R3LScienceWorldWorkflow(Workflow):
 
                     try:
                         retry_env = utils.create_sciworld_environment(self.task_desc)
-                        (
-                            retry_trajectory,
-                            retry_reward,
-                            retry_done,
-                            retry_steps,
-                            retry_format_valid,
-                        ) = utils.first_rollout(self, retry_env)
+                        retry_trajectory, retry_reward, retry_done, retry_steps, retry_format_valid = utils.first_rollout(
+                            self, retry_env
+                        )
 
                         retry_exp = self.model.convert_messages_to_experience(retry_trajectory[:-1])
                         retry_exp.reward = retry_reward
@@ -256,12 +250,12 @@ class R3LScienceWorldWorkflow(Workflow):
                                 reward=retry_reward,
                                 steps=retry_steps,
                                 success=retry_reward >= 1.0,
-                                attempt_type="retry_after_invalid_reflection",
+                                attempt_type="retry_after_invalid_reflection"
                             )
                             utils.save_experience_data(
                                 task_id=f"{task_id}_attempt_{i}_retry",
                                 experience_data=retry_record,
-                                data_dir=self.train_dir,
+                                data_dir=self.train_dir
                             )
                     except Exception as e:
                         print(f"Retry rollout after invalid reflection failed: {e}")
@@ -282,12 +276,8 @@ class R3LScienceWorldWorkflow(Workflow):
                         ) = utils.second_rollout(
                             self, second_env, guidance_prompt, trajectory, retry_step
                         )
-                        print(
-                            f"[R3L] Second rollout - reward: {second_reward}, steps: {second_steps}, improve: {second_reward > reward}"
-                        )
-                        second_exp = self.model.convert_messages_to_experience(
-                            distill_trajectory[:-1]
-                        )
+                        print(f"[R3L] Second rollout - reward: {second_reward}, steps: {second_steps}, improve: {second_reward > reward}")
+                        second_exp = self.model.convert_messages_to_experience(distill_trajectory[:-1])
 
                         if retry_step > 0:
                             self._adjust_action_mask_for_retry(second_exp, retry_step)
@@ -320,26 +310,22 @@ class R3LScienceWorldWorkflow(Workflow):
                                     "first_reward": reward,
                                     "improvement": second_reward > reward,
                                     "reward_difference": second_reward - reward,
-                                    "step_difference": second_steps - steps,
-                                },
+                                    "step_difference": second_steps - steps
+                                }
                             )
                             utils.save_experience_data(
                                 task_id=f"{task_id}_attempt_{i}_second",
                                 experience_data=second_record,
-                                data_dir=self.train_dir,
+                                data_dir=self.train_dir
                             )
 
-                        if (second_reward > reward and second_reward >= 1.0) or (
-                            second_reward >= 1.0 and second_steps < steps
-                        ):
+                        if (second_reward > reward and second_reward >= 1.0) or (second_reward >= 1.0 and second_steps < steps):
                             reflect_exp.reward = 1.0
                             reflect_exp.eid.task = str(self.task.task_id) + f"_reflect_{i}"
                             reflect_exp.eid.run = len(exp_lst) + self.run_id_base
                             exp_lst.append(reflect_exp)
 
-                            retry_exp = self.model.convert_messages_to_experience(
-                                second_trajectory[:-1]
-                            )
+                            retry_exp = self.model.convert_messages_to_experience(second_trajectory[:-1])
                             if retry_step > 0:
                                 self._adjust_action_mask_for_retry(retry_exp, retry_step)
 
@@ -356,10 +342,7 @@ class R3LScienceWorldWorkflow(Workflow):
 
         return exp_lst
 
-    def resettable(self) -> bool:
-        """Indicate that this workflow can be reset to avoid re-initialization"""
-        return True
-
     def set_repeat_times(self, repeat_times, run_id_base):
         self.repeat_times = repeat_times
         self.run_id_base = run_id_base
+        self.n = repeat_times

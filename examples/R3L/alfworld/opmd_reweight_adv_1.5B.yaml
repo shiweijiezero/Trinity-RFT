@@ -3,9 +3,6 @@ name: "ALFWORLD_RFT_Qwen_1.5B_OPMD_Reweight_Adv"
 checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
 algorithm:
   algorithm_type: opmd_reweight_adv
-  kl_loss_fn: k3
-  kl_loss_fn_args:
-    kl_coef: 0.01
   repeat_times: 8
   optimizer:
     lr: 1e-6
@@ -49,12 +46,12 @@ buffer:
         priority_fn: decay_limit_randomization
       path: 'sqlite:///alfworld_opmd_reweight_adv_1.5B.db'
 explorer:
-  runner_per_model: 16
+  runner_per_model: 32
   eval_interval: 20
   rollout_model:
     engine_num: 2
     tensor_parallel_size: 1
-    enable_prefix_caching: true
+    enable_prefix_caching: false
     enforce_eager: false
     dtype: bfloat16
     seed: 0
@@ -73,7 +70,7 @@ trainer:
   save_interval: 20
   grad_clip: 1.0
   use_dynamic_bsz: true
-  max_token_len_per_gpu: 16384
+  max_token_len_per_gpu: 10240
   ulysses_sequence_parallel_size: 1
 monitor:
   monitor_type: wandb

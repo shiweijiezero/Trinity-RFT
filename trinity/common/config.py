@@ -223,7 +223,7 @@ class TasksetConfig:
     max_retry_times: int = 3
     max_retry_interval: int = 1
 
-    enable_progress_bar: bool = False
+    enable_progress_bar: bool = True
 
     # ! DO NOT SET, automatically load from checkpoint
     index: int = 0
@@ -286,7 +286,7 @@ class ExperienceBufferConfig:
     split: str = "train"
     subset_name: Optional[str] = None
     format: FormatConfig = field(default_factory=FormatConfig)
-    enable_progress_bar: Optional[bool] = False
+    enable_progress_bar: Optional[bool] = True
 
     # ! DO NOT SET, automatically set
     schema_type: Optional[str] = None

@@ -19,11 +19,14 @@ class RAFTBaselineCountdownWorkflow(Workflow):
     Performs rollouts for Reinforcement Learning from AI Feedback Training.
     """
 
+    can_reset: bool = True
+    can_repeat: bool = True
+
     def __init__(
-        self,
-        model: ModelWrapper,
-        task: Task,
-        auxiliary_models: Optional[List] = None,
+            self,
+            model: ModelWrapper,
+            task: Task,
+            auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -50,7 +53,9 @@ class RAFTBaselineCountdownWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.countdown_system_template = self.jinja_env.get_template("countdown_system.j2")
 
-        print(f"Initializing RAFTBaselineCountdownWorkflow, temperature={self.temperature}")
+        print(
+            f"Initializing RAFTBaselineCountdownWorkflow, temperature={self.temperature}"
+        )
         self.reset(task)
 
         # Default experience for error cases
@@ -63,7 +68,7 @@ class RAFTBaselineCountdownWorkflow(Workflow):
                 "success": 0.0,
                 "reward": 0.0,
             },
-            reward=0.0,
+            reward=0.0
         )
 
     def reset(self, task: Task):
@@ -74,7 +79,7 @@ class RAFTBaselineCountdownWorkflow(Workflow):
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
 
         # Extract numbers and target from task
-        if hasattr(task, "raw_task") and task.raw_task:
+        if hasattr(task, 'raw_task') and task.raw_task:
             raw_task = task.raw_task
 
             # Countdown format: direct access to nums and target fields
@@ -89,14 +94,7 @@ class RAFTBaselineCountdownWorkflow(Workflow):
 
         if self.is_eval:
             try:
-                (
-                    trajectory,
-                    reward,
-                    success,
-                    predicted_answer,
-                    ground_truth,
-                    attempts,
-                ) = utils.first_rollout(self)
+                trajectory, reward, success, predicted_answer, ground_truth, attempts = utils.first_rollout(self)
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
                 exp.metrics = {
@@ -112,14 +110,7 @@ class RAFTBaselineCountdownWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n):
             try:
-                (
-                    trajectory,
-                    reward,
-                    success,
-                    predicted_answer,
-                    ground_truth,
-                    attempts,
-                ) = utils.first_rollout(self)
+                trajectory, reward, success, predicted_answer, ground_truth, attempts = utils.first_rollout(self)
                 print(f"[RAFT Countdown] Rollout {i} - reward: {reward}, attempts: {attempts}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
@@ -134,10 +125,7 @@ class RAFTBaselineCountdownWorkflow(Workflow):
 
         return exp_lst
 
-    def resettable(self) -> bool:
-        """Indicate that this workflow can be reset to avoid re-initialization"""
-        return True
-
     def set_repeat_times(self, repeat_times, run_id_base):
         self.repeat_times = repeat_times
         self.run_id_base = run_id_base
+        self.n = repeat_times

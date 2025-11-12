@@ -19,11 +19,14 @@ class RAFTBaselineAlfworldWorkflow(Workflow):
     Performs rollouts for Reinforcement Learning from AI Feedback Training.
     """
 
+    can_reset: bool = True
+    can_repeat: bool = True
+
     def __init__(
-        self,
-        model: ModelWrapper,
-        task: Task,
-        auxiliary_models: Optional[List] = None,
+            self,
+            model: ModelWrapper,
+            task: Task,
+            auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -49,7 +52,9 @@ class RAFTBaselineAlfworldWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.alfworld_system_template = self.jinja_env.get_template("alfworld_system.j2")
 
-        print(f"Initializing RAFTAlfworldWorkflow, temperature={self.temperature}")
+        print(
+            f"Initializing RAFTAlfworldWorkflow, temperature={self.temperature}"
+        )
         self.reset(task)
 
         # Default experience for error cases
@@ -62,7 +67,7 @@ class RAFTBaselineAlfworldWorkflow(Workflow):
                 "success": 0.0,
                 "reward": 0.0,
             },
-            reward=0.0,
+            reward=0.0
         )
 
     def reset(self, task: Task):
@@ -80,7 +85,9 @@ class RAFTBaselineAlfworldWorkflow(Workflow):
 
         if self.is_eval:
             try:
-                trajectory, reward, done, steps, format_valid = utils.first_rollout(self, env)
+                trajectory, reward, done, steps, format_valid = utils.first_rollout(
+                    self, env
+                )
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
                 exp.metrics = {
@@ -96,7 +103,9 @@ class RAFTBaselineAlfworldWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n):
             try:
-                trajectory, reward, done, steps, format_valid = utils.first_rollout(self, env)
+                trajectory, reward, done, steps, format_valid = utils.first_rollout(
+                    self, env
+                )
                 print(f"[RAFT] First rollout - reward: {reward}, steps: {steps}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
@@ -105,15 +114,15 @@ class RAFTBaselineAlfworldWorkflow(Workflow):
                     "steps": steps,
                     "reward": reward,
                 }
-                exp_lst.append(exp)
+                if reward >= 1.0:
+                    exp_lst.append(exp)
+                else:
+                    exp_lst.append(copy.deepcopy(self.default_exp))
             except Exception:
-                pass
+                exp_lst.append(copy.deepcopy(self.default_exp))
         return exp_lst
-
-    def resettable(self) -> bool:
-        """Indicate that this workflow can be reset to avoid re-initialization"""
-        return True
 
     def set_repeat_times(self, repeat_times, run_id_base):
         self.repeat_times = repeat_times
         self.run_id_base = run_id_base
+        self.n = repeat_times

@@ -49,12 +49,12 @@ buffer:
         priority_fn: decay_limit_randomization
       path: 'sqlite:///scienceworld_grpo_baseline_7B.db'
 explorer:
-  runner_per_model: 16
+  runner_per_model: 32
   eval_interval: 20
   rollout_model:
     engine_num: 2
     tensor_parallel_size: 1
-    enable_prefix_caching: true
+    enable_prefix_caching: false
     enforce_eager: false
     dtype: bfloat16
     seed: 0

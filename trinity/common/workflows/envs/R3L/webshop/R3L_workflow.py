@@ -20,11 +20,14 @@ class R3LWebshopWorkflow(Workflow):
     R3L workflow for webshop
     """
 
+    can_reset: bool = True
+    can_repeat: bool = True
+
     def __init__(
-        self,
-        model: ModelWrapper,
-        task: Task,
-        auxiliary_models: Optional[List] = None,
+            self,
+            model: ModelWrapper,
+            task: Task,
+            auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -51,7 +54,6 @@ class R3LWebshopWorkflow(Workflow):
         # Initialize WebShop environment
         try:
             import sys
-
             # sys.path.append("/nas/shiweijie/trinity/webshop")
             sys.path.append("/home/wshiah/code/shiweijie/weijie/trinity/webshop")
             # Try gymnasium first, fallback to gym
@@ -91,7 +93,7 @@ class R3LWebshopWorkflow(Workflow):
                 "success": 0.0,
                 "reward": -0.1,
             },
-            reward=-0.1,  # Default minimum reward for webshop tasks
+            reward=-0.1 # Default minimum reward for webshop tasks
         )
 
         self.default_second_exp = Experience(
@@ -103,7 +105,7 @@ class R3LWebshopWorkflow(Workflow):
                 "second_success": 0.0,
                 "second_reward": -0.1,
             },
-            reward=-0.1,
+            reward=-0.1
         )
 
         print(
@@ -119,9 +121,8 @@ class R3LWebshopWorkflow(Workflow):
         self.n = task.repeat_times
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
 
-    def get_reflect(
-        self, trajectory: List[Dict[str, str]]
-    ) -> tuple[Optional[Dict[str, Any]], Optional[str], Optional[Any]]:
+    def get_reflect(self, trajectory: List[Dict[str, str]]) -> tuple[
+        Optional[Dict[str, Any]], Optional[str], Optional[Any]]:
         """
         Generates a comprehensive reflection report using a single, unified self-interrogation prompt.
         The model first assesses its own performance and then follows the appropriate reflection path.
@@ -139,12 +140,7 @@ class R3LWebshopWorkflow(Workflow):
             responses = self.model.chat(
                 [
                     {"role": "system", "content": reflect_prompt},
-                    {
-                        "role": "user",
-                        "content": "Here is last attempt trajectory log: \n\n"
-                        + formatted_trajectory
-                        + "\n\nPlease output in the specified JSON format.",
-                    },
+                    {"role": "user", "content": "Here is last attempt trajectory log: \n\n" + formatted_trajectory + "\n\nPlease output in the specified JSON format."}
                 ],
                 n=1,
                 temperature=self.temperature,
@@ -155,11 +151,11 @@ class R3LWebshopWorkflow(Workflow):
             # print(f"raw reflection text: {reflection_text}")
 
             # Find first '{' and last '}'
-            first_brace = reflection_text.find("{")
-            last_brace = reflection_text.rfind("}")
+            first_brace = reflection_text.find('{')
+            last_brace = reflection_text.rfind('}')
 
             if first_brace != -1 and last_brace != -1 and first_brace < last_brace:
-                json_str = reflection_text[first_brace : last_brace + 1]
+                json_str = reflection_text[first_brace:last_brace + 1]
             else:
                 json_str = reflection_text
 
@@ -253,12 +249,12 @@ class R3LWebshopWorkflow(Workflow):
                         reward=reward,
                         steps=steps,
                         success=reward >= 1.0,
-                        attempt_type="first",
+                        attempt_type="first"
                     )
                     utils.save_experience_data(
                         task_id=f"{task_id}_attempt_{i}_first",
                         experience_data=first_record,
-                        data_dir=self.train_dir,
+                        data_dir=self.train_dir
                     )
 
                 # 对首次尝试进行反思
@@ -277,13 +273,9 @@ class R3LWebshopWorkflow(Workflow):
 
                     # 再进行一次rollout，以让整个batch有足够的数据
                     try:
-                        (
-                            retry_trajectory,
-                            retry_reward,
-                            retry_done,
-                            retry_steps,
-                            retry_format_valid,
-                        ) = utils.first_rollout(self, self.env, self.session_id)
+                        retry_trajectory, retry_reward, retry_done, retry_steps, retry_format_valid = utils.first_rollout(
+                            self, self.env, self.session_id
+                        )
 
                         retry_exp = self.model.convert_messages_to_experience(retry_trajectory[:-1])
                         retry_exp.reward = retry_reward
@@ -305,12 +297,12 @@ class R3LWebshopWorkflow(Workflow):
                                 reward=retry_reward,
                                 steps=retry_steps,
                                 success=retry_reward >= 1.0,
-                                attempt_type="retry_after_invalid_reflection",
+                                attempt_type="retry_after_invalid_reflection"
                             )
                             utils.save_experience_data(
                                 task_id=f"{task_id}_attempt_{i}_retry",
                                 experience_data=retry_record,
-                                data_dir=self.train_dir,
+                                data_dir=self.train_dir
                             )
                     except Exception as e:
                         print(f"Retry rollout after invalid reflection failed: {e}")
@@ -331,12 +323,8 @@ class R3LWebshopWorkflow(Workflow):
                         ) = utils.second_rollout(
                             self, self.env, self.session_id, guidance_prompt, trajectory, retry_step
                         )
-                        print(
-                            f"[R3L] Second rollout - reward: {second_reward}, steps: {second_steps}, improve: {second_reward > reward}"
-                        )
-                        second_exp = self.model.convert_messages_to_experience(
-                            distill_trajectory[:-1]
-                        )
+                        print(f"[R3L] Second rollout - reward: {second_reward}, steps: {second_steps}, improve: {second_reward > reward}")
+                        second_exp = self.model.convert_messages_to_experience(distill_trajectory[:-1])
 
                         # Adjust action_mask to exclude retry prefix from training
                         if retry_step > 0:
@@ -375,19 +363,17 @@ class R3LWebshopWorkflow(Workflow):
                                     "first_reward": reward,
                                     "improvement": second_reward > reward,
                                     "reward_difference": second_reward - reward,
-                                    "step_difference": second_steps - steps,
-                                },
+                                    "step_difference": second_steps - steps
+                                }
                             )
                             utils.save_experience_data(
                                 task_id=f"{task_id}_attempt_{i}_second",
                                 experience_data=second_record,
-                                data_dir=self.train_dir,
+                                data_dir=self.train_dir
                             )
 
                         # 如果第二次尝试的分数高于第一次，或第二次是满分情况下步数更少，则记录反思和重试数据
-                        if (second_reward > reward and second_reward >= 1.0) or (
-                            second_reward >= 1.0 and second_steps < steps
-                        ):
+                        if (second_reward > reward and second_reward >= 1.0) or (second_reward >= 1.0 and second_steps < steps):
                             # 将反思数据转换为exp
                             # reflect_exp.reward = second_reward - reward
                             reflect_exp.reward = 1.0
@@ -397,9 +383,7 @@ class R3LWebshopWorkflow(Workflow):
                             exp_lst.append(reflect_exp)
 
                             # 将重试数据转换为exp
-                            retry_exp = self.model.convert_messages_to_experience(
-                                second_trajectory[:-1]
-                            )
+                            retry_exp = self.model.convert_messages_to_experience(second_trajectory[:-1])
 
                             # Adjust action_mask to exclude retry prefix from training
                             if retry_step > 0:
@@ -421,10 +405,7 @@ class R3LWebshopWorkflow(Workflow):
 
         return exp_lst
 
-    def resettable(self) -> bool:
-        """Indicate that this workflow can be reset to avoid re-initialization"""
-        return True
-
     def set_repeat_times(self, repeat_times, run_id_base):
         self.repeat_times = repeat_times
         self.run_id_base = run_id_base
+        self.n = repeat_times

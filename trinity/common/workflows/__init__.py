@@ -37,6 +37,9 @@ from trinity.common.workflows.envs.R3L.alfworld.opmd_workflow import (
 )
 
 # Alfworld R3L workflows
+from trinity.common.workflows.envs.R3L.alfworld.dapo_workflow import (
+    DAPOAlfworldWorkflow,
+)
 from trinity.common.workflows.envs.R3L.alfworld.R3L_workflow import R3LAlfworldWorkflow
 from trinity.common.workflows.envs.R3L.alfworld.raft_workflow import (
     RAFTBaselineAlfworldWorkflow,
@@ -143,6 +146,7 @@ __all__ = [
     "GRPOBaselineAlfworldWorkflow",
     "OPMDBaselineAlfworldWorkflow",
     "RAFTBaselineAlfworldWorkflow",
+    "DAPOAlfworldWorkflow",
     # DAPO R3L workflows
     "R3LDapoWorkflow",
     "GRPOBaselineDapoWorkflow",

@@ -19,11 +19,14 @@ class RAFTBaselineWebshopWorkflow(Workflow):
     Performs rollouts for Reinforcement Learning from AI Feedback Training.
     """
 
+    can_reset: bool = True
+    can_repeat: bool = True
+
     def __init__(
-        self,
-        model: ModelWrapper,
-        task: Task,
-        auxiliary_models: Optional[List] = None,
+            self,
+            model: ModelWrapper,
+            task: Task,
+            auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -42,7 +45,6 @@ class RAFTBaselineWebshopWorkflow(Workflow):
         # Initialize WebShop environment
         try:
             import sys
-
             sys.path.append("/home/wshiah/code/shiweijie/weijie/trinity/webshop")
             import gym
             from web_agent_site.envs import WebAgentTextEnv  # noqa: F401
@@ -74,7 +76,9 @@ class RAFTBaselineWebshopWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.webshop_system_template = self.jinja_env.get_template("webshop_system.j2")
 
-        print(f"Initializing RAFTWebshopWorkflow, temperature={self.temperature}")
+        print(
+            f"Initializing RAFTWebshopWorkflow, temperature={self.temperature}"
+        )
         self.reset(task)
 
         # Default experience for error cases
@@ -87,7 +91,7 @@ class RAFTBaselineWebshopWorkflow(Workflow):
                 "success": 0.0,
                 "reward": -0.1,
             },
-            reward=-0.1,
+            reward=-0.1
         )
 
     def reset(self, task: Task):
@@ -138,10 +142,7 @@ class RAFTBaselineWebshopWorkflow(Workflow):
 
         return exp_lst
 
-    def resettable(self) -> bool:
-        """Indicate that this workflow can be reset to avoid re-initialization"""
-        return True
-
     def set_repeat_times(self, repeat_times, run_id_base):
         self.repeat_times = repeat_times
         self.run_id_base = run_id_base
+        self.n = repeat_times

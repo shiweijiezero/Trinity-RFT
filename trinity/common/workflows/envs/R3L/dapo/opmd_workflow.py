@@ -17,11 +17,14 @@ class OPMDBaselineDapoWorkflow(Workflow):
     Performs rollouts for offline policy model distillation.
     """
 
+    can_reset: bool = True
+    can_repeat: bool = True
+
     def __init__(
-        self,
-        model: ModelWrapper,
-        task: Task,
-        auxiliary_models: Optional[List] = None,
+            self,
+            model: ModelWrapper,
+            task: Task,
+            auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -48,7 +51,9 @@ class OPMDBaselineDapoWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.dapo_system_template = self.jinja_env.get_template("math_system.j2")
 
-        print(f"Initializing OPMDDapoWorkflow, temperature={self.temperature}")
+        print(
+            f"Initializing OPMDDapoWorkflow, temperature={self.temperature}"
+        )
         self.reset(task)
 
     def reset(self, task: Task):
@@ -59,7 +64,7 @@ class OPMDBaselineDapoWorkflow(Workflow):
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
 
         # Extract prompt and ground truth from task
-        if hasattr(task, "raw_task") and task.raw_task:
+        if hasattr(task, 'raw_task') and task.raw_task:
             raw_task = task.raw_task
 
             # Format 1: prompt is a list (math_dapo format)
@@ -98,14 +103,7 @@ class OPMDBaselineDapoWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n):
             try:
-                (
-                    trajectory,
-                    reward,
-                    success,
-                    predicted_answer,
-                    ground_truth,
-                    attempts,
-                ) = utils.first_rollout(self)
+                trajectory, reward, success, predicted_answer, ground_truth, attempts = utils.first_rollout(self)
                 print(f"[OPMD] First rollout - reward: {reward}, attempts: {attempts}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
@@ -120,10 +118,7 @@ class OPMDBaselineDapoWorkflow(Workflow):
 
         return exp_lst
 
-    def resettable(self) -> bool:
-        """Indicate that this workflow can be reset to avoid re-initialization"""
-        return True
-
     def set_repeat_times(self, repeat_times, run_id_base):
         self.repeat_times = repeat_times
         self.run_id_base = run_id_base
+        self.n = repeat_times

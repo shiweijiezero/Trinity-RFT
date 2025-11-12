@@ -5,16 +5,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import torch
 from jinja2 import Environment, FileSystemLoader
-
+import torch
 from trinity.common.experience import Experience
 
 
 def first_rollout(self, env) -> tuple[List[Dict[str, str]], float, bool, int, bool]:
     """Run a single rollout in SciWorld environment"""
     observation, info = env.reset()
-    observation = "Task Description: " + str(env.get_task_description()) + "\n" + observation
+    observation = (
+        "Task Description: " + str(env.get_task_description()) + "\n" + observation
+    )
 
     trajectory = []
     action_history = []  # Track last actions for repetition detection
@@ -30,7 +31,9 @@ def first_rollout(self, env) -> tuple[List[Dict[str, str]], float, bool, int, bo
     done = False
 
     for step in range(self.max_env_steps):
-        trajectory.append({"role": "user", "content": format_observation(observation)})
+        trajectory.append(
+            {"role": "user", "content": format_observation(observation)}
+        )
 
         # Get model response
         responses = self.model.chat(
@@ -63,7 +66,7 @@ def first_rollout(self, env) -> tuple[List[Dict[str, str]], float, bool, int, bo
 
         # If last 3 actions are the same, terminate with failure
         if len(action_history) >= 3 and all(
-            action == action_history[0] for action in action_history
+                action == action_history[0] for action in action_history
         ):
             feedback = f"Repeated invalid action {action} multiple times, task failed"
             trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
@@ -88,11 +91,17 @@ def first_rollout(self, env) -> tuple[List[Dict[str, str]], float, bool, int, bo
     if final_reward >= 1.0 and step + 1 < self.max_env_steps:
         feedback = f"Task completed successfully (reward: {final_reward}/1.0), and satisfying the step limit ({step + 1}/{self.max_env_steps} steps)"
     elif final_reward >= 1.0 and step + 1 >= self.max_env_steps:
-        feedback = f"Task completed successfully (reward: {final_reward}/1.0), but exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
+        feedback = (
+            f"Task completed successfully (reward: {final_reward}/1.0), but exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
+        )
     elif final_reward < 1.0 and step + 1 < self.max_env_steps:
-        feedback = f"Task not completed (reward: {final_reward}/1.0), but within the step limit ({step + 1}/{self.max_env_steps} steps)"
+        feedback = (
+            f"Task not completed (reward: {final_reward}/1.0), but within the step limit ({step + 1}/{self.max_env_steps} steps)"
+        )
     else:
-        feedback = f"Task not completed (reward: {final_reward}/1.0), and exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
+        feedback = (
+            f"Task not completed (reward: {final_reward}/1.0), and exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
+        )
 
     # Add feedback to trajectory
     trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
@@ -100,11 +109,11 @@ def first_rollout(self, env) -> tuple[List[Dict[str, str]], float, bool, int, bo
 
 
 def second_rollout(
-    self,
-    env,
-    guidance_prompt: str,
-    first_trajectory: List[Dict[str, str]],
-    retry_step: int = 0,
+        self,
+        env,
+        guidance_prompt: str,
+        first_trajectory: List[Dict[str, str]],
+        retry_step: int = 0,
 ) -> tuple[List[Dict[str, str]], List[Dict[str, str]], float, bool, int, bool]:
     """
     Performs rollout starting from a specific retry step, reusing previous responses.
@@ -112,7 +121,9 @@ def second_rollout(
 
     # Reset environment to start fresh
     observation, info = env.reset()
-    observation = "Task Description: " + str(env.get_task_description()) + "\n" + observation
+    observation = (
+        "Task Description: " + str(env.get_task_description()) + "\n" + observation
+    )
     trajectory = []
     distill_trajectory = []
     action_history = []  # Track last 3 actions for repetition detection
@@ -166,36 +177,28 @@ def second_rollout(
 
                     if done:
                         # If environment finished during replay, no need to continue
-                        return (
-                            distill_trajectory,
-                            trajectory,
-                            final_reward,
-                            done,
-                            step,
-                            valid_format,
-                        )
+                        return distill_trajectory, trajectory, final_reward, done, step, valid_format
                 else:
                     break
 
         # Add guidance prompt as a separate system message before retry point
-        guidance_system_msg = {
-            "role": "system",
-            "content": f"# Previous Attempt Analysis & Guidance\n{guidance_prompt}",
-        }
+        guidance_system_msg = {"role": "system", "content": f"# Previous Attempt Analysis & Guidance\n{guidance_prompt}"}
         trajectory.append(guidance_system_msg)
         # Don't add guidance to distill_trajectory to keep it clean
 
     else:
         # Starting from beginning - add system prompt with guidance
-        merged_system_prompt = (
-            f"{original_system_prompt}\n\n# Previous Attempt Analysis & Guidance\n{guidance_prompt}"
-        )
+        merged_system_prompt = f"{original_system_prompt}\n\n# Previous Attempt Analysis & Guidance\n{guidance_prompt}"
         trajectory.append({"role": "system", "content": merged_system_prompt})
         distill_trajectory.append({"role": "system", "content": original_system_prompt})
 
     for step in range(step, self.max_env_steps):
-        trajectory.append({"role": "user", "content": format_observation(observation)})
-        distill_trajectory.append({"role": "user", "content": format_observation(observation)})
+        trajectory.append(
+            {"role": "user", "content": format_observation(observation)}
+        )
+        distill_trajectory.append(
+            {"role": "user", "content": format_observation(observation)}
+        )
 
         # Get model response with guidance
         responses = self.model.chat(
@@ -230,7 +233,7 @@ def second_rollout(
 
         # If last 3 actions are the same, terminate with failure
         if len(action_history) >= 3 and all(
-            action == action_history[0] for action in action_history
+                action == action_history[0] for action in action_history
         ):
             feedback = f"Repeated invalid action {action} multiple times, task failed"
             trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
@@ -255,11 +258,17 @@ def second_rollout(
     if final_reward >= 1.0 and step + 1 < self.max_env_steps:
         feedback = f"Task completed successfully (reward: {final_reward}/1.0), and satisfying the step limit ({step + 1}/{self.max_env_steps} steps)"
     elif final_reward >= 1.0 and step + 1 >= self.max_env_steps:
-        feedback = f"Task completed successfully (reward: {final_reward}/1.0), but exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
+        feedback = (
+            f"Task completed successfully (reward: {final_reward}/1.0), but exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
+        )
     elif final_reward < 1.0 and step + 1 < self.max_env_steps:
-        feedback = f"Task not completed (reward: {final_reward}/1.0), but within the step limit ({step + 1}/{self.max_env_steps} steps)"
+        feedback = (
+            f"Task not completed (reward: {final_reward}/1.0), but within the step limit ({step + 1}/{self.max_env_steps} steps)"
+        )
     else:
-        feedback = f"Task not completed (reward: {final_reward}/1.0), and exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
+        feedback = (
+            f"Task not completed (reward: {final_reward}/1.0), and exceeded the step limit ({step + 1}/{self.max_env_steps} steps)"
+        )
 
     # Add feedback to trajectory
     trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
@@ -272,7 +281,9 @@ def eval_sciworld(self) -> List[Experience]:
     """Evaluate a single sciworld trajectory"""
     try:
         env = create_sciworld_environment(self.task_desc)
-        trajectory, reward, done, steps, valid_format = first_rollout(self, env)
+        trajectory, reward, done, steps, valid_format = first_rollout(
+            self, env
+        )
         exp = self.model.convert_messages_to_experience(trajectory[:-1])
         exp.reward = reward
         exp.metrics = {
@@ -291,10 +302,12 @@ def eval_sciworld(self) -> List[Experience]:
                 reward=reward,
                 steps=steps,
                 success=reward >= 1.0,
-                attempt_type="evaluation",
+                attempt_type="evaluation"
             )
             save_experience_data(
-                task_id=f"{eval_task_id}_eval", experience_data=eval_record, data_dir=self.eval_dir
+                task_id=f"{eval_task_id}_eval",
+                experience_data=eval_record,
+                data_dir=self.eval_dir
             )
     except Exception as e:
         exp = Experience(
@@ -305,7 +318,7 @@ def eval_sciworld(self) -> List[Experience]:
             metrics={
                 "success": 0.0,
                 "reward": 0.0,
-            },
+            }
         )
         exp.reward = 0.0
     return [exp]
@@ -359,20 +372,20 @@ def create_sciworld_environment(task_desc):
     """Create sciworld environment"""
     try:
         from scienceworld import ScienceWorldEnv
-
+        
         # Parse task_desc to get task name and variation
         # Format: "task_name-variation_number" or just "task_name"
-        if "-" in task_desc:
-            parts = task_desc.split("-")
+        if '-' in task_desc:
+            parts = task_desc.split('-')
             task_name = parts[0]
             variation = int(parts[1]) if len(parts) > 1 else 0
         else:
             task_name = task_desc
             variation = 0
-
+        
         env = ScienceWorldEnv(task_name, serverPath="")
         env.load(task_name, variation, generateGoldPath=True)
-
+        
         return env
     except ImportError as e:
         raise ImportError(
@@ -425,9 +438,9 @@ def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tu
         - is_perfect: Whether the report indicates the trajectory is perfect (only meaningful if is_valid is True)
     """
     if (
-        not isinstance(report, dict)
-        or "outcome_assessment" not in report
-        or "analysis" not in report
+            not isinstance(report, dict)
+            or "outcome_assessment" not in report
+            or "analysis" not in report
     ):
         print("Validation failed: Report is not a dict or missing top-level keys.")
         return False, False
@@ -456,12 +469,9 @@ def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tu
             "Reasoning Flaw",
             "Execution Flaw",
             "Knowledge Gap",
-            "Inefficiency",
+            "Inefficiency"
         ]
-        if (
-            diagnosis.get("category") not in valid_categories
-            and diagnosis.get("category") != "null"
-        ):
+        if diagnosis.get("category") not in valid_categories and diagnosis.get("category") != "null":
             print(f"Validation failed: Invalid 'category'. Got: {diagnosis.get('category')}")
             return False, False
 
@@ -470,15 +480,14 @@ def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tu
         required_better_approach_keys = ["strategy", "key_differences", "projected_benefits"]
         for key in required_better_approach_keys:
             if key not in better_approach:
-                print(
-                    f"Validation failed: Missing '{key}' in better_approach. Got: {better_approach}"
-                )
+                print(f"Validation failed: Missing '{key}' in better_approach. Got: {better_approach}")
                 return False, False
 
         # Validate lessons_learned
         lessons_learned = analysis.get("lessons_learned", {})
         if not (
-            "corrective_principle" in lessons_learned and "revised_action_plan" in lessons_learned
+                "corrective_principle" in lessons_learned
+                and "revised_action_plan" in lessons_learned
         ):
             print(f"Validation failed: Invalid 'lessons_learned'. Got: {lessons_learned}")
             return False, False
@@ -499,22 +508,17 @@ def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tu
             try:
                 retry_step = int(retry_step)
             except (ValueError, TypeError):
-                print(
-                    f"Validation failed: 'retry_step' must be an integer or null. Got: {retry_step}"
-                )
+                print(f"Validation failed: 'retry_step' must be an integer or null. Got: {retry_step}")
                 return False, False
             if not isinstance(retry_step, int) or retry_step < 0:
-                print(
-                    f"Validation failed: 'retry_step' must be a non-negative integer or null. Got: {retry_step}"
-                )
+                print(f"Validation failed: 'retry_step' must be a non-negative integer or null. Got: {retry_step}")
                 return False, False
 
             # Check trajectory bounds if max_steps is provided
             if max_steps is not None:
                 if retry_step >= max_steps:
                     print(
-                        f"Validation failed: 'retry_step' ({retry_step}) exceeds trajectory bounds (0 to {max_steps - 1})."
-                    )
+                        f"Validation failed: 'retry_step' ({retry_step}) exceeds trajectory bounds (0 to {max_steps - 1}).")
                     return False, False
 
         # Validate retry_rationale
@@ -546,7 +550,11 @@ def reflect_report_to_guidance_prompt(report: Dict[str, Any]) -> str:
     return template.render(report=report_str)
 
 
-def save_experience_data(task_id: str, experience_data: Dict, data_dir: str) -> str:
+def save_experience_data(
+        task_id: str,
+        experience_data: Dict,
+        data_dir: str
+) -> str:
     """
     Save experience data including trajectory, rewards, and steps to a JSON file.
 
@@ -569,7 +577,7 @@ def save_experience_data(task_id: str, experience_data: Dict, data_dir: str) -> 
     for key, value in experience_data.items():
         if isinstance(value, torch.Tensor):
             serializable_data[key] = value.tolist()
-        elif hasattr(value, "__dict__"):
+        elif hasattr(value, '__dict__'):
             # For complex objects, convert to dict representation
             serializable_data[key] = str(value)
         else:
@@ -580,7 +588,7 @@ def save_experience_data(task_id: str, experience_data: Dict, data_dir: str) -> 
     serializable_data["task_id"] = task_id
 
     try:
-        with open(filepath, "w", encoding="utf-8") as f:
+        with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(serializable_data, f, indent=2, ensure_ascii=False)
         # print(f"Experience data saved to: {filepath}")
         return filepath
@@ -590,14 +598,14 @@ def save_experience_data(task_id: str, experience_data: Dict, data_dir: str) -> 
 
 
 def create_experience_record(
-    task_id: str,
-    trajectory: List[Dict[str, str]],
-    reward: float,
-    steps: int,
-    success: bool,
-    attempt_type: str = "first",
-    reflection_data: Optional[Dict] = None,
-    additional_metrics: Optional[Dict] = None,
+        task_id: str,
+        trajectory: List[Dict[str, str]],
+        reward: float,
+        steps: int,
+        success: bool,
+        attempt_type: str = "first",
+        reflection_data: Optional[Dict] = None,
+        additional_metrics: Optional[Dict] = None
 ) -> Dict:
     """
     Create a structured experience record for saving.
@@ -623,9 +631,9 @@ def create_experience_record(
             "reward": reward,
             "steps": steps,
             "success": success,
-            "trajectory_length": len(trajectory),
+            "trajectory_length": len(trajectory)
         },
-        "created_at": datetime.now().isoformat(),
+        "created_at": datetime.now().isoformat()
     }
 
     if reflection_data:

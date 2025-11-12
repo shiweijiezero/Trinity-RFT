@@ -3,7 +3,7 @@ name: "COUNTDOWN_RFT_Qwen_1.5B_RAFT_Baseline"
 checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
 algorithm:
   algorithm_type: raft
-  repeat_times: 8
+  repeat_times: 1
   optimizer:
     lr: 1e-6
 model:
@@ -15,7 +15,7 @@ cluster:
   gpu_per_node: 4
 buffer:
   total_epochs: 20
-  batch_size: 8
+  batch_size: 96
   explorer_input:
     taskset:
       name: countdown
@@ -48,21 +48,17 @@ buffer:
         priority_fn: decay_limit_randomization
       path: 'sqlite:///countdown_raft_baseline_1.5B.db'
 explorer:
-  runner_per_model: 16
+  runner_per_model: 32
   eval_interval: 20
   rollout_model:
     engine_num: 2
     tensor_parallel_size: 1
-    enable_prefix_caching: true
+    enable_prefix_caching: false
     enforce_eager: false
     dtype: bfloat16
     seed: 0
     gpu_memory_utilization: 0.7
     enable_chunked_prefill: true
-data_processor:
-  experience_pipeline:
-    operators:
-      - name: "RAFT_filter"
 synchronizer:
   sync_style: dynamic_by_explorer
   sync_method: 'nccl'

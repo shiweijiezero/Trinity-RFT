@@ -33,7 +33,7 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
             target=self.target,
             current_step=attempt,
             attempt_history=attempt_history,
-            history_length=getattr(self, "history_length", 4),
+            history_length=getattr(self, 'history_length', 4)
         )
         trajectory.append({"role": "user", "content": user_prompt})
 
@@ -48,14 +48,7 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
         # Check if tokens exceed limit
         if responses[0].tokens.shape[0] >= 20480 - 4096:
             # 由于 chat 内部 tokenizer 会做截断，所以只要>= 最长限制 就直接终止
-            return (
-                trajectory,
-                final_reward,
-                final_success,
-                final_predicted_answer,
-                str(self.target),
-                attempt_count,
-            )
+            return trajectory, final_reward, final_success, final_predicted_answer, str(self.target), attempt_count
 
         response_text = responses[0].response_text.strip()
         trajectory.append({"role": "assistant", "content": response_text})
@@ -68,7 +61,10 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
             feedback = "Invalid response format. Please ensure you provide both <think>...</think> and <answer>...</answer> tags."
             trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             # Record this failed attempt in history
-            attempt_history.append({"equation": "Invalid format", "feedback": feedback})
+            attempt_history.append({
+                "equation": "Invalid format",
+                "feedback": feedback
+            })
             continue
 
         # Verify answer
@@ -84,9 +80,7 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
         else:
             # Wrong answer
             if attempt < self.max_attempts - 1:
-                feedback = (
-                    f"Incorrect. Your equation {predicted_answer} does not work. Please try again."
-                )
+                feedback = f"Incorrect. Your equation {predicted_answer} does not work. Please try again."
                 trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             else:
                 # Last attempt
@@ -95,23 +89,19 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
             final_predicted_answer = predicted_answer
 
             # Record this failed attempt in history
-            attempt_history.append({"equation": predicted_answer, "feedback": feedback})
+            attempt_history.append({
+                "equation": predicted_answer,
+                "feedback": feedback
+            })
 
-    return (
-        trajectory,
-        final_reward,
-        final_success,
-        final_predicted_answer,
-        str(self.target),
-        attempt_count,
-    )
+    return trajectory, final_reward, final_success, final_predicted_answer, str(self.target), attempt_count
 
 
 def second_rollout(
-    self,
-    guidance_prompt: str,
-    first_trajectory: List[Dict[str, str]],
-    retry_step: int = 0,
+        self,
+        guidance_prompt: str,
+        first_trajectory: List[Dict[str, str]],
+        retry_step: int = 0,
 ) -> tuple[List[Dict[str, str]], List[Dict[str, str]], float, bool, str, str, int]:
     """
     Performs rollout with guidance from reflection.
@@ -139,7 +129,7 @@ def second_rollout(
                 current_step=attempt,
                 attempt_history=attempt_history,
                 guidance_prompt=guidance_prompt,
-                history_length=getattr(self, "history_length", 4),
+                history_length=getattr(self, 'history_length', 4)
             )
             # For distill trajectory, use prompt without guidance
             distill_user_prompt = format_countdown_prompt(
@@ -147,7 +137,7 @@ def second_rollout(
                 target=self.target,
                 current_step=attempt,
                 attempt_history=attempt_history,
-                history_length=getattr(self, "history_length", 4),
+                history_length=getattr(self, 'history_length', 4)
             )
         else:
             # Subsequent attempts don't repeat guidance
@@ -156,7 +146,7 @@ def second_rollout(
                 target=self.target,
                 current_step=attempt,
                 attempt_history=attempt_history,
-                history_length=getattr(self, "history_length", 4),
+                history_length=getattr(self, 'history_length', 4)
             )
             distill_user_prompt = user_prompt
 
@@ -174,15 +164,7 @@ def second_rollout(
         # Check if tokens exceed limit
         if responses[0].tokens.shape[0] >= 20480 - 4096:
             # 由于 chat 内部 tokenizer 会做截断，所以只要>= 最长限制 就直接终止
-            return (
-                distill_trajectory,
-                trajectory,
-                final_reward,
-                final_success,
-                final_predicted_answer,
-                str(self.target),
-                attempt_count,
-            )
+            return distill_trajectory, trajectory, final_reward, final_success, final_predicted_answer, str(self.target), attempt_count
 
         response_text = responses[0].response_text.strip()
         trajectory.append({"role": "assistant", "content": response_text})
@@ -197,7 +179,10 @@ def second_rollout(
             trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             distill_trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             # Record this failed attempt in history
-            attempt_history.append({"equation": "Invalid format", "feedback": feedback})
+            attempt_history.append({
+                "equation": "Invalid format",
+                "feedback": feedback
+            })
             continue
 
         # Verify answer
@@ -207,18 +192,14 @@ def second_rollout(
             final_reward = 1.0
             final_success = True
             final_predicted_answer = predicted_answer
-            feedback = (
-                f"Correct! Your equation {predicted_answer} successfully equals {self.target}."
-            )
+            feedback = f"Correct! Your equation {predicted_answer} successfully equals {self.target}."
             trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             distill_trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             break
         else:
             # Wrong answer
             if attempt < self.max_attempts - 1:
-                feedback = (
-                    f"Incorrect. Your equation {predicted_answer} does not work. Please try again."
-                )
+                feedback = f"Incorrect. Your equation {predicted_answer} does not work. Please try again."
                 trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
                 distill_trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             else:
@@ -229,17 +210,12 @@ def second_rollout(
             final_predicted_answer = predicted_answer
 
             # Record this failed attempt in history
-            attempt_history.append({"equation": predicted_answer, "feedback": feedback})
+            attempt_history.append({
+                "equation": predicted_answer,
+                "feedback": feedback
+            })
 
-    return (
-        distill_trajectory,
-        trajectory,
-        final_reward,
-        final_success,
-        final_predicted_answer,
-        str(self.target),
-        attempt_count,
-    )
+    return distill_trajectory, trajectory, final_reward, final_success, final_predicted_answer, str(self.target), attempt_count
 
 
 def eval_countdown(self) -> List[Experience]:
@@ -254,9 +230,7 @@ def eval_countdown(self) -> List[Experience]:
             "reward": reward,
             "attempts": attempts,
         }
-        print(
-            f"[R3L Countdown Eval] Completed - Reward: {reward}, Success: {success}, Attempts: {attempts}"
-        )
+        print(f"[R3L Countdown Eval] Completed - Reward: {reward}, Success: {success}, Attempts: {attempts}")
 
         if self.whether_save_data:
             # Save evaluation data
@@ -268,10 +242,12 @@ def eval_countdown(self) -> List[Experience]:
                 success=success,
                 predicted_answer=predicted_answer,
                 ground_truth=ground_truth,
-                attempt_type="evaluation",
+                attempt_type="evaluation"
             )
             save_experience_data(
-                task_id=f"{eval_task_id}_eval", experience_data=eval_record, data_dir=self.eval_dir
+                task_id=f"{eval_task_id}_eval",
+                experience_data=eval_record,
+                data_dir=self.eval_dir
             )
     except Exception as e:
         print(f"[R3L Countdown Eval] Evaluation failed - Error: {str(e)}")
@@ -283,7 +259,7 @@ def eval_countdown(self) -> List[Experience]:
             metrics={
                 "success": 0.0,
                 "reward": 0.0,
-            },
+            }
         )
         exp.reward = 0.0
     return [exp]
@@ -402,9 +378,7 @@ def validate_reflect_report(report: Dict[str, Any], total_steps: int) -> Tuple[b
     # Check valid outcome values
     valid_outcomes = ["OPTIMAL", "SUBOPTIMAL_SUCCESS", "PARTIAL", "INEFFECTIVE"]
     if outcome not in valid_outcomes:
-        print(
-            f"[R3L Countdown Validation] Invalid outcome_assessment: {outcome} (valid: {valid_outcomes})"
-        )
+        print(f"[R3L Countdown Validation] Invalid outcome_assessment: {outcome} (valid: {valid_outcomes})")
         return False, False
 
     # If OPTIMAL, it's perfect
@@ -451,7 +425,11 @@ def reflect_report_to_guidance_prompt(report: Dict[str, Any]) -> str:
     return template.render(report=report_str)
 
 
-def save_experience_data(task_id: str, experience_data: Dict, data_dir: str) -> str:
+def save_experience_data(
+        task_id: str,
+        experience_data: Dict,
+        data_dir: str
+) -> str:
     """
     Save experience data including trajectory, rewards, and attempts to a JSON file.
 
@@ -467,21 +445,21 @@ def save_experience_data(task_id: str, experience_data: Dict, data_dir: str) -> 
     filename = f"{task_id}.json"
     filepath = os.path.join(data_dir, filename)
 
-    with open(filepath, "w", encoding="utf-8") as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(experience_data, f, indent=2, ensure_ascii=False)
 
     return filepath
 
 
 def create_experience_record(
-    task_id: str,
-    trajectory: List[Dict[str, str]],
-    reward: float,
-    success: bool,
-    predicted_answer: str,
-    ground_truth: str,
-    attempt_type: str,
-    additional_metrics: Optional[Dict] = None,
+        task_id: str,
+        trajectory: List[Dict[str, str]],
+        reward: float,
+        success: bool,
+        predicted_answer: str,
+        ground_truth: str,
+        attempt_type: str,
+        additional_metrics: Optional[Dict] = None
 ) -> Dict:
     """
     Create a structured experience record.
@@ -517,11 +495,11 @@ def create_experience_record(
 
 
 def format_countdown_prompt(
-    numbers: List[int],
-    target: int,
-    current_step: int,
-    attempt_history: List[Dict[str, str]],
-    history_length: int = 4,
+        numbers: List[int],
+        target: int,
+        current_step: int,
+        attempt_history: List[Dict[str, str]],
+        history_length: int = 4
 ) -> str:
     """
     Format countdown prompt with limited history.
@@ -546,19 +524,13 @@ You should first reason step-by-step about the current situation. This reasoning
 Once you've finished your reasoning, you should provide your equation answer and present it within <answer> </answer> tags, for example <answer>(1 + 2) / 3</answer>."""
     else:
         # Show limited history
-        recent_attempts = (
-            attempt_history[-history_length:]
-            if len(attempt_history) > history_length
-            else attempt_history
-        )
+        recent_attempts = attempt_history[-history_length:] if len(attempt_history) > history_length else attempt_history
 
         # Format attempt history as a list
         history_lines = []
         for idx, attempt in enumerate(recent_attempts):
             attempt_num = current_step - len(recent_attempts) + idx + 1
-            history_lines.append(
-                f"  Attempt {attempt_num}: {attempt['equation']} -> {attempt['feedback']}"
-            )
+            history_lines.append(f"  Attempt {attempt_num}: {attempt['equation']} -> {attempt['feedback']}")
 
         attempt_history_str = "\n".join(history_lines)
 
@@ -576,12 +548,12 @@ Once you've finished your reasoning, you should provide your equation answer and
 
 
 def format_countdown_prompt_with_guidance(
-    numbers: List[int],
-    target: int,
-    current_step: int,
-    attempt_history: List[Dict[str, str]],
-    guidance_prompt: str,
-    history_length: int = 4,
+        numbers: List[int],
+        target: int,
+        current_step: int,
+        attempt_history: List[Dict[str, str]],
+        guidance_prompt: str,
+        history_length: int = 4
 ) -> str:
     """
     Format countdown prompt with limited history and guidance from reflection.
@@ -597,9 +569,7 @@ def format_countdown_prompt_with_guidance(
     Returns:
         Formatted prompt string with guidance
     """
-    base_prompt = format_countdown_prompt(
-        numbers, target, current_step, attempt_history, history_length
-    )
+    base_prompt = format_countdown_prompt(numbers, target, current_step, attempt_history, history_length)
 
     # Insert guidance before the final instruction
     prompt_with_guidance = f"""{base_prompt.split('Now it\'s your turn')[0]}
