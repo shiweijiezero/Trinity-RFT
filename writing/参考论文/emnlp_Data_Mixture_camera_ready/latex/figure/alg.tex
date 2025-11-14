@@ -1,0 +1,50 @@
+\begin{algorithm*}[t]
+\caption{Domain Impact-aware Data Sampling (DIDS)}
+\label{alg:dids}
+\KwIn{Training dataset $\mathcal{D}$; Downstream tasks $\mathcal{S}$; Proxy model $f'$; Number of domains $k$; Update interval $\tau$; EMA coefficient $\beta$; Training steps $T$}
+\KwOut{Domain sampling probabilities $\mathbf{p}_t$}
+
+// Initialize sampling probabilities uniformly\;
+$\mathbf{p}_0 \leftarrow [1/k,...,1/k]$\;
+
+// Domain repartition based on gradients\;
+$G \leftarrow \emptyset$\;
+\ForEach{$x_i \in \mathcal{D}$}{
+    $g_i \leftarrow \nabla \ell(f', x_i)$ \;
+    $g_i \leftarrow \text{TopK}(g_i)$ \;
+    $\tilde{g}_i \leftarrow R^T g_i$\;
+    $G \leftarrow G \cup \{\tilde{g}_i\}$\;
+}
+$\{D_1,...,D_k\} \leftarrow \text{KMeans}(G, k)$\;
+
+\For{$t \leftarrow 1$ \KwTo $T$}{
+    \If{$t \bmod \tau = 0$}{
+        // Compute domain impact matrix\;
+        \ForEach{$D_i \in \{D_1,...,D_k\}$}{
+            \ForEach{$S_j \in \{S_1,...,S_m\}$}{
+                $\Delta \leftarrow \nabla \ell_{S_j} - \nabla \ell_{D_i}$\;
+                $F \leftarrow \mathbb{E}[\nabla\log p(\theta) \odot \nabla\log p(\theta)]$\;
+                $I(D_i,S_j) \leftarrow \frac{1}{2}\Delta^T F \Delta$\;
+            }
+        }
+        
+        // Compute future potential\;
+        \ForEach{$S_j \in \{S_1,...,S_m\}$}{
+            Fit $L(t) = ae^{-bt} + c$ using loss history $\{L_1(S_j),...,L_t(S_j)\}$\;
+            $L_p(S_j) \leftarrow L_t(S_j) - L(t + \tau)$\;
+            $\Delta L(S_j) \leftarrow L_{t-1}(S_j) - L_t(S_j)$\;
+        }
+        
+        // Update sampling probabilities\;
+        \ForEach{$D_i \in \{D_1,...,D_k\}$}{
+            $U(D_i) \leftarrow \sum_j \frac{I(D_i,S_j) \cdot (\Delta L(S_j) + L_p(S_j))}{p_{t-1,i}}$\;
+            $\hat{p}_{t,i} \leftarrow \text{softmax}(U(D_i))$\;
+            $p_{t,i} \leftarrow \beta p_{t-1,i} + (1-\beta)\hat{p}_{t,i}$\;
+        }
+        $\mathbf{p}_t \leftarrow \mathbf{p}_t / \sum_i p_{t,i}$\;
+    }
+    Sample batch $\mathcal{B}_t$ according to $\mathbf{p}_t$\;
+    Update model parameters $\theta$ using $\mathcal{B}_t$\;
+}
+\Return{$\mathbf{p}_t$}
+\end{algorithm*}

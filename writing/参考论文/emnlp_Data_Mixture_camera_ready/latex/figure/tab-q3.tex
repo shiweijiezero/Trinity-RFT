@@ -1,0 +1,21 @@
+\setlength{\tabcolsep}{3pt}
+\begin{table}[t]
+\scriptsize
+\centering
+\begin{tabular}{l|cc|cc}
+\toprule
+\multirow{2}{*}{Component} & \multicolumn{2}{c|}{TFLOPs} & \multicolumn{2}{c}{GPU Hours} \\
+& DGA & DIDS & DGA & DIDS \\
+\midrule
+Base Training & $5.47 \times 10^{4}$ & $5.47 \times 10^{4}$ & 101.6 & 101.6 \\
+Cluster (BERT vs. Gradient) & $7.77 \times 10^{2}$ & $1.87 \times 10^{3}$ & 1.5 & 3.3 \\
+Impact (Gradient vs. FIM) & $9.86 \times 10^{1}$ & $1.78 \times 10^{2}$ & 0.1 & 0.2 \\
+Loss Trajectory Consideration & - & $< 10^{-1}$ & - & < 0.1 \\
+\midrule
+Total & $5.56 \times 10^{4}$ & $5.67 \times 10^{4}$ & 103.2 & 105.2 \\
+\bottomrule
+\end{tabular}
+\caption{Computational cost analysis of different components in DIDS. Base training refers to standard training of an 8B parameter model on 1B tokens.}
+\label{tab:efficiency}
+\vspace{-0.7cm}
+\end{table}

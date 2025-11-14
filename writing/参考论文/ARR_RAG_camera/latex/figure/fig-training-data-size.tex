@@ -1,0 +1,76 @@
+\begin{figure}[t]
+\centering
+\subfigure[NQ]{
+\begin{minipage}[t]{0.46\linewidth}
+\centering
+\begin{tikzpicture}[scale=0.45]
+    \begin{axis}[
+        xlabel=Training Data Size (k),
+        ylabel=EM Scores,
+        % y label style={at={(-0.0,0.5)}},
+        ymajorgrids=true,
+        font=\Large,
+        legend style={at={(0.5,1.05)}, anchor=south, legend columns=2, draw=black, fill=white,align=left,font=\normalsize},
+    ]
+        \addplot+[color={rgb,255:red,255;green,110;blue,110}, line width=1.5pt, mark=diamond*, mark size=2.5pt] coordinates {
+            (30,50.5)
+            (60,53.4)
+            (90,56.2)
+            (160,58.5)
+            (220,60.3)
+            (440,61.0)
+        };
+        \addlegendentry{LKG-RALM};
+        \addplot+[color={rgb,255:red,100;green,150;blue,220}, line width=1.5pt, mark=square*, mark size=2pt] coordinates {
+            (30,44.6)
+            (60,45.3)
+            (90,45.4)
+            (160,45.5)
+            (220,45.5)
+            (440,45.7)
+        };
+        \addlegendentry{LLAMA-FineTune};
+    \end{axis}
+\end{tikzpicture}
+\label{fig:nq-data-size}
+\end{minipage}
+}
+\hfill
+\subfigure[HotpotQA]{
+\begin{minipage}[t]{0.46\linewidth}
+\centering
+\begin{tikzpicture}[scale=0.45]
+    \begin{axis}[
+        xlabel=Training Data Size (k),
+        ylabel=EM Scores,
+        % y label style={at={(-0.0,0.5)}},
+        ymajorgrids=true,
+        font=\Large,
+        legend style={at={(0.5,1.05)}, anchor=south, legend columns=2, draw=black, fill=white,align=left,font=\normalsize},
+    ]
+        \addplot+[color={rgb,255:red,255;green,110;blue,110}, line width=1.5pt, mark=diamond*, mark size=2.5pt] coordinates {
+            (30,37.1)
+            (60,40.7)
+            (90,43.2)
+            (160,45.0)
+            (220,45.6)
+            (440,45.8)
+        };
+        \addlegendentry{LKG-RALM};
+        \addplot+[color={rgb,255:red,100;green,150;blue,220}, line width=1.5pt, mark=square*, mark size=2pt] coordinates {
+            (30,36.7)
+            (60,37.1)
+            (90,37.7)
+            (160,37.9)
+            (220,38.2)
+            (440,38.1)
+        };
+        \addlegendentry{LLAMA-FineTune};
+    \end{axis}
+\end{tikzpicture}
+\label{fig:hotpotqa-data-size}
+\end{minipage}
+}
+\caption{Effects of training data size.}
+\label{fig:data-size-impact}
+\end{figure}

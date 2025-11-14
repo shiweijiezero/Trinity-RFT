@@ -1,0 +1,18 @@
+\begin{table}[t]
+\footnotesize
+\begin{center}
+\begin{tabular}{l|cccc|c}
+\toprule
+Variant & BBH & MathQA & IFEval & TruthfulQA & Avg \\
+\midrule
+DIDS (100k) & \textbf{68.3} & \textbf{20.5} & \textbf{55.6} & \textbf{43.0} & \textbf{46.9} \\
+DIDS-GC & 67.7 & 19.7 & 53.0 & 40.1 & 45.1 \\
+DIDS-FIM & 67.2 & 18.6 & 51.9 & 38.5 & 44.0 \\
+DIDS-LT & 67.5 & 19.5 & 51.4 & 38.1 & 44.1 \\
+\bottomrule
+\end{tabular}
+\caption{Ablation results. We progressively remove key components: gradient-based clustering (DIDS-GC), FIM-guided impact measurement (DIDS-FIM), and loss trajectory consideration (DIDS-LT).}
+\label{tab:ablation}
+\end{center}
+\vspace{-0.6cm}
+\end{table}

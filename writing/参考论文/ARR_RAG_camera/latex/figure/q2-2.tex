@@ -1,0 +1,20 @@
+\setlength{\tabcolsep}{3.2pt}  % 默认值是6pt
+\begin{table}[t]
+\begin{center}
+\scriptsize
+\caption{Ablation result of LKG-RALM, where "LPR", "ELS", and "RPF" stand for Layer-wised Passage Relevance, Entropy-based Layer-Knowledge Selection, and Relevance-aware Passage Fusion, respectively.}
+\begin{tabular}{lccccc} 
+\hline
+\textbf{Model Varient} &  \textbf{NQ}  &  \textbf{TriviaQA} & \textbf{HotpotQA} & \textbf{PopQA} & \textbf{2WikiMQA} \\ 
+\hline 
+LKG-RALM-8B   &  55.3  & 88.6 & 43.1 & 57.2 & 39.0  \\
+\hline
+w/o LPR & 50.6  & 86.0 & 39.5 & 52.5 & 34.8  \\
+w/o ELS &  53.1  & 87.7 & 41.8 & 55.8 & 37.2  \\
+w/o RPF  & 30.9  & 70.7 & 26.0 & 34.9 & 9.6  \\
+w/o Auxiliary Loss  & 54.2  & 87.3  & 42.3 & 56.4 & 37.8  \\
+\hline
+\end{tabular}
+\label{table:q2-2}
+\end{center}
+\end{table}

@@ -1,0 +1,37 @@
+\setlength{\tabcolsep}{3pt}
+\begin{table*}[t]
+\footnotesize
+\begin{center}
+\begin{tabular}{l|ccccccccc|c}
+\toprule
+\multirow{2}{*}{Method} & \multicolumn{2}{c}{Reasoning} & \multicolumn{2}{c}{Mathematics} & \multicolumn{1}{c}{Instruction} & \multicolumn{2}{c}{Commonsense} & \multicolumn{1}{c}{Domain} & \multicolumn{1}{c|}{Truthfulness} & \multirow{2}{*}{Average} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-6} \cmidrule(lr){7-8} \cmidrule(lr){9-9} \cmidrule(lr){10-10}
+& BBH & BoolQ & GSM8K & MathQA & IFEval & MMLU & PIQA & PubMedQA & TruthfulQA & \\
+\midrule
+\multicolumn{11}{c}{\textit{Multi-task Optimization}} \\
+\midrule
+Llama-3.1-8B & \colorbox[rgb]{1.0,0.7,0.7}{62.5} & \colorbox[rgb]{1.0,0.7,0.7}{81.8} & \colorbox[rgb]{1.0,0.7,0.7}{48.9} & \colorbox[rgb]{1.0,0.9,0.9}{15.7} & \colorbox[rgb]{1.0,0.7,0.7}{18.5} & 64.7 & 81.1 & \colorbox[rgb]{1.0,0.8,0.8}{75.8} & \colorbox[rgb]{1.0,0.7,0.7}{28.5} & \colorbox[rgb]{1.0,0.7,0.7}{53.1} \\
++ Full Data (929k) & \colorbox[rgb]{0.8,0.8,1.0}{68.0} & \colorbox[rgb]{0.8,0.8,1.0}{87.3} & \colorbox[rgb]{0.8,0.8,1.0}{65.2} & 16.2 & \colorbox[rgb]{0.8,0.8,1.0}{61.2} & \colorbox[rgb]{1.0,0.85,0.85}{64.3} & \colorbox[rgb]{1.0,0.85,0.85}{81.0} & \colorbox[rgb]{0.85,0.85,1.0}{78.0} & \colorbox[rgb]{1.0,0.8,0.8}{29.5} & \colorbox[rgb]{0.85,0.85,1.0}{61.2} \\
++ Random (100k) & 67.4 & 85.6 & \colorbox[rgb]{1.0,0.8,0.8}{58.9} & \colorbox[rgb]{1.0,0.7,0.7}{11.4} & \colorbox[rgb]{1.0,0.9,0.9}{48.2} & 64.0 & \colorbox[rgb]{0.9,0.9,1.0}{82.0} & 77.4 & 31.5 & 58.9 \\
++ Uniform (100k) & \colorbox[rgb]{1.0,0.8,0.8}{66.2} & \colorbox[rgb]{1.0,0.8,0.8}{83.2} & \colorbox[rgb]{1.0,0.8,0.8}{57.5} & \colorbox[rgb]{1.0,0.8,0.8}{11.8} & 48.2 & 64.1 & 81.5 & \colorbox[rgb]{1.0,0.8,0.8}{76.0} & 31.2 & \colorbox[rgb]{1.0,0.8,0.8}{57.7} \\
+\midrule
++ Doremi (100k) & \colorbox[rgb]{0.9,0.9,1.0}{67.5} & 85.8 & 58.8 & 17.5 & 49.8 & 64.5 & 81.9 & 77.8 & 35.8 & 59.9 \\
++ Velocitune (100k) & 67.2 & 85.5 & 56.2 & 17.2 & 49.0 & 64.4 & 81.7 & 77.5 & 35.0 & 59.3 \\
++ Doge (100k) & \colorbox[rgb]{0.85,0.85,1.0}{67.8} & \colorbox[rgb]{0.85,0.85,1.0}{86.0} & \colorbox[rgb]{0.9,0.9,1.0}{57.5} & \colorbox[rgb]{0.85,0.85,1.0}{17.8} & \colorbox[rgb]{0.85,0.85,1.0}{51.2} & 64.6 & \colorbox[rgb]{0.85,0.85,1.0}{82.0} & \colorbox[rgb]{0.9,0.9,1.0}{78.5} & \colorbox[rgb]{0.8,0.8,1.0}{37.2} & \colorbox[rgb]{0.9,0.9,1.0}{60.2} \\
++ DGA (100k) & 67.0 & 85.4 & 58.8 & \colorbox[rgb]{0.8,0.8,1.0}{18.2} & \colorbox[rgb]{1.0,0.7,0.7}{42.1} & \colorbox[rgb]{0.9,0.9,1.0}{64.8} & 81.8 & \colorbox[rgb]{1.0,0.7,0.7}{75.2} & \colorbox[rgb]{1.0,0.8,0.8}{33.4} & \colorbox[rgb]{1.0,0.9,0.9}{58.5} \\
++ DIDS (100k) & \colorbox[rgb]{0.8,0.8,1.0}{68.3} & \colorbox[rgb]{0.85,0.85,1.0}{86.9} & \colorbox[rgb]{0.85,0.85,1.0}{59.0} & \colorbox[rgb]{0.8,0.8,1.0}{20.5} & \colorbox[rgb]{0.9,0.9,1.0}{55.6} & \colorbox[rgb]{0.8,0.8,1.0}{64.9} & \colorbox[rgb]{0.8,0.8,1.0}{82.2} & \colorbox[rgb]{0.8,0.8,1.0}{80.4} & \colorbox[rgb]{0.8,0.8,1.0}{43.0} & \colorbox[rgb]{0.8,0.8,1.0}{62.3} \\
+\midrule
+\multicolumn{11}{c}{\textit{Single-task Optimization}} \\
+\midrule
++ Doremi (100k) & \colorbox[rgb]{0.9,0.9,1.0}{68.8} & 86.2 & 60.8 & 18.2 & 51.2 & 64.8 & \colorbox[rgb]{0.8,0.8,1.0}{82.6} & 78.5 & 37.2 & 60.9 \\
++ Velocitune (100k) & 68.0 & 86.0 & 60.5 & 18.0 & 50.8 & 64.5 & 82.0 & 78.2 & 36.8 & 60.5 \\
++ Doge (100k) & 68.2 & \colorbox[rgb]{0.9,0.9,1.0}{86.8} & 60.9 & 18.4 & 51.5 & 64.9 & 82.2 & \colorbox[rgb]{0.8,0.8,1.0}{79.0} & 37.5 & 61.0 \\
++ DGA (100k) & \colorbox[rgb]{0.85,0.85,1.0}{68.6} & \colorbox[rgb]{0.85,0.85,1.0}{86.5} & \colorbox[rgb]{0.85,0.85,1.0}{61.8} & \colorbox[rgb]{0.85,0.85,1.0}{19.2} & \colorbox[rgb]{0.85,0.85,1.0}{53.2} & \colorbox[rgb]{0.85,0.85,1.0}{65.2} & \colorbox[rgb]{0.85,0.85,1.0}{82.4} & \colorbox[rgb]{0.9,0.9,1.0}{78.8} & \colorbox[rgb]{0.85,0.85,1.0}{38.5} & \colorbox[rgb]{0.85,0.85,1.0}{61.6} \\
++ DIDS (100k) & \colorbox[rgb]{0.8,0.8,1.0}{69.2} & \colorbox[rgb]{0.8,0.8,1.0}{87.5} & \colorbox[rgb]{0.8,0.8,1.0}{63.0} & \colorbox[rgb]{0.8,0.8,1.0}{21.5} & \colorbox[rgb]{0.8,0.8,1.0}{57.5} & \colorbox[rgb]{0.8,0.8,1.0}{65.8} & \colorbox[rgb]{0.8,0.8,1.0}{83.0} & \colorbox[rgb]{0.8,0.8,1.0}{81.2} & \colorbox[rgb]{0.8,0.8,1.0}{44.8} & \colorbox[rgb]{0.8,0.8,1.0}{63.7} \\
+\bottomrule
+\end{tabular}
+\caption{The overall performance comparison. Cells with \colorbox[rgb]{0.9,0.9,1.0}{blue background indicate high scores}, while \colorbox[rgb]{1.0,0.9,0.9}{red background indicates low scores}. The top section shows results when optimizing for multiple downstream tasks simultaneously, while the bottom section shows results when optimizing for individual tasks.}
+\label{tab:main_results}
+\end{center}
+\vspace{-0.6cm}
+\end{table*}
