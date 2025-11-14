@@ -334,7 +334,16 @@ def _get_jinja_env():
 
 
 def format_observation(observation: str, available_actions: dict):
-    return f"Environment Observation: {observation} \n Available Actions: {available_actions}"
+    """Format observation with format reminder for each turn"""
+    formatted_prompt = f"""Environment Observation: {observation}
+Available Actions: {available_actions}
+
+Now it's your turn to take an action.
+You should first reason step-by-step about the current situation. This reasoning process MUST be enclosed within <think> </think> tags.
+Once you've finished your reasoning, you should choose an action and present it within <action> </action> tags.
+
+Format: <think>your reasoning process</think> <action>your chosen action</action>"""
+    return formatted_prompt
 
 
 def parse_response(response):

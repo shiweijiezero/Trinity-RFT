@@ -335,8 +335,16 @@ def _get_jinja_env():
 
 
 def format_observation(observation: str):
-    """Format observation for SciWorld environment"""
-    return "Observation: \n" + observation
+    """Format observation for SciWorld environment with format reminder"""
+    formatted_prompt = f"""Observation:
+{observation}
+
+Now it's your turn to take an action.
+You should first reason step-by-step about the current situation. This reasoning process MUST be enclosed within <think> </think> tags.
+Once you've finished your reasoning, you should choose an action and present it within <action> </action> tags.
+
+Format: <think>your reasoning process</think> <action>your chosen action</action>"""
+    return formatted_prompt
 
 
 def parse_response(response):
