@@ -143,6 +143,10 @@ class R3LScienceWorldWorkflow(Workflow):
         """
         Adjust action_mask in-place to exclude retry prefix from training.
         Only tokens from retry_step onwards should be trained.
+
+        Args:
+            experience: The experience object with action_mask to adjust
+            retry_step: The step from which training should start
         """
         if retry_step <= 0:
             return

@@ -419,14 +419,16 @@ def validate_reflect_report(report: Dict[str, Any], total_steps: int) -> Tuple[b
 
 def reflect_report_to_guidance_prompt(report: Dict[str, Any]) -> str:
     """
-    Convert validated reflection report into a structured guidance prompt.
+    Converts a validated reflection report into a structured, actionable
+    guidance prompt for the agent's second attempt. This prompt is framed
+    as an internal directive to ensure the model's output is clean for SFT.
     """
+    # Convert the report dictionary to a formatted string
+    report_str = json.dumps(report, indent=2, ensure_ascii=False)
+
     # Load and render template
     jinja_env = _get_jinja_env()
     template = jinja_env.get_template("self_correction.j2")
-
-    # Convert the report dictionary to a formatted string
-    report_str = json.dumps(report, indent=2, ensure_ascii=False)
 
     return template.render(report=report_str)
 
