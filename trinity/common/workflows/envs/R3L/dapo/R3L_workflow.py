@@ -277,8 +277,8 @@ class R3LDapoWorkflow(Workflow):
                 else:
                     print("[R3L] Valid reflection obtained, proceeding to second rollout...")
                     guidance_prompt = utils.reflect_report_to_guidance_prompt(reflect_checklist)
-                    # Extract retry_step from validated reflection report
-                    retry_step = reflect_checklist["analysis"]["retry_strategy"]["retry_step"] if "retry_strategy" in reflect_checklist.get("analysis", {}) else 0
+                    # Extract retry_step from validated reflection report (top-level field in alfworld schema)
+                    retry_step = reflect_checklist.get("retry_from_step", 0)
 
                     try:
                         (

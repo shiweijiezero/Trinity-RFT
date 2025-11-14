@@ -262,7 +262,8 @@ class R3LScienceWorldWorkflow(Workflow):
 
                 else:
                     guidance_prompt = utils.reflect_report_to_guidance_prompt(reflect_checklist)
-                    retry_step = reflect_checklist["analysis"]["retry_strategy"]["retry_step"]
+                    # Extract retry_step from validated reflection report (top-level field in alfworld schema)
+                    retry_step = reflect_checklist.get("retry_from_step", 0)
 
                     try:
                         second_env = utils.create_sciworld_environment(self.task_desc)

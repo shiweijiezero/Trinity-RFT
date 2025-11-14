@@ -358,57 +358,63 @@ def format_trajectory_for_reflection(trajectory: List[Dict[str, str]]) -> str:
 
 def validate_reflect_report(report: Dict[str, Any], total_steps: int) -> Tuple[bool, bool]:
     """
-    Validate the structure and content of the reflection report.
+    Validates the structure and content of the reflection report
+    based on the alfworld reflection.j2 schema.
+
+    Args:
+        report: The reflection report to validate
+        total_steps: Maximum number of steps in trajectory for retry_step bounds checking
 
     Returns:
         tuple[bool, bool]: (is_valid, is_perfect)
+        - is_valid: Whether the report structure is valid
+        - is_perfect: Whether the report indicates the trajectory is perfect (only meaningful if is_valid is True)
     """
-    if not isinstance(report, dict):
-        print("[R3L Countdown Validation] Reflection report is not a dict")
+    if (
+            not isinstance(report, dict)
+            or "trajectory_summary" not in report
+            or "root_cause_analysis" not in report
+            or "trajectory_outcome" not in report
+    ):
+        print("[R3L Countdown Validation] Report is not a dict or missing keys.")
         return False, False
 
-    # Check required keys
-    if "outcome_assessment" not in report or "analysis" not in report:
-        print("[R3L Countdown Validation] Missing required top-level keys in reflection report")
-        return False, False
+    outcome = report["trajectory_outcome"]
 
-    outcome = report["outcome_assessment"]
-    analysis = report["analysis"]
-
-    # Check valid outcome values
-    valid_outcomes = ["OPTIMAL", "SUBOPTIMAL_SUCCESS", "PARTIAL", "INEFFECTIVE"]
-    if outcome not in valid_outcomes:
-        print(f"[R3L Countdown Validation] Invalid outcome_assessment: {outcome} (valid: {valid_outcomes})")
-        return False, False
-
-    # If OPTIMAL, it's perfect
-    if outcome == "OPTIMAL":
+    if outcome == "success":
+        # For success, we only need summary and no flaw analysis
+        print("[R3L Countdown Validation] success report validation successful.")
         return True, True
 
-    # For non-OPTIMAL outcomes, check required analysis fields
-    if "summary" not in analysis:
-        print("[R3L Countdown Validation] Missing 'summary' in analysis")
-        return False, False
+    elif outcome in ["success_but_inefficient", "failure"]:
+        # For non-optimal outcomes, validate required fields
+        improvement_suggestion = report.get("improvement_suggestion", None)
+        retry_from_step = report.get("retry_from_step", None)
 
-    if "flaw_analysis" not in analysis:
-        print("[R3L Countdown Validation] Missing 'flaw_analysis' in analysis")
-        return False, False
+        if improvement_suggestion is None or retry_from_step is None:
+            print("[R3L Countdown Validation] Missing 'improvement_suggestion' or 'retry_from_step'.")
+            return False, False
 
-    if "lessons_learned" not in analysis:
-        print("[R3L Countdown Validation] Missing 'lessons_learned' in analysis")
+        # check retry from step
+        try:
+            retry_from_step = int(retry_from_step)
+        except (ValueError, TypeError):
+            print(f"[R3L Countdown Validation] 'retry_from_step' must be an integer. Got: {retry_from_step}")
+            return False, False
+        if not isinstance(retry_from_step, int) or retry_from_step < 0:
+            print(f"[R3L Countdown Validation] 'retry_from_step' must be a non-negative integer. Got: {retry_from_step}")
+            return False, False
+        # Check trajectory bounds if total_steps is provided
+        if total_steps is not None:
+            if retry_from_step >= total_steps:
+                print(
+                    f"[R3L Countdown Validation] 'retry_from_step' ({retry_from_step}) exceeds trajectory bounds (0 to {total_steps - 1}).")
+                return False, False
+        print(f"[R3L Countdown Validation] {outcome} report validation successful.")
+        return True, False
+    else:
+        print(f"[R3L Countdown Validation] Invalid trajectory_outcome: {outcome}")
         return False, False
-
-    if "retry_strategy" not in analysis:
-        print("[R3L Countdown Validation] Missing 'retry_strategy' in analysis")
-        return False, False
-
-    # Validate retry_strategy
-    retry_strategy = analysis["retry_strategy"]
-    if "retry_step" not in retry_strategy:
-        print("[R3L Countdown Validation] Missing 'retry_step' in retry_strategy")
-        return False, False
-
-    return True, False
 
 
 def reflect_report_to_guidance_prompt(report: Dict[str, Any]) -> str:

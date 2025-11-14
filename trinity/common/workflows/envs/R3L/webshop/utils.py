@@ -436,14 +436,14 @@ def format_trajectory_for_reflection(trajectory: List[Dict[str, str]]) -> str:
     return "\n".join(formatted_lines)
 
 
-def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tuple[bool, bool]:
+def validate_reflect_report(report: Dict[str, Any], total_steps: int) -> Tuple[bool, bool]:
     """
     Validates the structure and content of the reflection report
-    based on the new reflection.j2 schema.
+    based on the alfworld reflection.j2 schema.
 
     Args:
         report: The reflection report to validate
-        max_steps: Maximum number of steps in trajectory for retry_step bounds checking (optional)
+        total_steps: Maximum number of steps in trajectory for retry_step bounds checking
 
     Returns:
         tuple[bool, bool]: (is_valid, is_perfect)
@@ -452,98 +452,48 @@ def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tu
     """
     if (
             not isinstance(report, dict)
-            or "outcome_assessment" not in report
-            or "analysis" not in report
+            or "trajectory_summary" not in report
+            or "root_cause_analysis" not in report
+            or "trajectory_outcome" not in report
     ):
-        print("Validation failed: Report is not a dict or missing top-level keys.")
+        print("[R3L WebShop Validation] Report is not a dict or missing keys.")
         return False, False
 
-    outcome = report["outcome_assessment"]
-    analysis = report["analysis"]
+    outcome = report["trajectory_outcome"]
 
-    # Check for required top-level analysis keys
-    if "summary" not in analysis:
-        print("Validation failed: Missing 'summary' in analysis.")
-        return False, False
-
-    if outcome == "OPTIMAL":
-        # For OPTIMAL, we only need summary and no flaw analysis
-        print("OPTIMAL report validation successful.")
+    if outcome == "success":
+        # For success, we only need summary and no flaw analysis
+        print("[R3L WebShop Validation] success report validation successful.")
         return True, True
 
-    elif outcome in ["SUBOPTIMAL_SUCCESS", "PARTIAL", "INEFFECTIVE"]:
-        # For non-optimal outcomes, validate flaw_analysis structure
-        flaw_analysis = analysis.get("flaw_analysis", {})
+    elif outcome in ["success_but_inefficient", "failure"]:
+        # For non-optimal outcomes, validate required fields
+        improvement_suggestion = report.get("improvement_suggestion", None)
+        retry_from_step = report.get("retry_from_step", None)
 
-        # Validate diagnosis
-        diagnosis = flaw_analysis.get("diagnosis", {})
-        valid_categories = [
-            "Strategy Flaw",
-            "Reasoning Flaw",
-            "Execution Flaw",
-            "Knowledge Gap",
-            "Inefficiency"
-        ]
-        if diagnosis.get("category") not in valid_categories and diagnosis.get("category") != "null":
-            print(f"Validation failed: Invalid 'category'. Got: {diagnosis.get('category')}")
+        if improvement_suggestion is None or retry_from_step is None:
+            print("[R3L WebShop Validation] Missing 'improvement_suggestion' or 'retry_from_step'.")
             return False, False
 
-        # Validate better_approach
-        better_approach = flaw_analysis.get("better_approach", {})
-        required_better_approach_keys = ["strategy", "key_differences", "projected_benefits"]
-        for key in required_better_approach_keys:
-            if key not in better_approach:
-                print(f"Validation failed: Missing '{key}' in better_approach. Got: {better_approach}")
+        # check retry from step
+        try:
+            retry_from_step = int(retry_from_step)
+        except (ValueError, TypeError):
+            print(f"[R3L WebShop Validation] 'retry_from_step' must be an integer. Got: {retry_from_step}")
+            return False, False
+        if not isinstance(retry_from_step, int) or retry_from_step < 0:
+            print(f"[R3L WebShop Validation] 'retry_from_step' must be a non-negative integer. Got: {retry_from_step}")
+            return False, False
+        # Check trajectory bounds if total_steps is provided
+        if total_steps is not None:
+            if retry_from_step >= total_steps:
+                print(
+                    f"[R3L WebShop Validation] 'retry_from_step' ({retry_from_step}) exceeds trajectory bounds (0 to {total_steps - 1}).")
                 return False, False
-
-        # Validate lessons_learned
-        lessons_learned = analysis.get("lessons_learned", {})
-        if not (
-                "corrective_principle" in lessons_learned
-                and "revised_action_plan" in lessons_learned
-        ):
-            print(f"Validation failed: Invalid 'lessons_learned'. Got: {lessons_learned}")
-            return False, False
-
-        # Validate retry_strategy
-        retry_strategy = analysis.get("retry_strategy", {})
-        if not retry_strategy:
-            print("Validation failed: Missing 'retry_strategy' in analysis.")
-            return False, False
-
-        # Validate retry_step
-        if "retry_step" not in retry_strategy:
-            print("Validation failed: Missing 'retry_step' in retry_strategy.")
-            return False, False
-
-        retry_step = retry_strategy["retry_step"]
-        if retry_step is not None:
-            try:
-                retry_step = int(retry_step)
-            except (ValueError, TypeError):
-                print(f"Validation failed: 'retry_step' must be an integer or null. Got: {retry_step}")
-                return False, False
-            if not isinstance(retry_step, int) or retry_step < 0:
-                print(f"Validation failed: 'retry_step' must be a non-negative integer or null. Got: {retry_step}")
-                return False, False
-
-            # Check trajectory bounds if max_steps is provided
-            if max_steps is not None:
-                if retry_step >= max_steps:
-                    print(
-                        f"Validation failed: 'retry_step' ({retry_step}) exceeds trajectory bounds (0 to {max_steps - 1}).")
-                    return False, False
-
-        # Validate retry_rationale
-        if "retry_rationale" not in retry_strategy:
-            print("Validation failed: Missing 'retry_rationale' in retry_strategy.")
-            return False, False
-
-        print(f"{outcome} report validation successful.")
+        print(f"[R3L WebShop Validation] {outcome} report validation successful.")
         return True, False
-
     else:
-        print(f"Validation failed: Unknown 'outcome_assessment': {outcome}")
+        print(f"[R3L WebShop Validation] Invalid trajectory_outcome: {outcome}")
         return False, False
 
 
