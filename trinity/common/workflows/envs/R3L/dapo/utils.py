@@ -376,57 +376,18 @@ def validate_reflect_report(report: Dict[str, Any], total_steps: int) -> Tuple[b
 
 def reflect_report_to_guidance_prompt(report: Dict[str, Any]) -> str:
     """
-    Convert a validated reflection report into a guidance prompt for second attempt.
-    The guidance should provide directional hints without revealing the answer.
+    Converts a validated reflection report into a structured, actionable
+    guidance prompt for the agent's second attempt. This prompt is framed
+    as an internal directive to ensure the model's output is clean for SFT.
     """
-    print("[R3L] Converting reflection report to guidance prompt...")
-    try:
-        analysis = report.get("analysis", {})
-        flaw_analysis = analysis.get("flaw_analysis", {})
-        lessons_learned = analysis.get("lessons_learned", {})
+    # Convert the report dictionary to a formatted string
+    report_str = json.dumps(report, indent=2, ensure_ascii=False)
 
-        # Build guidance sections
-        guidance_parts = []
+    # Load and render template
+    jinja_env = _get_jinja_env()
+    template = jinja_env.get_template("self_correction.j2")
 
-        # Add summary
-        if "summary" in analysis:
-            guidance_parts.append(f"## Analysis Summary\n{analysis['summary']}")
-
-        # Add error diagnosis (without answer)
-        if "diagnosis" in flaw_analysis:
-            diagnosis = flaw_analysis["diagnosis"]
-            guidance_parts.append(f"\n## Error Diagnosis")
-            if "category" in diagnosis and diagnosis["category"]:
-                guidance_parts.append(f"Error Type: {diagnosis['category']}")
-            if "root_cause" in diagnosis and diagnosis["root_cause"]:
-                guidance_parts.append(f"Root Cause: {diagnosis['root_cause']}")
-
-        # Add method hints (directional guidance)
-        if "better_approach" in flaw_analysis:
-            better_approach = flaw_analysis["better_approach"]
-            guidance_parts.append(f"\n## Recommended Approach")
-            if "key_insights" in better_approach and better_approach["key_insights"]:
-                guidance_parts.append(f"Key Insights: {better_approach['key_insights']}")
-            if "method_hints" in better_approach and better_approach["method_hints"]:
-                guidance_parts.append(f"Method Hints: {better_approach['method_hints']}")
-            if "strategy" in better_approach and better_approach["strategy"]:
-                guidance_parts.append(f"Strategy: {better_approach['strategy']}")
-
-        # Add corrective principle
-        if "corrective_principle" in lessons_learned and lessons_learned["corrective_principle"]:
-            guidance_parts.append(f"\n## Corrective Principle\n{lessons_learned['corrective_principle']}")
-
-        # Add verification reminders
-        if "verification_reminders" in lessons_learned and lessons_learned["verification_reminders"]:
-            guidance_parts.append(f"\n## Verification Reminders\n{lessons_learned['verification_reminders']}")
-
-        guidance_prompt = "\n\n".join(guidance_parts)
-        print(f"[R3L] Guidance prompt generated ({len(guidance_parts)} sections)")
-        return guidance_prompt
-
-    except Exception as e:
-        print(f"[R3L] Error converting reflection to guidance: {e}")
-        return "Please try solving the problem again carefully."
+    return template.render(report=report_str)
 
 
 def create_experience_record(
