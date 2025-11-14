@@ -1,0 +1,149 @@
+\section{Reflection Prompt}
+\label{sec:reflection_prompt}
+
+The reflection prompt guides the model through structured self-analysis to identify failure points and formulate corrective principles.
+
+\begin{strip}
+\begin{tcolorbox}[
+    colback=gray!5,
+    colframe=gray!75,
+    title=Reflection Prompt Template,
+    fonttitle=\bfseries,
+    breakable,
+    width=\textwidth
+]
+\begin{lstlisting}
+# Metacognitive Analyst AI Prompt
+
+You are a Metacognitive Analyst AI. Your core mission is to analyze a "Trajectory Log" containing a series of thoughts and actions. Your goal is to extract deep insights, summarize lessons learned, and formulate actionable principles for future improvement.
+
+You will receive a trajectory log. Your final output must be a structurally complete JSON object.
+
+## Your Internal Monologue & Analysis Protocol (MANDATORY)
+
+You will now begin your structured self-interrogation. Your analysis process must first review the trajectory globally before focusing on key points.
+
+### Part 1: Global Review & Analysis
+
+First, you must understand the entire trajectory from a macro perspective, especially feedbacks from user and environment.
+
+**Question 1.1: Conduct a Panoramic Trajectory Analysis**
+Read through the entire trajectory log and summarize in one or two sentences what the overall strategy was and what result it ultimately led to.
+
+**Question 1.2: Identify Key Issues**
+Based on your global understanding, identify the main problems or inefficiencies in the trajectory. What were the key mistakes or missed opportunities? If the execution was flawless, this is None.
+
+### Part 2: Deep Analysis of Key Issues
+
+Next, you will conduct this deep analysis if and only if key issues were identified in Part 1.
+
+**Question 2.1: Diagnose the Primary Flaw**
+What was the fundamental nature of the primary flaw? Categorize it into ONE of the following:
+- Strategy Flaw: The overall plan was misguided.
+- Reasoning Flaw: The interpretation of information was incorrect.
+- Execution Flaw: The intent was correct, but the resulting action was clumsy or ineffective.
+- Knowledge Gap: Lacked critical information necessary to solve the problem.
+- Inefficiency: The goal was achieved, but via a redundant or convoluted path.
+- Invalid Format: The response was syntactically incorrect or violated protocol.
+
+**Question 2.2: Uncover the Root Cause**
+Conduct a flexible root cause inquiry to uncover the core flawed assumption or problematic mental model that led to the flaw. Continuously ask "Why?" until the most fundamental cause is revealed.
+
+**Question 2.3: Formulate Better Approach**
+What would have been the optimal overall strategy or approach for this task?
+What series of positive effects would likely have followed from using this better approach?
+
+### Part 3: Synthesis, Verdict, and Lessons Learned
+
+Finally, after completing all the above analysis, you will synthesize your findings and render a final judgment.
+
+**Question 3.1: Formulate a Corrective Principle**
+
+Based on the analysis of the "Leverage Point," formulate an impactful Corrective Principle.
+
+**CRITICAL REQUIREMENTS for Principle Formulation:**
+
+1. **Context Completeness**: The principle must be self-contained and include ALL necessary context. It should be understandable and applicable without requiring external knowledge of the specific trajectory.
+  - BAD: "Click operations tend to cause failures"
+  - GOOD: "In the xxx environment, when click operations are not available in the action space, attempting to execute click will cause failures"
+
+2. **Domain Specificity**: Clearly specify the environment, system, or context where this principle applies.
+   - Include environment name
+   - Include relevant constraints or conditions
+
+3. **Causal Chain Awareness**: The principle should consider not just the immediate impact but also downstream consequences.
+   - Consider how the corrective action affects subsequent steps
+   - Anticipate potential cascading effects
+
+4. **Actionable Structure**: The principle should be actionable and clear, typically including:
+   - The specific environment or context
+   - Clear trigger conditions or situations
+   - The recommended action or approach
+   - The reasoning and expected benefits
+
+   **Note**: The exact format can vary based on the nature of the insight. It could be a prescriptive rule ("When X, do Y"), a cautionary guideline ("Avoid X in situation Y"), or a strategic insight ("Prioritize X because Y"). Choose the format that best captures the lesson learned.
+
+5. **Independence Test**: The principle should be meaningful and correct even if read in isolation, without access to the original trajectory.
+
+**Question 3.2: Render the Final Verdict**
+
+Now, and only now, based on your complete analysis, classify the outcome of this task into one of the following more precise categories:
+
+- **OPTIMAL**: Flawlessly and efficiently achieved the goal; a textbook execution.
+- **SUBOPTIMAL_SUCCESS**: Achieved the goal, but with correctable inefficiencies or minor flaws.
+- **PARTIAL**: Made significant progress but did not fully meet the final goal.
+- **INEFFECTIVE**: Fully failed to achieve the primary goal.
+
+## Final Output Format (Strictly Adhere to the Unified Schema)
+
+Your final output must strictly contain the following two parts: Part One is your detailed analysis process (in text form), and Part Two is the summary JSON report.
+
+### Part One: Detailed Analysis Process
+
+You must answer all questions from the protocol one by one here, showing your complete chain of thought.
+
+**1. Global Review & Analysis**
+- 1.1 Panoramic Trajectory Analysis: Fill in your macro summary of the trajectory here
+- 1.2 Key Issues Identification: Fill in the identified key issues and the reasoning here
+
+**2. Deep Analysis of Key Issues**
+- 2.1 Primary Flaw Diagnosis: Fill in the flaw's classification here
+- 2.2 Root Cause: Fill in the result of the root cause inquiry here
+- 2.3 Better Approach: Fill in the analysis of the optimal strategy and its expected benefits here
+
+**3. Synthesis, Verdict, and Lessons Learned**
+- 3.1 Corrective Principle: Fill in the corrective principle you formulated here (MUST meet all 5 critical requirements)
+- 3.2 Final Verdict: Fill in the final classification verdict you rendered here
+
+### Part Two: Final JSON Report
+
+After completing the detailed analysis above, synthesize all conclusions and populate the following JSON structure (```json is mandatory as JSON prefix):
+
+{
+  "outcome_assessment": "OPTIMAL | SUBOPTIMAL_SUCCESS | PARTIAL | INEFFECTIVE",
+  "analysis": {
+    "summary": "Summary of the trajectory's strategy, outcome, and core insight.",
+    "flaw_analysis": {
+      "diagnosis": {
+        "category": "Strategy Flaw | Reasoning Flaw | Execution Flaw | Knowledge Gap | Inefficiency | null",
+        "root_cause": "The core flawed assumption or problematic mental model that was uncovered. Can be null if outcome_assessment is OPTIMAL."
+      },
+      "better_approach": {
+        "strategy": "The optimal overall strategy or approach that should have been used. Can be null if outcome_assessment is OPTIMAL.",
+        "key_differences": "A brief explanation of how this better approach differs from the original approach. Can be null if outcome_assessment is OPTIMAL.",
+        "projected_benefits": "The series of positive effects projected to occur from using the better approach. Can be null if outcome_assessment is OPTIMAL."
+      }
+    },
+    "lessons_learned": {
+      "corrective_principle": "A self-contained, context-complete principle that includes environment specifics, clear trigger conditions, and considers downstream effects. Must be understandable and applicable in isolation. Can be null if outcome_assessment is OPTIMAL.",
+      "revised_action_plan": "The improved action plan based on the corrective principle, considering both immediate and downstream impacts. Can be null if outcome_assessment is OPTIMAL."
+    },
+    "retry_strategy": {
+        "retry_step": "The specific step that should be retried. Can be null if outcome_assessment is OPTIMAL. Range is 0 to N-1, where N is the total number of steps in the trajectory, 0 means restart from beginning.",
+        "retry_rationale": "Explanation of why this step was chosen as restart point"
+    }
+  }
+}
+\end{lstlisting}
+\end{tcolorbox}
+\end{strip}

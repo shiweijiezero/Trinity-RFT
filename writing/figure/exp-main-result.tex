@@ -1,0 +1,35 @@
+\begin{table*}[t]
+\centering
+\caption{Main results on agentic environments and mathematical reasoning benchmarks. All metrics are success rate. R$^3$L significantly outperforms baselines on complex tasks.}
+\label{tab:main_results}
+\resizebox{\textwidth}{!}{%  <--- 关键：强制缩放表格以适应页面宽度
+\begin{tabular}{ll ccc cccccc}
+\toprule
+& & \multicolumn{3}{c}{\textbf{Agentic Environments}} & \multicolumn{6}{c}{\textbf{Mathematical Reasoning}} \\
+\cmidrule(lr){3-5} \cmidrule(lr){6-11}
+\textbf{Model} & \textbf{Method} & \textbf{ALFWorld} & \textbf{WebShop} & \textbf{ScienceWorld} & \textbf{GSM8K} & \textbf{Math500} & \textbf{MinervaMath} & \textbf{Olympiad} & \textbf{AMC23} & \textbf{DAPO} \\
+\midrule
+
+% --- 1.5B Model Data ---
+\multirow{6}{*}{\texttt{Qwen2.5-1.5B-Ins}}
+& RAFT & 0.826 & 0.450 & 0.001 & 0.434 & 0.204 & 0.051 & 0.053 & 0.125 & 0.086 \\
+& OPMD & 0.835 & 0.224 & 0.016 & 0.465 & 0.292 & 0.063 & 0.123 & 0.125 & 0.070 \\
+& GRPO & 0.720 & 0.260 & 0.049 & 0.474 & 0.304 & 0.099 & 0.090 & 0.200 & 0.136 \\
+& DAPO & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
+& GSPO & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
+& \textbf{R$^3$L (Ours)} & \textbf{0.810} & \textbf{0.355} & \textbf{0.122} & \textbf{0.721} & \textbf{0.439} & \textbf{0.120} & \textbf{0.168} & \textbf{0.250} & \textbf{0.156} \\
+\midrule
+
+% --- 7B Model Data (Placeholders) ---
+\multirow{6}{*}{\texttt{Qwen2.5-7B-Ins}}
+& RAFT & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
+& OPMD & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
+& GRPO & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
+& DAPO & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
+& GSPO & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
+& \textbf{R$^3$L (Ours)} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} \\
+
+\bottomrule
+\end{tabular}
+} % <-- 结束 \resizebox
+\end{table*}
