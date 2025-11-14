@@ -22,11 +22,10 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
     system_prompt = self.dapo_system_template.render()
     trajectory.append({"role": "system", "content": system_prompt})
 
-    # Add user prompt (math problem)
-    if self.prompt:
-        trajectory.append({"role": "user", "content": self.prompt})
-    else:
-        trajectory.append({"role": "user", "content": "Please solve the given mathematical problem."})
+    # Add user prompt (math problem) with format reminder
+    problem_prompt = self.prompt if self.prompt else "Please solve the given mathematical problem."
+    formatted_prompt = format_dapo_prompt(problem_prompt, attempt=0)
+    trajectory.append({"role": "user", "content": formatted_prompt})
 
     final_reward = 0.0
     final_success = False
@@ -59,7 +58,8 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
         if think is None or predicted_answer is None:
             # Invalid format
             feedback = "Invalid response format. Please ensure you provide both <think>...</think> and <answer>...</answer> tags."
-            trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
+            formatted_feedback = format_dapo_prompt("", attempt=attempt_count, feedback=feedback)
+            trajectory.append({"role": "user", "content": formatted_feedback})
             continue
 
         # Verify answer
@@ -78,7 +78,8 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
             print(f"[R3L First Rollout] Attempt {attempt_count} - Incorrect answer: {predicted_answer} (Expected: {self.ground_truth})")
             if attempt < self.max_attempts - 1:
                 feedback = f"Incorrect. Your answer {predicted_answer} does not match. Please try again."
-                trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
+                formatted_feedback = format_dapo_prompt("", attempt=attempt_count, feedback=feedback)
+                trajectory.append({"role": "user", "content": formatted_feedback})
             else:
                 # Last attempt
                 feedback = f"Incorrect. Your answer {predicted_answer} does not match the expected answer. Maximum attempts reached."
@@ -109,13 +110,11 @@ def second_rollout(
     trajectory.append({"role": "system", "content": merged_system_prompt})
     distill_trajectory.append({"role": "system", "content": original_system_prompt})
 
-    # Add user prompt (math problem)
-    if self.prompt:
-        trajectory.append({"role": "user", "content": self.prompt})
-        distill_trajectory.append({"role": "user", "content": self.prompt})
-    else:
-        trajectory.append({"role": "user", "content": "Please solve the given mathematical problem."})
-        distill_trajectory.append({"role": "user", "content": "Please solve the given mathematical problem."})
+    # Add user prompt (math problem) with format reminder
+    problem_prompt = self.prompt if self.prompt else "Please solve the given mathematical problem."
+    formatted_prompt = format_dapo_prompt(problem_prompt, attempt=0)
+    trajectory.append({"role": "user", "content": formatted_prompt})
+    distill_trajectory.append({"role": "user", "content": formatted_prompt})
 
     final_reward = 0.0
     final_success = False
@@ -149,8 +148,9 @@ def second_rollout(
         if think is None or predicted_answer is None:
             # Invalid format
             feedback = "Invalid response format. Please ensure you provide both <think>...</think> and <answer>...</answer> tags."
-            trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
-            distill_trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
+            formatted_feedback = format_dapo_prompt("", attempt=attempt_count, feedback=feedback)
+            trajectory.append({"role": "user", "content": formatted_feedback})
+            distill_trajectory.append({"role": "user", "content": formatted_feedback})
             continue
 
         # Verify answer
@@ -170,8 +170,9 @@ def second_rollout(
             print(f"[R3L Second Rollout] Attempt {attempt_count} - Incorrect answer: {predicted_answer} (Expected: {self.ground_truth})")
             if attempt < self.max_attempts - 1:
                 feedback = f"Incorrect. Your answer {predicted_answer} does not match. Please try again."
-                trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
-                distill_trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
+                formatted_feedback = format_dapo_prompt("", attempt=attempt_count, feedback=feedback)
+                trajectory.append({"role": "user", "content": formatted_feedback})
+                distill_trajectory.append({"role": "user", "content": formatted_feedback})
             else:
                 # Last attempt
                 feedback = f"Incorrect. Your answer {predicted_answer} does not match the expected answer. Maximum attempts reached."
@@ -238,6 +239,34 @@ def _get_jinja_env():
         trim_blocks=True,
         lstrip_blocks=True,
     )
+
+
+def format_dapo_prompt(prompt: str, attempt: int = 0, feedback: str = None) -> str:
+    """
+    Format DAPO prompt with format reminder for each user turn.
+
+    Args:
+        prompt: The math problem prompt
+        attempt: Current attempt number (0-based)
+        feedback: Optional feedback from previous attempt
+
+    Returns:
+        Formatted prompt string with format reminder
+    """
+    if attempt == 0 or feedback is None:
+        # First attempt - just the problem with format reminder
+        return f"""{prompt}
+
+Now it's your turn to solve this problem.
+You should first reason step-by-step about the current situation. This reasoning process MUST be enclosed within <think> </think> tags.
+Once you've finished your reasoning, you should provide your final answer and present it within <answer> </answer> tags."""
+    else:
+        # Subsequent attempt - include feedback and format reminder
+        return f"""Feedback: {feedback}
+
+Now it's your turn to try again.
+You should first reason step-by-step about the current situation. This reasoning process MUST be enclosed within <think> </think> tags.
+Once you've finished your reasoning, you should provide your final answer and present it within <answer> </answer> tags."""
 
 
 def parse_response(response: str) -> Tuple[Optional[str], Optional[str]]:
