@@ -38,6 +38,7 @@ class R3LScienceWorldWorkflow(Workflow):
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
         self.max_env_steps = 30
         self.max_tokens = 16384
+        self.max_reflect_tokens = 4096
         self.task = task
         self.is_eval = task.is_eval
 
@@ -142,6 +143,10 @@ class R3LScienceWorldWorkflow(Workflow):
         """
         Adjust action_mask in-place to exclude retry prefix from training.
         Only tokens from retry_step onwards should be trained.
+
+        Args:
+            experience: The experience object with action_mask to adjust
+            retry_step: The step from which training should start
         """
         if retry_step <= 0:
             return
@@ -262,7 +267,8 @@ class R3LScienceWorldWorkflow(Workflow):
 
                 else:
                     guidance_prompt = utils.reflect_report_to_guidance_prompt(reflect_checklist)
-                    retry_step = reflect_checklist["analysis"]["retry_strategy"]["retry_step"]
+                    # Extract retry_step from validated reflection report (top-level field in alfworld schema)
+                    retry_step = reflect_checklist.get("retry_from_step", 0)
 
                     try:
                         second_env = utils.create_sciworld_environment(self.task_desc)

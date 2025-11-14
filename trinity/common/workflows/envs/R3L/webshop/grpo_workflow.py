@@ -36,7 +36,6 @@ class GRPOBaselineWebshopWorkflow(Workflow):
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
         self.max_env_steps = 15
         self.max_tokens = 512
-        self.max_reflect_tokens = 4096
         self.task = task
         self.is_eval = task.is_eval
         self.whether_save_data = False
@@ -44,7 +43,13 @@ class GRPOBaselineWebshopWorkflow(Workflow):
         # Initialize WebShop environment
         try:
             import sys
-            sys.path.append("/home/wshiah/code/shiweijie/weijie/trinity/webshop")
+            # Add WebShop path - can be overridden via WEBSHOP_PATH environment variable
+            webshop_path = os.environ.get("WEBSHOP_PATH")
+            if webshop_path:
+                sys.path.append(webshop_path)
+            else:
+                # sys.path.append("/nas/shiweijie/trinity/webshop")
+                sys.path.append("/home/wshiah/code/shiweijie/weijie/trinity/webshop")
             import gym
             from web_agent_site.envs import WebAgentTextEnv  # noqa: F401
 

@@ -242,8 +242,8 @@ class R3LAlfworldWorkflow(Workflow):
 
                 else:
                     guidance_prompt = utils.reflect_report_to_guidance_prompt(reflect_checklist)
-                    # Extract retry_step from validated reflection report
-                    retry_step = reflect_checklist["retry_from_step"]
+                    # Extract retry_step from validated reflection report (top-level field in alfworld schema)
+                    retry_step = reflect_checklist.get("retry_from_step", 0)
 
                     try:
                         second_env = utils.create_alfworld_environment(self.game_file_path)

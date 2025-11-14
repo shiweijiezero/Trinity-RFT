@@ -22,11 +22,10 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
     system_prompt = self.dapo_system_template.render()
     trajectory.append({"role": "system", "content": system_prompt})
 
-    # Add user prompt (math problem)
-    if self.prompt:
-        trajectory.append({"role": "user", "content": self.prompt})
-    else:
-        trajectory.append({"role": "user", "content": "Please solve the given mathematical problem."})
+    # Add user prompt (math problem) with format reminder
+    problem_prompt = self.prompt if self.prompt else "Please solve the given mathematical problem."
+    formatted_prompt = format_dapo_prompt(problem_prompt, attempt=0)
+    trajectory.append({"role": "user", "content": formatted_prompt})
 
     final_reward = 0.0
     final_success = False
@@ -59,7 +58,8 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
         if think is None or predicted_answer is None:
             # Invalid format
             feedback = "Invalid response format. Please ensure you provide both <think>...</think> and <answer>...</answer> tags."
-            trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
+            formatted_feedback = format_dapo_prompt("", attempt=attempt_count, feedback=feedback)
+            trajectory.append({"role": "user", "content": formatted_feedback})
             continue
 
         # Verify answer
@@ -78,7 +78,8 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
             print(f"[R3L First Rollout] Attempt {attempt_count} - Incorrect answer: {predicted_answer} (Expected: {self.ground_truth})")
             if attempt < self.max_attempts - 1:
                 feedback = f"Incorrect. Your answer {predicted_answer} does not match. Please try again."
-                trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
+                formatted_feedback = format_dapo_prompt("", attempt=attempt_count, feedback=feedback)
+                trajectory.append({"role": "user", "content": formatted_feedback})
             else:
                 # Last attempt
                 feedback = f"Incorrect. Your answer {predicted_answer} does not match the expected answer. Maximum attempts reached."
@@ -109,13 +110,11 @@ def second_rollout(
     trajectory.append({"role": "system", "content": merged_system_prompt})
     distill_trajectory.append({"role": "system", "content": original_system_prompt})
 
-    # Add user prompt (math problem)
-    if self.prompt:
-        trajectory.append({"role": "user", "content": self.prompt})
-        distill_trajectory.append({"role": "user", "content": self.prompt})
-    else:
-        trajectory.append({"role": "user", "content": "Please solve the given mathematical problem."})
-        distill_trajectory.append({"role": "user", "content": "Please solve the given mathematical problem."})
+    # Add user prompt (math problem) with format reminder
+    problem_prompt = self.prompt if self.prompt else "Please solve the given mathematical problem."
+    formatted_prompt = format_dapo_prompt(problem_prompt, attempt=0)
+    trajectory.append({"role": "user", "content": formatted_prompt})
+    distill_trajectory.append({"role": "user", "content": formatted_prompt})
 
     final_reward = 0.0
     final_success = False
@@ -149,8 +148,9 @@ def second_rollout(
         if think is None or predicted_answer is None:
             # Invalid format
             feedback = "Invalid response format. Please ensure you provide both <think>...</think> and <answer>...</answer> tags."
-            trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
-            distill_trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
+            formatted_feedback = format_dapo_prompt("", attempt=attempt_count, feedback=feedback)
+            trajectory.append({"role": "user", "content": formatted_feedback})
+            distill_trajectory.append({"role": "user", "content": formatted_feedback})
             continue
 
         # Verify answer
@@ -170,8 +170,9 @@ def second_rollout(
             print(f"[R3L Second Rollout] Attempt {attempt_count} - Incorrect answer: {predicted_answer} (Expected: {self.ground_truth})")
             if attempt < self.max_attempts - 1:
                 feedback = f"Incorrect. Your answer {predicted_answer} does not match. Please try again."
-                trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
-                distill_trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
+                formatted_feedback = format_dapo_prompt("", attempt=attempt_count, feedback=feedback)
+                trajectory.append({"role": "user", "content": formatted_feedback})
+                distill_trajectory.append({"role": "user", "content": formatted_feedback})
             else:
                 # Last attempt
                 feedback = f"Incorrect. Your answer {predicted_answer} does not match the expected answer. Maximum attempts reached."
@@ -238,6 +239,34 @@ def _get_jinja_env():
         trim_blocks=True,
         lstrip_blocks=True,
     )
+
+
+def format_dapo_prompt(prompt: str, attempt: int = 0, feedback: str = None) -> str:
+    """
+    Format DAPO prompt with format reminder for each user turn.
+
+    Args:
+        prompt: The math problem prompt
+        attempt: Current attempt number (0-based)
+        feedback: Optional feedback from previous attempt
+
+    Returns:
+        Formatted prompt string with format reminder
+    """
+    if attempt == 0 or feedback is None:
+        # First attempt - just the problem with format reminder
+        return f"""{prompt}
+
+Now it's your turn to solve this problem.
+You should first reason step-by-step about the current situation. This reasoning process MUST be enclosed within <think> </think> tags.
+Once you've finished your reasoning, you should provide your final answer and present it within <answer> </answer> tags."""
+    else:
+        # Subsequent attempt - include feedback and format reminder
+        return f"""Feedback: {feedback}
+
+Now it's your turn to try again.
+You should first reason step-by-step about the current situation. This reasoning process MUST be enclosed within <think> </think> tags.
+Once you've finished your reasoning, you should provide your final answer and present it within <answer> </answer> tags."""
 
 
 def parse_response(response: str) -> Tuple[Optional[str], Optional[str]]:
@@ -315,98 +344,79 @@ def format_trajectory_for_reflection(trajectory: List[Dict[str, str]]) -> str:
 
 def validate_reflect_report(report: Dict[str, Any], total_steps: int) -> Tuple[bool, bool]:
     """
-    Validate the structure and content of the reflection report.
+    Validates the structure and content of the reflection report
+    based on the alfworld reflection.j2 schema.
+
+    Args:
+        report: The reflection report to validate
+        total_steps: Maximum number of steps in trajectory for retry_step bounds checking
 
     Returns:
         tuple[bool, bool]: (is_valid, is_perfect)
+        - is_valid: Whether the report structure is valid
+        - is_perfect: Whether the report indicates the trajectory is perfect (only meaningful if is_valid is True)
     """
-    if not isinstance(report, dict):
-        print("[R3L Validation] Reflection report is not a dict")
+    if (
+            not isinstance(report, dict)
+            or "trajectory_summary" not in report
+            or "root_cause_analysis" not in report
+            or "trajectory_outcome" not in report
+    ):
+        print("[R3L DAPO Validation] Report is not a dict or missing keys.")
         return False, False
 
-    # Check required keys
-    if "outcome_assessment" not in report or "analysis" not in report:
-        print("[R3L Validation] Missing required top-level keys in reflection report")
-        return False, False
+    outcome = report["trajectory_outcome"]
 
-    outcome = report["outcome_assessment"]
-    analysis = report["analysis"]
+    if outcome == "success":
+        # For success, we only need summary and no flaw analysis
+        print("[R3L DAPO Validation] success report validation successful.")
+        return True, True
 
-    # Check valid outcome values
-    valid_outcomes = ["OPTIMAL", "SUBOPTIMAL_SUCCESS", "PARTIAL", "INEFFECTIVE"]
-    if outcome not in valid_outcomes:
-        print(f"[R3L Validation] Invalid outcome_assessment: {outcome} (valid: {valid_outcomes})")
-        return False, False
+    elif outcome in ["success_but_inefficient", "failure"]:
+        # For non-optimal outcomes, validate required fields
+        improvement_suggestion = report.get("improvement_suggestion", None)
+        retry_from_step = report.get("retry_from_step", None)
 
-    # If OPTIMAL, it's perfect
-    is_perfect = (outcome == "OPTIMAL")
+        if improvement_suggestion is None or retry_from_step is None:
+            print("[R3L DAPO Validation] Missing 'improvement_suggestion' or 'retry_from_step'.")
+            return False, False
 
-    # Check retry_strategy
-    if not is_perfect and "retry_strategy" in analysis:
-        retry_strategy = analysis["retry_strategy"]
-        retry_step = retry_strategy.get("retry_step")
-
-        if retry_step is not None:
-            if not isinstance(retry_step, int) or retry_step < 0 or retry_step > total_steps:
-                print(f"[R3L Validation] Invalid retry_step: {retry_step} (total steps: {total_steps})")
+        # check retry from step
+        try:
+            retry_from_step = int(retry_from_step)
+        except (ValueError, TypeError):
+            print(f"[R3L DAPO Validation] 'retry_from_step' must be an integer. Got: {retry_from_step}")
+            return False, False
+        if not isinstance(retry_from_step, int) or retry_from_step < 0:
+            print(f"[R3L DAPO Validation] 'retry_from_step' must be a non-negative integer. Got: {retry_from_step}")
+            return False, False
+        # Check trajectory bounds if total_steps is provided
+        if total_steps is not None:
+            if retry_from_step >= total_steps:
+                print(
+                    f"[R3L DAPO Validation] 'retry_from_step' ({retry_from_step}) exceeds trajectory bounds (0 to {total_steps - 1}).")
                 return False, False
-    print(f"[R3L Validation] Reflection validated - Outcome: {outcome}, Is perfect: {is_perfect}")
-    return True, is_perfect
+        print(f"[R3L DAPO Validation] {outcome} report validation successful.")
+        return True, False
+    else:
+        print(f"[R3L DAPO Validation] Invalid trajectory_outcome: {outcome}")
+        return False, False
 
 
 def reflect_report_to_guidance_prompt(report: Dict[str, Any]) -> str:
     """
-    Convert a validated reflection report into a guidance prompt for second attempt.
-    The guidance should provide directional hints without revealing the answer.
+    Converts a validated reflection report into a structured, actionable
+    guidance prompt for the agent's second attempt. This prompt is framed
+    as an internal directive to ensure the model's output is clean for SFT.
     """
-    print("[R3L] Converting reflection report to guidance prompt...")
-    try:
-        analysis = report.get("analysis", {})
-        flaw_analysis = analysis.get("flaw_analysis", {})
-        lessons_learned = analysis.get("lessons_learned", {})
+    # Convert the report dictionary to a formatted string
+    report_str = json.dumps(report, indent=2, ensure_ascii=False)
 
-        # Build guidance sections
-        guidance_parts = []
+    # Load and render template
+    jinja_env = _get_jinja_env()
+    template = jinja_env.get_template("self_correction.j2")
 
-        # Add summary
-        if "summary" in analysis:
-            guidance_parts.append(f"## Analysis Summary\n{analysis['summary']}")
-
-        # Add error diagnosis (without answer)
-        if "diagnosis" in flaw_analysis:
-            diagnosis = flaw_analysis["diagnosis"]
-            guidance_parts.append(f"\n## Error Diagnosis")
-            if "category" in diagnosis and diagnosis["category"]:
-                guidance_parts.append(f"Error Type: {diagnosis['category']}")
-            if "root_cause" in diagnosis and diagnosis["root_cause"]:
-                guidance_parts.append(f"Root Cause: {diagnosis['root_cause']}")
-
-        # Add method hints (directional guidance)
-        if "better_approach" in flaw_analysis:
-            better_approach = flaw_analysis["better_approach"]
-            guidance_parts.append(f"\n## Recommended Approach")
-            if "key_insights" in better_approach and better_approach["key_insights"]:
-                guidance_parts.append(f"Key Insights: {better_approach['key_insights']}")
-            if "method_hints" in better_approach and better_approach["method_hints"]:
-                guidance_parts.append(f"Method Hints: {better_approach['method_hints']}")
-            if "strategy" in better_approach and better_approach["strategy"]:
-                guidance_parts.append(f"Strategy: {better_approach['strategy']}")
-
-        # Add corrective principle
-        if "corrective_principle" in lessons_learned and lessons_learned["corrective_principle"]:
-            guidance_parts.append(f"\n## Corrective Principle\n{lessons_learned['corrective_principle']}")
-
-        # Add verification reminders
-        if "verification_reminders" in lessons_learned and lessons_learned["verification_reminders"]:
-            guidance_parts.append(f"\n## Verification Reminders\n{lessons_learned['verification_reminders']}")
-
-        guidance_prompt = "\n\n".join(guidance_parts)
-        print(f"[R3L] Guidance prompt generated ({len(guidance_parts)} sections)")
-        return guidance_prompt
-
-    except Exception as e:
-        print(f"[R3L] Error converting reflection to guidance: {e}")
-        return "Please try solving the problem again carefully."
+    return template.render(report=report_str)
 
 
 def create_experience_record(

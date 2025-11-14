@@ -54,8 +54,13 @@ class R3LWebshopWorkflow(Workflow):
         # Initialize WebShop environment
         try:
             import sys
-            # sys.path.append("/nas/shiweijie/trinity/webshop")
-            sys.path.append("/home/wshiah/code/shiweijie/weijie/trinity/webshop")
+            # Add WebShop path - can be overridden via WEBSHOP_PATH environment variable
+            webshop_path = os.environ.get("WEBSHOP_PATH")
+            if webshop_path:
+                sys.path.append(webshop_path)
+            else:
+                # sys.path.append("/nas/shiweijie/trinity/webshop")
+                sys.path.append("/home/wshiah/code/shiweijie/weijie/trinity/webshop")
             # Try gymnasium first, fallback to gym
             import gym
             from web_agent_site.envs import WebAgentTextEnv  # noqa: F401
@@ -309,8 +314,8 @@ class R3LWebshopWorkflow(Workflow):
 
                 else:
                     guidance_prompt = utils.reflect_report_to_guidance_prompt(reflect_checklist)
-                    # Extract retry_step from validated reflection report
-                    retry_step = reflect_checklist["analysis"]["retry_strategy"]["retry_step"]
+                    # Extract retry_step from validated reflection report (top-level field in alfworld schema)
+                    retry_step = reflect_checklist.get("retry_from_step", 0)
 
                     try:
                         (

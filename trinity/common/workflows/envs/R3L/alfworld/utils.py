@@ -3,7 +3,7 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from jinja2 import Environment, FileSystemLoader
 import torch
@@ -526,17 +526,17 @@ def format_trajectory_for_reflection(trajectory: List[Dict[str, str]]) -> str:
     return "\n".join(formatted_lines)
 
 
-def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tuple[bool, bool]:
+def validate_reflect_report(report: Dict[str, Any], total_steps: int) -> Tuple[bool, bool]:
     """
     Validates the structure and content of the reflection report
     based on the new reflection.j2 schema.
 
     Args:
         report: The reflection report to validate
-        max_steps: Maximum number of steps in trajectory for retry_step bounds checking (optional)
+        total_steps: Total number of steps in trajectory for retry_step bounds checking
 
     Returns:
-        tuple[bool, bool]: (is_valid, is_perfect)
+        Tuple[bool, bool]: (is_valid, is_perfect)
         - is_valid: Whether the report structure is valid
         - is_perfect: Whether the report indicates the trajectory is perfect (only meaningful if is_valid is True)
     """
@@ -546,7 +546,7 @@ def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tu
             or "root_cause_analysis" not in report
             or "trajectory_outcome" not in report
     ):
-        print("Validation failed: Report is not a dict or missing keys.")
+        print("[R3L Alfworld Validation] Validation failed: Report is not a dict or missing keys.")
         return False, False
 
     outcome = report["trajectory_outcome"]
@@ -554,7 +554,7 @@ def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tu
 
     if outcome == "success":
         # For OPTIMAL, we only need summary and no flaw analysis
-        print("success report validation successful.")
+        print("[R3L Alfworld Validation] success report validation successful.")
         return True, True
 
     elif outcome in ["success_but_inefficient", "failure"]:
@@ -562,27 +562,29 @@ def validate_reflect_report(report: Dict[str, Any], max_steps: int = None) -> tu
         improvement_suggestion = report.get("improvement_suggestion", None)
         retry_from_step = report.get("retry_from_step", None)
 
-        if retry_from_step is None or retry_from_step is None:
-            print("Validation failed: Missing 'improvement_suggestion' or 'retry_from_step'.")
+        if improvement_suggestion is None or retry_from_step is None:
+            print("[R3L Alfworld Validation] Validation failed: Missing 'improvement_suggestion' or 'retry_from_step'.")
             return False, False
 
         # check retry from step
         try:
             retry_from_step = int(retry_from_step)
         except (ValueError, TypeError):
-            print(f"Validation failed: 'retry_from_step' must be an integer. Got: {retry_from_step}")
+            print(f"[R3L Alfworld Validation] Validation failed: 'retry_from_step' must be an integer. Got: {retry_from_step}")
             return False, False
         if not isinstance(retry_from_step, int) or retry_from_step < 0:
-            print(f"Validation failed: 'retry_from_step' must be a non-negative integer. Got: {retry_from_step}")
+            print(f"[R3L Alfworld Validation] Validation failed: 'retry_from_step' must be a non-negative integer. Got: {retry_from_step}")
             return False, False
-        # Check trajectory bounds if max_steps is provided
-        if max_steps is not None:
-            if retry_from_step >= max_steps:
-                print(
-                    f"Validation failed: 'retry_from_step' ({retry_from_step}) exceeds trajectory bounds (0 to {max_steps - 1}).")
-                return False, False
-        print(f"{outcome} report validation successful.")
+        # Check trajectory bounds
+        if retry_from_step >= total_steps:
+            print(
+                f"[R3L Alfworld Validation] Validation failed: 'retry_from_step' ({retry_from_step}) exceeds trajectory bounds (0 to {total_steps - 1}).")
+            return False, False
+        print(f"[R3L Alfworld Validation] {outcome} report validation successful.")
         return True, False
+    else:
+        print(f"[R3L Alfworld Validation] Invalid trajectory_outcome: {outcome}")
+        return False, False
 
 
 def reflect_report_to_guidance_prompt(report: Dict[str, Any]) -> str:
