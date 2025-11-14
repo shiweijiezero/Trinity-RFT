@@ -150,6 +150,47 @@ class R3LCountdownWorkflow(Workflow):
             print(f"[R3L] Reflection failed - Error: {str(e)}")
             return None, None, None
 
+    def _adjust_action_mask_for_retry(self, experience: Experience, retry_step: int):
+        """
+        Adjust action_mask in-place to exclude retry prefix from training.
+        Only tokens from retry_step onwards should be trained.
+
+        Args:
+            experience: The experience object with action_mask to adjust
+            retry_step: The step from which training should start
+        """
+        if retry_step <= 0:
+            return
+
+        # Note: experience.action_mask already excludes prompt tokens
+        action_mask = experience.action_mask
+
+        # Find all assistant response regions and mark the first 'retry_step' as non-trainable
+        if torch.any(action_mask == 1):
+            # Find all segments where action_mask == 1 (assistant responses)
+            assistant_segments = []
+            in_segment = False
+            segment_start = 0
+
+            for i, mask_val in enumerate(action_mask):
+                if mask_val == 1 and not in_segment:
+                    # Start of a new segment
+                    segment_start = i
+                    in_segment = True
+                elif mask_val == 0 and in_segment:
+                    # End of current segment
+                    assistant_segments.append((segment_start, i))
+                    in_segment = False
+
+            # Handle case where sequence ends with assistant response
+            if in_segment:
+                assistant_segments.append((segment_start, len(action_mask)))
+
+            # Set the first 'retry_step' assistant segments to 0 (non-trainable)
+            for i in range(min(retry_step, len(assistant_segments))):
+                start, end = assistant_segments[i]
+                action_mask[start:end] = 0
+
     def run(self) -> List[Experience]:
         """Run the R3L countdown workflow and return experiences"""
 
@@ -275,6 +316,15 @@ class R3LCountdownWorkflow(Workflow):
                         )
                         print(f"[R3L] Second rollout - reward: {second_reward}, attempts: {second_attempts}, improve: {second_reward > reward}")
                         second_exp = self.model.convert_messages_to_experience(distill_trajectory[:-1])
+
+                        # Adjust action_mask to exclude retry prefix from training
+                        if retry_step > 0:
+                            self._adjust_action_mask_for_retry(second_exp, retry_step)
+                            # Also adjust first rollout exp for fair comparison
+                            for existing_exp in exp_lst:
+                                if existing_exp.eid.run == exp_run_id:
+                                    self._adjust_action_mask_for_retry(existing_exp, retry_step)
+                                    break
 
                         second_exp.reward = second_reward
                         second_exp.metrics = {

@@ -38,6 +38,7 @@ class R3LScienceWorldWorkflow(Workflow):
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
         self.max_env_steps = 30
         self.max_tokens = 16384
+        self.max_reflect_tokens = 4096
         self.task = task
         self.is_eval = task.is_eval
 
