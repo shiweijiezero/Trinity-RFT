@@ -1,0 +1,25 @@
+\begin{table}[t]
+\centering
+\scriptsize
+\begin{tabular}{lccc}
+\toprule
+\textbf{Mixing Strategy} & \textbf{GSM8K} & \textbf{HumanEval} & \textbf{MT-Bench} \\
+\midrule
+Mix[(code,math), 1 general] & 47.53 & 14.63 & 5.76 \\
+Mix[(code,math), 1/4 general] & 48.44 & 15.85 & 5.73 \\
+Mix[(code,math), 1/16 general] & 47.99 & 15.24 & 5.27 \\
+Mix[(code,math), 1/64 general] & 47.23 & 14.63 & 5.16 \\
+Mix[(code,math), 1/256 general] & 48.52 & 16.46 & 4.69 \\
+\midrule
+Mix[1(code,math), general] & 47.53 & 14.63 & 5.76 \\
+Mix[1/4(code,math), general] & 41.31 & 10.97 & 5.81 \\
+Mix[1/16(code,math), general] & 33.20 & 11.58 & 5.76 \\
+Mix[1/64(code,math), general] & 25.17 & 12.19 & 5.84 \\
+Mix[1/256(code,math), general] & 16.52 & 9.14 & 5.82 \\
+\midrule
+DIDS (dynamic) & 52.21 & 18.05 & 5.88 \\
+\bottomrule
+\end{tabular}
+\caption{Performance with different static mixing ratios between specialized and general domains.}
+\label{tab:grid_search}
+\end{table}

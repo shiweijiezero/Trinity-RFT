@@ -1,0 +1,29 @@
+\begin{table}[t]
+\footnotesize
+\begin{center}
+\caption{Efficiency and Accuracy Trade-off for LKG-RALM and Baseline Models under 1024 Context Tokens.}
+\begin{tabular}{lccc}
+\hline
+\textbf{Model} & \textbf{EM} & \textbf{Speed (s/query)} & \textbf{TFLOPs} \\
+\hline
+Self-RAG & 28.4 & 3.07 & 20.5 \\
+RA-ISF & 31.3 & 3.44 & 63.8 \\
+Robust-RALM & 45.7 & 0.74 & 14.6 \\
+RankRAG & 54.2 & 1.25 & 145.4 \\
+\hline
+\multicolumn{4}{c}{\textbf{LKG-RALM with Different Passage Estimator}} \\
+\hline
+LLAMA-3.1-8B & 30.9 & 0.82 & 16.3 \\
+\hspace{0.1cm} + Qwen-2.5-500M & 53.6 & 0.83 & 18.1 \\
+\hspace{0.1cm} + Qwen-2.5-1.5B & 54.8 & 0.85 & 20.0 \\
+\hspace{0.1cm} + Qwen-2.5-7B   & 55.3 & 0.91 & 30.9 \\
+\hline
+LLAMA-3.1-70B & 42.7 & 1.24 & 142.6 \\
+\hspace{0.1cm} + Qwen-2.5-500M & 60.0 & 1.24 & 144.4 \\
+\hspace{0.1cm} + Qwen-2.5-1.5B & 60.7 & 1.25 & 146.3 \\
+\hspace{0.1cm} + Qwen-2.5-7B   & 61.0 & 1.27 & 157.2 \\
+\hline
+\end{tabular}
+\label{table:efficiency-accuracy}
+\end{center}
+\end{table}

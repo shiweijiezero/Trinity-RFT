@@ -1,0 +1,25 @@
+\setlength{\tabcolsep}{1.5pt}  % 默认值是6pt
+\begin{table}[t]
+\footnotesize
+\begin{center}
+\begin{tabular}{llccc} 
+\hline
+\textbf{Model} & \textbf{\# Params} & \textbf{Original} & \textbf{+LKG-RALM} & \textbf{Gain \%}\\
+\hline
+\multirow{4}*{GPT-2} & 117M & 1.33 & 1.22 & 8.27 \\
+ & 345M & 1.20 & 1.13 & 10.83 \\
+ & 774M & 1.19 & 1.14 & 4.20 \\
+ & 1.5B & 1.16 & 1.01 & 12.93 \\
+\hline
+\multirow{3}*{Qwen-2.5} & 7B & 0.95 & 0.90 & 5.26 \\
+& 14B & 0.88 & 0.84 & 4.54 \\
+& 72B & 0.70 & 0.66 & 5.71 \\
+\hline
+\multirow{2}*{LLAMA-3.1} & 8B & 0.97 & 0.93 & 4.12 \\
+ & 70B & 0.72 & 0.70 & 2.77 \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Performance on language modeling task}
+\label{table:LM}
+\end{table}

@@ -1,0 +1,33 @@
+\setlength{\tabcolsep}{3pt}
+\begin{table*}[thbp]
+\centering
+\small
+\begin{tabular}{l|ccc|cc|c|cc|c|c}
+\toprule
+\multirow{2}{*}{Method} & \multicolumn{3}{c|}{Reasoning} & \multicolumn{2}{c|}{Mathematics} & Instruction & \multicolumn{2}{c|}{Commonsense} & Truthfulness & \multirow{2}{*}{Average} \\
+& BBH & BoolQ & GSM8K & MathQA & IFEval & MMLU & PIQA & PubMedQA & TruthfulQA & \\
+\midrule
+\multicolumn{11}{c}{Multi-task Optimization} \\
+\midrule
+Llama-3.1-8B & 62.5 & 81.8 & 48.9 & 15.7 & 18.5 & 64.7 & 81.1 & 75.8 & 28.5 & 53.1 \\
++ Full OH-2.5 (1000k) & 67.5 & 86.8 & 67.0 & 17.5 & 60.0 & 64.5 & 81.5 & 77.5 & 39.5 & 62.4 \\
++ Random (100k) & 66.8 & 85.0 & 60.2 & 12.5 & 49.0 & 64.2 & 82.0 & 76.8 & 34.0 & 59.0 \\
++ Uniform (100k) & 65.8 & 83.5 & 59.0 & 12.8 & 48.8 & 64.0 & 81.6 & 76.2 & 33.5 & 58.4 \\
++ Doremi (100k) & 67.2 & 85.5 & 61.5 & 17.0 & 50.5 & 64.5 & 82.0 & 77.5 & 38.0 & 60.4 \\
++ Velocitune (100k) & 67.0 & 85.2 & 60.0 & 16.8 & 50.0 & 64.3 & 81.8 & 77.2 & 37.5 & 60.0 \\
++ Doge (100k) & 67.5 & 85.8 & 61.0 & 17.5 & 52.0 & 64.6 & 82.1 & 78.0 & 39.0 & 60.8 \\
++ DGA (100k) & 66.8 & 85.2 & 61.8 & 17.8 & 46.5 & 64.7 & 81.9 & 76.5 & 36.5 & 59.7 \\
++ DIDS (100k) & \textbf{68.0} & \textbf{86.5} & \textbf{62.5} & \textbf{19.5} & \textbf{56.0} & \textbf{64.8} & \textbf{82.3} & \textbf{79.5} & \textbf{45.0} & \textbf{62.7} \\
+\midrule
+\multicolumn{11}{c}{Single-task Optimization} \\
+\midrule
++ Doremi (100k) & 68.5 & 86.0 & 63.0 & 18.0 & 52.5 & 64.8 & 82.5 & 78.2 & 39.0 & 61.4 \\
++ Velocitune (100k) & 67.8 & 85.8 & 62.5 & 17.8 & 52.0 & 64.6 & 82.2 & 78.0 & 38.6 & 61.0 \\
++ Doge (100k) & 68.0 & 86.5 & 63.0 & 18.2 & 53.0 & 64.8 & 82.3 & 78.8 & 39.5 & 61.6 \\
++ DGA (100k) & 68.4 & 86.2 & 64.0 & 19.0 & 54.5 & 65.0 & 82.5 & 78.5 & 40.5 & 62.1 \\
++ DIDS (100k) & \textbf{69.0} & \textbf{87.2} & \textbf{65.5} & \textbf{21.0} & \textbf{58.5} & \textbf{65.5} & \textbf{82.8} & \textbf{80.5} & \textbf{46.5} & \textbf{64.1} \\
+\bottomrule
+\end{tabular}
+\caption{Performance comparison of Llama-3.1-8B model trained on OpenHermes-2.5 dataset under different sampling strategies.}
+\label{tab:llama_openhermes}
+\end{table*}

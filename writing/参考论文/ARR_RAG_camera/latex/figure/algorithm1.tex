@@ -1,0 +1,17 @@
+\begin{algorithm}[t]
+\caption{Hierarchical Retrieval with LLM}
+\begin{algorithmic}[1]
+\REQUIRE Question $q$, Corpus $\mathcal{C}$
+\STATE Generate three rewritten questions $q_{rewrite}$ using LLM
+\STATE Concatenate $q$ and $q_{rewrite}$ as expanded query
+\STATE Retrieve top-$k/2$ documents using sparse retriever
+\STATE Retrieve top-$k/2$ documents using dense retriever
+\STATE Extract core entities from question $q$ by LLM
+\STATE Filter retrieved documents containing core entities
+\STATE Further filter documents by LLM based on title and question
+\STATE Retrieve top-$n/2$ passages from filtered documents using sparse retriever
+\STATE Retrieve top-$n/2$ passages from filtered documents using dense retriever
+\ENSURE Retrieved passages $\mathcal{P}$
+\end{algorithmic}
+\label{alg1}
+\end{algorithm}
