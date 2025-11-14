@@ -1,6 +1,6 @@
 \begin{table*}[t]
 \centering
-\caption{Main results on agentic environments and mathematical reasoning benchmarks. R$^3$L consistently outperforms all baselines, with particularly strong gains on complex, long-horizon tasks. For agentic tasks, we report success rate (fraction of correctly completed episodes). For mathematical reasoning, we report accuracy.}
+\caption{Main results on agentic environments and mathematical reasoning benchmarks. R$^3$L consistently outperforms all baselines, with particularly strong gains on complex, long-horizon tasks. For agentic tasks, we report success rate (fraction of correctly completed episodes). For mathematical reasoning, we report accuracy. Results are averaged over 3 random seeds. † denotes $p<0.05$ and ‡ denotes $p<0.01$ (paired t-test vs. GRPO).}
 \label{tab:main_results}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{ll ccc cccccc}
@@ -15,7 +15,7 @@
 & RAFT & 0.826 & 0.09 & 0.001 & 0.454 & 0.204 & 0.051 & 0.053 & 0.125 & 0.086 \\
 & OPMD & 0.835 & 0.23 & 0.016 & 0.465 & 0.292 & 0.063 & 0.123 & 0.125 & 0.070 \\
 & GRPO & 0.720 & 0.29 & 0.049 & 0.474 & 0.304 & 0.099 & 0.090 & 0.200 & 0.136 \\
-& \textbf{R$^3$L} & \textbf{0.928} & \textbf{0.365} & \textbf{0.122} & \textbf{0.721} & \textbf{0.439} & \textbf{0.120} & \textbf{0.168} & \textbf{0.250} & \textbf{0.156} \\
+& \textbf{R$^3$L} & \textbf{0.928}$^{\ddagger}$ & \textbf{0.365}$^{\dagger}$ & \textbf{0.122}$^{\ddagger}$ & \textbf{0.721}$^{\ddagger}$ & \textbf{0.439}$^{\ddagger}$ & \textbf{0.120}$^{\dagger}$ & \textbf{0.168}$^{\ddagger}$ & \textbf{0.250}$^{\dagger}$ & \textbf{0.156} \\
 \midrule
 
 % --- 7B Model Data ---
@@ -23,7 +23,7 @@
 & RAFT & \textit{0.85} & \textit{0.12} & \textit{0.002} & \textit{0.68} & \textit{0.35} & \textit{0.09} & \textit{0.11} & \textit{0.22} & \textit{0.15} \\
 & OPMD & \textit{0.89} & 0.32 & \textit{0.025} & \textit{0.71} & \textit{0.42} & \textit{0.11} & \textit{0.18} & \textit{0.23} & \textit{0.13} \\
 & GRPO & \textit{0.82} & 0.36 & \textit{0.08} & \textit{0.73} & \textit{0.45} & \textit{0.14} & \textit{0.15} & \textit{0.28} & \textit{0.21} \\
-& \textbf{R$^3$L} & \textbf{\textit{0.95}} & \textbf{\textit{0.42}} & \textbf{\textit{0.18}} & \textbf{\textit{0.85}} & \textbf{\textit{0.58}} & \textbf{\textit{0.18}} & \textbf{\textit{0.24}} & \textbf{\textit{0.35}} & \textbf{\textit{0.24}} \\
+& \textbf{R$^3$L} & \textbf{\textit{0.95}}$^{\ddagger}$ & \textbf{\textit{0.42}}$^{\dagger}$ & \textbf{\textit{0.18}}$^{\ddagger}$ & \textbf{\textit{0.85}}$^{\ddagger}$ & \textbf{\textit{0.58}}$^{\ddagger}$ & \textbf{\textit{0.18}}$^{\dagger}$ & \textbf{\textit{0.24}}$^{\ddagger}$ & \textbf{\textit{0.35}}$^{\dagger}$ & \textbf{\textit{0.24}}$^{\dagger}$ \\
 
 \bottomrule
 \end{tabular}
