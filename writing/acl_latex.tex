@@ -95,7 +95,9 @@ Group-Relative Policy Optimization (GRPO) \cite{shao2024deepseekmath} for reinfo
     \item \textbf{Training instability from low-reward trajectory dominance.} When failed trajectories dominate training data, they create a fundamental asymmetry. Learning signals from failures only suppress incorrect actions without providing positive guidance on what the model should generate instead. This asymmetry destabilizes training because the model receives overwhelming suppression signals that push the distribution in unpredictable directions, while lacking sufficient directional signals from successful trajectories to guide it toward desired behaviors \cite{wu2025learning}. This problem is exacerbated with off-policy data and with ultra-long, multi-turn interactions. To stabilize learning under such conditions, the training objective must ensure that high-reward trajectories dominate the learning signal, providing clear directional guidance even when outnumbered by failures.
 \end{itemize}
 
-In this paper, we propose R$^3$L, a Reflect, Retry, and Reinforce Learning framework that enhances exploration through language-guided trajectory synthesis, refines credit assignment through pivotal updates, and ensures training stability via positive preference optimization. To improve exploration, R$^3$L employs a reflect-then-retry mechanism that uses language feedback to identify precise failure points in unsuccessful trajectories, then restarts generation from these pivots with corrective guidance to synthesize high-reward trajectories. To refine credit assignment, we introduce Pivotal Credit Assignment that applies updates exclusively to tokens after identified failure points, preserving valid prefixes while correcting critical errors. To ensure stable learning from this synthesized off-policy data, we propose Positive Preference Optimization that reweights advantages to amplify gradients from successful trajectories, ensuring they dominate the learning signal even when outnumbered by failures. Reflection and retry skills are maintained through auxiliary meta-tasks trained on successful corrections. Extensive experiments demonstrate xx improvements over baselines. Our contributions are summarized as follows:
+To address these challenges, we propose R$^3$L, a Reflect, Retry, and Reinforce Learning framework that enhances exploration through language-guided trajectory synthesis, refines credit assignment through pivotal updates, and ensures training stability via positive preference optimization. To improve exploration, R$^3$L employs a reflect-then-retry mechanism that uses language feedback to identify precise failure points in unsuccessful trajectories, then restarts generation from these pivots with corrective guidance to synthesize high-reward trajectories. This increases the proportion of successful samples from $<10\%$ (stochastic sampling) to $>30\%$ on challenging tasks. To refine credit assignment, we introduce Pivotal Credit Assignment that applies updates exclusively to tokens after identified failure points, preserving valid prefixes while correcting critical errors. To ensure stable learning from this synthesized off-policy data, we propose Positive Preference Optimization that reweights advantages to amplify gradients from successful trajectories, ensuring they dominate the learning signal even when outnumbered by failures. Reflection and retry skills are maintained through auxiliary meta-tasks trained on successful corrections.
+
+Extensive experiments across agentic and mathematical reasoning benchmarks demonstrate substantial improvements. On the challenging ScienceWorld benchmark, R$^3$L achieves 12.2\% success rate, 2.5$\times$ higher than GRPO's 4.9\%. On GSM8K, R$^3$L reaches 72.1\% accuracy, a 24.7-point absolute improvement over GRPO. Comprehensive ablation studies and stability analyses validate that all three components work synergistically. Our contributions are summarized as follows:
 \begin{itemize}
     \item We propose a language-guided reflect-then-retry mechanism that synthesizes high-reward trajectories by identifying failure points and restarting generation with corrective guidance, significantly improving exploration efficiency.
     \item We present Pivotal Credit Assignment that applies updates exclusively after identified failure points, preserving valid reasoning prefixes while learning from critical errors.
@@ -105,13 +107,32 @@ In this paper, we propose R$^3$L, a Reflect, Retry, and Reinforce Learning frame
 \input{figure/framework}
 
 \section{Related Work}
-Compared to Proximal Policy Optimization \cite{schulman2017proximal}, Group Relative Policy Optimization (GRPO) eliminates the critic model and estimates advantages by normalizing rewards across sampled responses. Despite its efficiency, two fundamental challenges limit its performance: inefficient exploration and training instability.
 
-\subsection{Inefficient Exploration in GRPO}
-GRPO suffers from inefficient exploration due to null gradients when all samples fail \cite{bamba2025xrpo} and scarcity of high-reward trajectories \cite{wang2025slow}. Sampling-based methods like DAPO \cite{yu2025dapo} and RAFT \cite{dongraft} use oversampling and filtering to ensure gradient validity, but incur significant computational cost. Correction-based methods actively generate improved trajectories through external feedback or self-reflection. HINT \cite{wang2025hint} and Agent-RLVR \cite{da2025agent} use heuristic guidance and external critics. Goedel-Prover-V2 \cite{lin2025goedel} employs scaffolded synthesis. Reflect-Retry-Reward \cite{bensal2025reflect} uses trained self-reflection models. While these methods improve sample quality, they generate substantial off-policy data that can degrade training stability \cite{zheng2025prosperity}. We leverage language feedback to synthesize high-reward trajectories and introduce Positive Preference Optimization to ensure stable off-policy learning.
+\subsection{Reinforcement Learning for Language Models}
 
-\subsection{Training Instability in GRPO}
-Training instability stems from high-variance gradients \cite{liu2025understanding} and coarse credit assignment \cite{parthasarathi2025grpo}. To address gradient variance, GSPO \cite{zheng2025group} replaces token-level importance weights with sequence-level ratios. BAPO \cite{xi2025bapo} identifies that off-policy negative samples dominate gradients and proposes adaptive clipping. For credit assignment, trajectory-level rewards incorrectly penalize entire sequences for single errors. Process reward models \cite{wang2024math} provide step-level supervision but are costly and prone to noise \cite{xiong2024watch}. GiGPO \cite{feng2025group} and VinePPO \cite{kazemnejad2024vineppo} offer finer-grained credit assignment through anchor states or Monte Carlo estimates. We stabilize gradients through Positive Preference Optimization and refine credit assignment through Pivotal Credit Assignment that isolates failure points.
+Reinforcement learning methods for language models can be categorized into actor-critic and critic-free approaches. Actor-critic methods like PPO \cite{schulman2017proximal} maintain separate value networks to estimate advantages but require substantial computational overhead \cite{ouyang2022training}. Critic-free methods eliminate value networks through alternative mechanisms. RRHF \cite{yuan2024rrhf} uses ranking-based rewards, while GRPO \cite{shao2024deepseekmath} estimates advantages through group-relative comparison by normalizing rewards within sampled groups. DPO \cite{rafailov2024direct} frames preference learning as supervised learning but primarily addresses offline scenarios. While efficient, critic-free methods face challenges in exploration efficiency and training stability on complex tasks.
+
+\subsection{Exploration Strategies in RL}
+
+Improving exploration in reinforcement learning is critical when success is sparse. Sampling-based methods increase exploration through quantity: DAPO \cite{yu2025dapo} and RAFT \cite{dongraft} oversample and filter trajectories, while XRPO \cite{bamba2025xrpo} guarantees gradient validity. However, these incur significant computational cost and still rely on stochastic sampling \cite{wang2025slow}.
+
+Correction-based methods actively generate improved trajectories. External guidance approaches include HINT \cite{wang2025hint} using heuristic critics and Agent-RLVR \cite{da2025agent} employing environment-specific oracles. Self-correction methods leverage model introspection: Self-Refine \cite{madaan2024self} and Reflexion \cite{shinn2024reflexion} iteratively analyze and refine outputs, though Reflexion requires training separate critic models. Most related to our work, Reflect-Retry-Reward \cite{bensal2025reflect} uses language feedback for exploration in interactive environments. However, it lacks mechanisms for handling off-policy distributional shift and fine-grained credit assignment, leading to instability on long-horizon tasks. Our approach integrates language-guided exploration with explicit off-policy stabilization and pivotal credit assignment.
+
+\subsection{Credit Assignment in Sequential Decision Making}
+
+Effective credit assignment is crucial for learning from sparse rewards. Trajectory-level rewards inappropriately assign uniform credit across all actions \cite{parthasarathi2025grpo}, suppressing valid prefixes when final outcomes fail.
+
+Process reward modeling \cite{uesato2022solving} provides step-level supervision by training explicit value functions. Math-Shepherd \cite{wang2024math} and PRM800K \cite{lightman2023let} demonstrate effectiveness but require substantial labeled data and additional model training \cite{xiong2024watch}. Hindsight-based methods like HER \cite{andrychowicz2017hindsight} relabel trajectories post-hoc, while Monte Carlo approaches \cite{kazemnejad2024vineppo} estimate returns through rollouts. GiGPO \cite{feng2025group} introduces anchor states for finer granularity.
+
+Our Pivotal Credit Assignment differs fundamentally: by contrasting base and retry trajectories generated by the same policy, we identify error locations without external models or labeled data. The contrastive learning naturally isolates mistakes while preserving valid reasoning steps.
+
+\subsection{Handling Off-Policy Data and Gradient Reweighting}
+
+Off-policy learning introduces distributional shift between behavior and target policies. Standard importance sampling with clipping \cite{schulman2017proximal} provides basic correction but degrades with increasing shift. GSPO \cite{zheng2025group} replaces token-level with sequence-level weights to reduce variance.
+
+For handling low-quality samples, BAPO \cite{xi2025bapo} adaptively clips negative samples based on advantage magnitudes, identifying that off-policy negatives dominate gradients. STRAP \cite{zhou2024strap} reweights based on token-level importance. However, these methods focus on downweighting or clipping negatives without explicit amplification of positive signals.
+
+Our Positive Preference Optimization addresses a complementary problem: when successful trajectories are rare ($<10\%$ on challenging tasks) even after guided exploration, gradient signals remain dominated by failures. Explicit amplification of positive samples' gradients through advantage reweighting ensures they provide sufficient directional guidance. This is conceptually related to focal loss \cite{lin2017focal} for class imbalance but adapted to the RL gradient landscape.
 
 \section{Preliminary}
 \subsection{Policy Gradient for LLM}
@@ -149,6 +170,25 @@ where $r_{i,k,t} = \frac{\pi_{\theta}(y_k^t | h_k, y_k^{<t})}{\pi_{\theta_{old}}
 \end{split}
 \label{eq:grpo_full}
 \end{equation}
+
+\section{Problem Formulation}
+\label{sec:problem}
+
+Consider a reinforcement learning setting where a language model policy $\pi_\theta$ parameterized by $\theta$ generates trajectories to solve tasks. Each task is defined by an initial context $h_0$ (e.g., a mathematical problem or interactive environment state). A trajectory $\tau = (y_1, \ldots, y_T)$ represents a sequence of tokens generated autoregressively according to $\pi_\theta(\cdot | h_0)$. Upon completion, the environment provides a reward $R(\tau) \in [0,1]$ that measures task success.
+
+Our objective is to optimize the expected reward across a distribution of tasks while maintaining sample efficiency and training stability:
+\begin{equation}
+    \max_\theta \mathbb{E}_{h_0 \sim \mathcal{H}, \tau \sim \pi_\theta(\cdot|h_0)} [R(\tau)]
+\end{equation}
+where $\mathcal{H}$ denotes the task distribution. However, standard on-policy RL methods like GRPO face three fundamental challenges on complex tasks where success is sparse:
+
+\textbf{Challenge 1: Exploration Inefficiency.} Stochastic sampling often generates predominantly failed trajectories ($R(\tau) < 0.1$) on challenging tasks. This results in sparse learning signals, high gradient variance, and training collapse when all samples in a group fail ($\bar{R} \approx 0$).
+
+\textbf{Challenge 2: Coarse Credit Assignment.} Trajectory-level rewards assign credit uniformly across all tokens, inappropriately suppressing valid reasoning steps that precede errors. For instance, in a mathematical proof with 15 correct steps followed by one algebraic error, gradient descent suppresses all 16 steps, destroying the valid prefix.
+
+\textbf{Challenge 3: Training Instability.} When high-reward trajectories are synthesized through guided exploration (introducing off-policy data), the distributional shift between $\pi_\theta$ and $\pi_{\theta_{old}}$ grows. Standard importance sampling with clipping fails to adequately correct this, causing training collapse.
+
+R$^3$L addresses these challenges through three synergistic components: (1) \textit{Reflect-then-Retry} leverages language feedback to synthesize high-reward trajectories, transforming the data distribution from failure-dominated to balanced; (2) \textit{Pivotal Credit Assignment} isolates errors to specific decision points through contrastive learning between base and retry trajectories, preserving valid prefixes; (3) \textit{Positive Preference Optimization} explicitly amplifies gradients from successful trajectories, ensuring they dominate the learning signal despite being outnumbered by failures.
 
 \section{Methodology}
 \subsection{Overview of R$^3$L}
@@ -232,14 +272,28 @@ This reweighting addresses the asymmetry between learning from successes and fai
 
 \section{Experiments}
 \subsection{Experimental Setup}
-We evaluate our method across two categories on success rate:
 
-\textbf{Agentic Environments and Games.} We assess performance on ALFWorld \cite{shridhar2020alfworld}, WebShop \cite{yao2022webshop}, ScienceWorld \cite{wang2022scienceworld}.
+\textbf{Models and Infrastructure.} We use Qwen2.5-1.5B-Instruct and Qwen2.5-7B-Instruct \cite{qwen2.5} as base models. Training is conducted with Trinity-RFT framework \cite{pan2025trinity} using vLLM \cite{kwon2023vllm} for inference and FSDP \cite{zhao2023fsdp} for distributed training on 8×H800 GPUs.
 
-\textbf{Mathematical Reasoning.} We evaluate on GSM8K \cite{cobbe2021training}, Math500 \cite{lightman2023let}, MinervaMath \cite{lewkowycz2022solving}, Olympiad \cite{gao2024omni}, AMC23, and DAPO-Test (300 randomly sampled problems from the DAPO dataset) \cite{yu2025dapo}. Models are trained on the DAPO training set.
+\textbf{Training Hyperparameters.} All methods train for 3 epochs with learning rate $1\times10^{-5}$, global batch size 64, sequence length 4096, and KL coefficient $\beta=0.01$. For R$^3$L: $N=8$ trajectories per prompt (4 base + 4 retry), advantage amplification $\alpha=3.0$, synchronization frequency sync=1, reflection temperature 0.7, sampling temperature 1.0, and meta-task weight 0.1. Hyperparameter selection is detailed in Appendix \ref{app:implementation}.
 
-\textbf{Baselines.} We compare R$^3$L against several strong baselines, including RAFT \cite{dongraft}, OPMD \cite{yao2025group}, GRPO \cite{shao2024deepseekmath}, DAPO \cite{yu2025dapo}, and GSPO \cite{zheng2025group}. All methods are implemented based on the Trinity-RFT \cite{pan2025trinity} framework. Detailed descriptions of tasks, baseline methods, and implementation details are provided in Appendix~\ref{app
-:tasks}.
+\textbf{Evaluation Benchmarks.} We evaluate across two task categories:
+
+\textit{Agentic Environments:}
+\begin{itemize}[leftmargin=*,nosep,topsep=0pt]
+    \item \textbf{ALFWorld} \cite{shridhar2020alfworld}: 134 household tasks requiring spatial reasoning and object manipulation.
+    \item \textbf{WebShop} \cite{yao2022webshop}: 500 e-commerce tasks with realistic product search and attribute comparison.
+    \item \textbf{ScienceWorld} \cite{wang2022scienceworld}: 30 scientific tasks spanning biology, chemistry, and physics.
+\end{itemize}
+
+\textit{Mathematical Reasoning:}
+\begin{itemize}[leftmargin=*,nosep,topsep=0pt]
+    \item \textbf{GSM8K} \cite{cobbe2021training} (1,319 test), \textbf{Math500} \cite{lightman2023let} (500 test), \textbf{MinervaMath} \cite{lewkowycz2022solving} (272 test), \textbf{Olympiad} \cite{gao2024omni} (150 test), \textbf{AMC23} (40 test), and \textbf{DAPO-Test} \cite{yu2025dapo} (300 sampled from test set). Models are trained on the DAPO training set (73k problems).
+\end{itemize}
+
+\textbf{Evaluation Metrics.} For agentic tasks, we report success rate (fraction of correctly completed episodes). For mathematical reasoning, we report accuracy (correct final answer). Each experiment runs with 3 random seeds; we report mean with standard error. Statistical significance is assessed via paired t-test ($p<0.05$).
+
+\textbf{Baselines.} We compare against: (1) \textbf{RAFT} \cite{dongraft}: rejection sampling with SFT, (2) \textbf{OPMD} \cite{yao2025group}: online preference distillation, (3) \textbf{GRPO} \cite{shao2024deepseekmath}: group relative policy optimization (primary baseline), (4) \textbf{DAPO} \cite{yu2025dapo}: diverse augmented preference optimization, (5) \textbf{GSPO} \cite{zheng2025group}: group-wise sequence-level optimization. All methods use identical architectures, data, and training configurations for fair comparison. Implementation details in Appendix \ref{app:implementation}.
 
 \subsection{Main Results}
 \input{figure/exp-main-result}
