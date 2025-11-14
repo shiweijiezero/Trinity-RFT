@@ -119,9 +119,13 @@ class RAFTBaselineCountdownWorkflow(Workflow):
                     "reward": reward,
                     "attempts": attempts,
                 }
-                exp_lst.append(exp)
+                # RAFT only uses successful samples
+                if reward >= 1.0:
+                    exp_lst.append(exp)
+                else:
+                    exp_lst.append(copy.deepcopy(self.default_exp))
             except Exception:
-                pass
+                exp_lst.append(copy.deepcopy(self.default_exp))
 
         return exp_lst
 
