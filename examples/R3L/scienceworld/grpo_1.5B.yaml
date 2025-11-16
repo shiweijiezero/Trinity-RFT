@@ -15,7 +15,7 @@ model:
   max_model_len: 20480
 cluster:
   node_num: 1
-  gpu_per_node: 4
+  gpu_per_node: 8
 buffer:
   total_epochs: 20
   batch_size: 96
@@ -23,20 +23,20 @@ buffer:
     taskset:
       name: scienceworld
       storage_type: file
-      path: 'examples/R3L/scienceworld/scienceworld_data'
+      path: 'examples/R3L/scienceworld/sciworld_data/'
       split: 'train'
       format:
-        prompt_key: 'task_id'
+        prompt_key: 'task_desc'
       rollout_args:
         temperature: 1.0
         logprobs: 0
     eval_tasksets:
       - name: scienceworld-eval
         storage_type: file
-        path: 'examples/R3L/scienceworld/scienceworld_data'
+        path: 'examples/R3L/scienceworld/sciworld_data/'
         split: 'test'
         format:
-          prompt_key: 'task_id'
+          prompt_key: 'task_desc'
         rollout_args:
           temperature: 0.4
     default_workflow_type: 'grpo_baseline_scienceworld_workflow'
@@ -52,7 +52,7 @@ explorer:
   runner_per_model: 32
   eval_interval: 20
   rollout_model:
-    engine_num: 2
+    engine_num: 4
     tensor_parallel_size: 1
     enable_prefix_caching: false
     enforce_eager: false

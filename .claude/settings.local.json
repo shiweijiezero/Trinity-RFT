@@ -6,7 +6,10 @@
       "Bash(findstr:*)",
       "Bash(dir \"C:\\Users\\weijie\\Desktop\\code\\Trinity-RFT-Exp\\examples\\R3L\\webshop\\*dapo*.yaml\" /b)",
       "Bash(dir \"C:\\Users\\weijie\\Desktop\\code\\Trinity-RFT-Exp\\examples\\R3L\\webshop\\*gspo*.yaml\" /b)",
-      "Bash(dir \"C:\\Users\\weijie\\Desktop\\code\\Trinity-RFT-Exp\\examples\\R3L\\scienceworld\\*dapo*.yaml\" /b)"
+      "Bash(dir \"C:\\Users\\weijie\\Desktop\\code\\Trinity-RFT-Exp\\examples\\R3L\\scienceworld\\*dapo*.yaml\" /b)",
+      "Bash(for:*)",
+      "Bash(do sed -i '' \"s/prompt_key: ''task_id''/prompt_key: ''task_desc''/g\" \"$f\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

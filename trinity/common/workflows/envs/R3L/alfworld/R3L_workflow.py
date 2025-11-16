@@ -24,10 +24,10 @@ class R3LAlfworldWorkflow(Workflow):
     can_repeat: bool = True
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -42,7 +42,7 @@ class R3LAlfworldWorkflow(Workflow):
         self.task = task
         self.is_eval = task.is_eval
 
-        self.whether_save_data = True
+        self.whether_save_data = False
         # Create data directories
         self.data_dir = f"R3L_alfworld_data"
         self.eval_dir = os.path.join(self.data_dir, "eval")
@@ -72,7 +72,7 @@ class R3LAlfworldWorkflow(Workflow):
                 "success": 0.0,
                 "reward": 0.0,
             },
-            reward=0.0
+            reward=0.0,
         )
 
         self.default_second_exp = Experience(
@@ -84,7 +84,7 @@ class R3LAlfworldWorkflow(Workflow):
                 "second_success": 0.0,
                 "second_reward": 0.0,
             },
-            reward=0.0
+            reward=0.0,
         )
 
         print(
@@ -100,8 +100,9 @@ class R3LAlfworldWorkflow(Workflow):
         self.task = task
         self.n = task.repeat_times
 
-    def get_reflect(self, trajectory: List[Dict[str, str]]) -> tuple[
-        Optional[Dict[str, Any]], Optional[str], Optional[Any]]:
+    def get_reflect(
+        self, trajectory: List[Dict[str, str]]
+    ) -> tuple[Optional[Dict[str, Any]], Optional[str], Optional[Any]]:
         """
         Generates a comprehensive reflection report using a single, unified self-interrogation prompt.
         The model first assesses its own performance and then follows the appropriate reflection path.
@@ -117,7 +118,12 @@ class R3LAlfworldWorkflow(Workflow):
             responses = self.model.chat(
                 [
                     {"role": "system", "content": reflect_prompt},
-                    {"role": "user", "content": "Here is last attempt trajectory log: \n\n" + formatted_trajectory + "\n\nPlease output in the specified JSON format."}
+                    {
+                        "role": "user",
+                        "content": "Here is last attempt trajectory log: \n\n"
+                        + formatted_trajectory
+                        + "\n\nPlease output in the specified JSON format.",
+                    },
                 ],
                 n=1,
                 temperature=self.temperature,
@@ -126,11 +132,11 @@ class R3LAlfworldWorkflow(Workflow):
             reflection_text = responses[0].response_text.strip()
 
             # Find first '{' and last '}'
-            first_brace = reflection_text.find('{')
-            last_brace = reflection_text.rfind('}')
+            first_brace = reflection_text.find("{")
+            last_brace = reflection_text.rfind("}")
 
             if first_brace != -1 and last_brace != -1 and first_brace < last_brace:
-                json_str = reflection_text[first_brace:last_brace + 1]
+                json_str = reflection_text[first_brace : last_brace + 1]
             else:
                 json_str = reflection_text
 
@@ -194,9 +200,7 @@ class R3LAlfworldWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n // 2):  # Half for rollout, half for reflection + retry
             try:
-                trajectory, reward, done, steps, format_valid = utils.first_rollout(
-                    self, env
-                )
+                trajectory, reward, done, steps, format_valid = utils.first_rollout(self, env)
                 print(f"[R3L] First rollout - reward: {reward}, steps: {steps}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
@@ -219,12 +223,12 @@ class R3LAlfworldWorkflow(Workflow):
                         reward=reward,
                         steps=steps,
                         success=reward >= 1.0,
-                        attempt_type="first"
+                        attempt_type="first",
                     )
                     utils.save_experience_data(
                         task_id=f"{task_id}_attempt_{i}_first",
                         experience_data=first_record,
-                        data_dir=self.train_dir
+                        data_dir=self.train_dir,
                     )
 
                 # Reflect on first attempt
@@ -257,8 +261,12 @@ class R3LAlfworldWorkflow(Workflow):
                         ) = utils.second_rollout(
                             self, second_env, guidance_prompt, trajectory, retry_step
                         )
-                        print(f"[R3L] Second rollout - reward: {second_reward}, steps: {second_steps}, improve: {second_reward > reward}")
-                        second_exp = self.model.convert_messages_to_experience(distill_trajectory[:-1])
+                        print(
+                            f"[R3L] Second rollout - reward: {second_reward}, steps: {second_steps}, improve: {second_reward > reward}"
+                        )
+                        second_exp = self.model.convert_messages_to_experience(
+                            distill_trajectory[:-1]
+                        )
 
                         # Adjust action_mask to exclude retry prefix from training
                         if retry_step > 0:
@@ -295,18 +303,20 @@ class R3LAlfworldWorkflow(Workflow):
                                     "first_reward": reward,
                                     "improvement": second_reward > reward,
                                     "reward_difference": second_reward - reward,
-                                    "step_difference": second_steps - steps
-                                }
+                                    "step_difference": second_steps - steps,
+                                },
                             )
                             utils.save_experience_data(
                                 task_id=f"{task_id}_attempt_{i}_second",
                                 experience_data=second_record,
-                                data_dir=self.train_dir
+                                data_dir=self.train_dir,
                             )
 
                         # If second attempt score is higher than first, or second is perfect with fewer steps,
                         # record reflection and retry data
-                        if (second_reward > reward and second_reward >= 1.0) or (second_reward >= 1.0 and second_steps < steps):
+                        if (second_reward > reward and second_reward >= 1.0) or (
+                            second_reward >= 1.0 and second_steps < steps
+                        ):
                             reflect_exp.reward = 1.0
                             # Set eid
                             reflect_exp.eid.task = str(self.task.task_id) + f"_reflect_{i}"
@@ -314,7 +324,9 @@ class R3LAlfworldWorkflow(Workflow):
                             exp_lst.append(reflect_exp)
 
                             # Convert retry data to exp
-                            retry_exp = self.model.convert_messages_to_experience(second_trajectory[:-1])
+                            retry_exp = self.model.convert_messages_to_experience(
+                                second_trajectory[:-1]
+                            )
 
                             # Adjust action_mask to exclude retry prefix from training
                             if retry_step > 0:
