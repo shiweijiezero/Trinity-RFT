@@ -136,6 +136,7 @@ class OPMDAlgorithm(AlgorithmType):
             "entropy_loss_fn": "default",
         }
 
+
 @ALGORITHM_TYPE.register_module("opmd_reweight_adv")
 class OPMDReweightAdvAlgorithm(AlgorithmType):
     """OPMD with reweighting advantage algorithm."""
@@ -158,6 +159,7 @@ class OPMDReweightAdvAlgorithm(AlgorithmType):
             "kl_loss_fn": "k2",
             "entropy_loss_fn": "default",
         }
+
 
 @ALGORITHM_TYPE.register_module("asymre")
 class AsymREAlgorithm(AlgorithmType):
@@ -334,6 +336,7 @@ class RAFTAlgorithm(AlgorithmType):
         return {
             "sample_strategy": "default",
             "policy_loss_fn": "sft",
+            "advantage_fn": "grpo",
             "kl_loss_fn": "none",
             "entropy_loss_fn": "none",
         }
