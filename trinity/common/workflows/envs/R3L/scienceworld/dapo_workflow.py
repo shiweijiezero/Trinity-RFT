@@ -114,7 +114,7 @@ class DAPOScienceWorldWorkflow(Workflow):
         """Run the DAPO workflow and return experiences"""
 
         if self.is_eval:
-            return utils.eval_scienceworld(self)
+            return utils.eval_sciworld(self)
 
         # Single rollout execution
         env = utils.create_sciworld_environment(self.task_desc)
