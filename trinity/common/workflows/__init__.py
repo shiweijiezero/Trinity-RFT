@@ -52,6 +52,9 @@ from trinity.common.workflows.envs.R3L.countdown.opmd_workflow import (
 )
 
 # Countdown R3L workflows
+from trinity.common.workflows.envs.R3L.countdown.dapo_workflow import (
+    DAPOCountdownWorkflow,
+)
 from trinity.common.workflows.envs.R3L.countdown.R3L_workflow import (
     R3LCountdownWorkflow,
 )
@@ -66,6 +69,7 @@ from trinity.common.workflows.envs.R3L.dapo.opmd_workflow import (
 )
 
 # DAPO R3L workflows
+from trinity.common.workflows.envs.R3L.dapo.dapo_workflow import DAPODapoWorkflow
 from trinity.common.workflows.envs.R3L.dapo.R3L_workflow import R3LDapoWorkflow
 from trinity.common.workflows.envs.R3L.dapo.raft_workflow import (
     RAFTBaselineDapoWorkflow,
@@ -78,6 +82,9 @@ from trinity.common.workflows.envs.R3L.scienceworld.opmd_workflow import (
 )
 
 # ScienceWorld R3L workflows
+from trinity.common.workflows.envs.R3L.scienceworld.dapo_workflow import (
+    DAPOScienceWorldWorkflow,
+)
 from trinity.common.workflows.envs.R3L.scienceworld.R3L_workflow import (
     R3LScienceWorldWorkflow,
 )
@@ -89,6 +96,9 @@ from trinity.common.workflows.envs.R3L.webshop.grpo_workflow import (
 )
 from trinity.common.workflows.envs.R3L.webshop.opmd_workflow import (
     OPMDBaselineWebshopWorkflow,
+)
+from trinity.common.workflows.envs.R3L.webshop.dapo_workflow import (
+    DAPOWebshopWorkflow,
 )
 from trinity.common.workflows.envs.R3L.webshop.R3L_workflow import R3LWebshopWorkflow
 from trinity.common.workflows.envs.R3L.webshop.raft_workflow import (
@@ -141,6 +151,7 @@ __all__ = [
     "GRPOBaselineWebshopWorkflow",
     "OPMDBaselineWebshopWorkflow",
     "RAFTBaselineWebshopWorkflow",
+    "DAPOWebshopWorkflow",
     # Alfworld R3L workflows
     "R3LAlfworldWorkflow",
     "GRPOBaselineAlfworldWorkflow",
@@ -152,16 +163,19 @@ __all__ = [
     "GRPOBaselineDapoWorkflow",
     "OPMDBaselineDapoWorkflow",
     "RAFTBaselineDapoWorkflow",
+    "DAPODapoWorkflow",
     # ScienceWorld R3L workflows
     "R3LScienceWorldWorkflow",
     "GRPOBaselineScienceWorldWorkflow",
     "OPMDBaselineScienceWorldWorkflow",
     "RAFTBaselineScienceWorldWorkflow",
+    "DAPOScienceWorldWorkflow",
     # Countdown R3L workflows
     "R3LCountdownWorkflow",
     "GRPOBaselineCountdownWorkflow",
     "OPMDBaselineCountdownWorkflow",
     "RAFTBaselineCountdownWorkflow",
+    "DAPOCountdownWorkflow",
     # Original workflows
     "AlfworldWorkflow",
     "StepWiseAlfworldWorkflow",
