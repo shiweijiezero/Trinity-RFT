@@ -267,7 +267,6 @@ class R3LWebshopWorkflow(Workflow):
                 is_valid, is_perfect = utils.validate_reflect_report(reflect_checklist, steps)
 
                 if not is_valid or is_perfect:
-                    # print("Reflect report is invalid or indicates perfection, skipping second rollout")
                     # 如果第一次尝试的reward是1.0且反思给出完美，则记录反思exp
                     if reward >= 1.0 and is_perfect and reflect_exp is not None:
                         reflect_exp.reward = 1.0
@@ -275,42 +274,6 @@ class R3LWebshopWorkflow(Workflow):
                         reflect_exp.eid.task = str(self.task.task_id) + f"_reflect_{i}"
                         reflect_exp.eid.run = len(exp_lst) + self.run_id_base
                         exp_lst.append(reflect_exp)
-
-                    # 再进行一次rollout，以让整个batch有足够的数据
-                    try:
-                        retry_trajectory, retry_reward, retry_done, retry_steps, retry_format_valid = utils.first_rollout(
-                            self, self.env, self.session_id
-                        )
-
-                        retry_exp = self.model.convert_messages_to_experience(retry_trajectory[:-1])
-                        retry_exp.reward = retry_reward
-                        retry_exp.metrics = {
-                            "success": 1.0 if retry_reward >= 1.0 else 0.0,
-                            "steps": retry_steps,
-                            "reward": retry_reward,
-                        }
-                        # 设置eid
-                        retry_exp.eid.task = str(self.task.task_id) + f"_explore"
-                        retry_exp.eid.run = len(exp_lst) + self.run_id_base
-                        exp_lst.append(retry_exp)
-
-                        if self.whether_save_data:
-                            # Save retry attempt experience data
-                            retry_record = utils.create_experience_record(
-                                task_id=task_id,
-                                trajectory=retry_trajectory,
-                                reward=retry_reward,
-                                steps=retry_steps,
-                                success=retry_reward >= 1.0,
-                                attempt_type="retry_after_invalid_reflection"
-                            )
-                            utils.save_experience_data(
-                                task_id=f"{task_id}_attempt_{i}_retry",
-                                experience_data=retry_record,
-                                data_dir=self.train_dir
-                            )
-                    except Exception as e:
-                        print(f"Retry rollout after invalid reflection failed: {e}")
 
                 else:
                     guidance_prompt = utils.reflect_report_to_guidance_prompt(reflect_checklist)

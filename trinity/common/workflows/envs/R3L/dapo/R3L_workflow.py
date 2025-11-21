@@ -269,7 +269,6 @@ class R3LDapoWorkflow(Workflow):
                     print(f"[R3L] Reflection validation failed - Invalid reflection data")
 
                 if not is_valid or is_perfect:
-                    print(f"[R3L] Skip second rollout due to invalid ({not is_valid}) or perfect ({is_perfect}) reflection.")
                     # If first attempt reward is 1.0 and reflection gives perfect, record reflection exp
                     if reward >= 1.0 and is_perfect and reflect_exp is not None:
                         reflect_exp.reward = 1.0
@@ -277,43 +276,6 @@ class R3LDapoWorkflow(Workflow):
                         reflect_exp.eid.task = str(self.task.task_id) + f"_reflect_{i}"
                         reflect_exp.eid.run = len(exp_lst) + self.run_id_base
                         exp_lst.append(reflect_exp)
-
-                    # Do another rollout to ensure the batch has enough data
-                    print(f"[R3L] Performing additional rollout...")
-                    try:
-                        retry_trajectory, retry_reward, retry_success, retry_predicted_answer, retry_ground_truth, retry_attempts = utils.first_rollout(self)
-                        print(f"[R3L] Additional rollout completed - reward: {retry_reward}, attempts: {retry_attempts}")
-
-                        retry_exp = self.model.convert_messages_to_experience(retry_trajectory[:-1])
-                        retry_exp.reward = retry_reward
-                        retry_exp.metrics = {
-                            "success": 1.0 if retry_success else 0.0,
-                            "reward": retry_reward,
-                            "attempts": retry_attempts,
-                        }
-                        # Set eid
-                        retry_exp.eid.task = str(self.task.task_id) + f"_explore"
-                        retry_exp.eid.run = len(exp_lst) + self.run_id_base
-                        exp_lst.append(retry_exp)
-
-                        if self.whether_save_data:
-                            # Save retry attempt experience data
-                            retry_record = utils.create_experience_record(
-                                task_id=task_id,
-                                trajectory=retry_trajectory,
-                                reward=retry_reward,
-                                success=retry_success,
-                                predicted_answer=retry_predicted_answer,
-                                ground_truth=retry_ground_truth,
-                                attempt_type="retry_after_invalid_reflection"
-                            )
-                            utils.save_experience_data(
-                                task_id=f"{task_id}_attempt_{i}_retry",
-                                experience_data=retry_record,
-                                data_dir=self.train_dir
-                            )
-                    except Exception as e:
-                        print(f"[R3L] Retry rollout after invalid reflection failed - Error: {e}")
 
                 else:
                     print("[R3L] Valid reflection obtained, proceeding to second rollout...")

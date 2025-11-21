@@ -11,7 +11,8 @@
       "Bash(do sed -i '' \"s/prompt_key: ''task_id''/prompt_key: ''task_desc''/g\" \"$f\")",
       "Bash(done)",
       "Bash(fi)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []
