@@ -1,8 +1,8 @@
 project: "DAPO"
-name: "DAPO_RFT_Qwen_7B_R3L"
+name: "DAPO_RFT_Qwen_7B_reflect_grpo"
 checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
 algorithm:
-  algorithm_type: opmd_reweight_adv
+  algorithm_type: grpo
   repeat_times: 8
   optimizer:
     lr: 1e-6
@@ -104,12 +104,12 @@ buffer:
     default_workflow_type: 'R3L_dapo_workflow'
   trainer_input:
     experience_buffer:
-      name: dapo_R3L_7B_buffer
+      name: dapo_reflect_grpo_7B_buffer
       storage_type: queue
       replay_buffer:
         enable: true
         priority_fn: decay_limit_randomization
-      path: 'sqlite:///dapo_R3L_7B.db'
+      path: 'sqlite:///dapo_reflect_grpo_7B.db'
 explorer:
   runner_per_model: 32
   eval_interval: 20

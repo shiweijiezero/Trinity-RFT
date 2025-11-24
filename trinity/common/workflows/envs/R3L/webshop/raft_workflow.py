@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import copy
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -23,10 +24,10 @@ class RAFTBaselineWebshopWorkflow(Workflow):
     can_repeat: bool = True
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -45,6 +46,7 @@ class RAFTBaselineWebshopWorkflow(Workflow):
         # Initialize WebShop environment
         try:
             import sys
+
             # Add WebShop path - can be overridden via WEBSHOP_PATH environment variable
             webshop_path = os.environ.get("WEBSHOP_PATH")
             if webshop_path:
@@ -82,9 +84,7 @@ class RAFTBaselineWebshopWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.webshop_system_template = self.jinja_env.get_template("webshop_system.j2")
 
-        print(
-            f"Initializing RAFTWebshopWorkflow, temperature={self.temperature}"
-        )
+        print(f"Initializing RAFTWebshopWorkflow, temperature={self.temperature}")
         self.reset(task)
 
         # Default experience for error cases
@@ -97,7 +97,7 @@ class RAFTBaselineWebshopWorkflow(Workflow):
                 "success": 0.0,
                 "reward": -0.1,
             },
-            reward=-0.1
+            reward=-0.1,
         )
 
     def reset(self, task: Task):

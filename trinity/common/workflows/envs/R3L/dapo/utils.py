@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 from jinja2 import Environment, FileSystemLoader
-
 from math_verify import parse, verify
 
 from trinity.common.experience import Experience
@@ -35,7 +34,7 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
     # Try up to 3 attempts
     for attempt in range(self.max_attempts):
         attempt_count = attempt + 1
-        
+
         # Get model response
         responses = self.model.chat(
             trajectory,
@@ -47,7 +46,14 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
         # Check if tokens exceed limit
         if responses[0].tokens.shape[0] >= 20480 - 4096:
             # 由于 chat 内部 tokenizer 会做截断，所以只要>= 最长限制 就直接终止
-            return trajectory, final_reward, final_success, final_predicted_answer, self.ground_truth, attempt_count
+            return (
+                trajectory,
+                final_reward,
+                final_success,
+                final_predicted_answer,
+                self.ground_truth,
+                attempt_count,
+            )
 
         response_text = responses[0].response_text.strip()
         trajectory.append({"role": "assistant", "content": response_text})
@@ -69,16 +75,24 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
             final_reward = 1.0
             final_success = True
             final_predicted_answer = predicted_answer
-            print(f"[R3L First Rollout] Attempt {attempt_count} - Correct answer! Reward: {final_reward}")
+            print(
+                f"[First Rollout] Attempt {attempt_count} - Correct answer! Reward: {final_reward}"
+            )
             feedback = f"Correct! Your answer {predicted_answer} matches the expected answer."
             trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             break
         else:
             # Wrong answer
-            print(f"[R3L First Rollout] Attempt {attempt_count} - Incorrect answer: {predicted_answer} (Expected: {self.ground_truth})")
+            print(
+                f"[First Rollout] Attempt {attempt_count} - Incorrect answer: {predicted_answer} (Expected: {self.ground_truth})"
+            )
             if attempt < self.max_attempts - 1:
-                feedback = f"Incorrect. Your answer {predicted_answer} does not match. Please try again."
-                formatted_feedback = format_dapo_prompt("", attempt=attempt_count, feedback=feedback)
+                feedback = (
+                    f"Incorrect. Your answer {predicted_answer} does not match. Please try again."
+                )
+                formatted_feedback = format_dapo_prompt(
+                    "", attempt=attempt_count, feedback=feedback
+                )
                 trajectory.append({"role": "user", "content": formatted_feedback})
             else:
                 # Last attempt
@@ -86,14 +100,21 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
                 trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             final_predicted_answer = predicted_answer
 
-    return trajectory, final_reward, final_success, final_predicted_answer, self.ground_truth, attempt_count
+    return (
+        trajectory,
+        final_reward,
+        final_success,
+        final_predicted_answer,
+        self.ground_truth,
+        attempt_count,
+    )
 
 
 def second_rollout(
-        self,
-        guidance_prompt: str,
-        first_trajectory: List[Dict[str, str]],
-        retry_step: int = 0,
+    self,
+    guidance_prompt: str,
+    first_trajectory: List[Dict[str, str]],
+    retry_step: int = 0,
 ) -> tuple[List[Dict[str, str]], List[Dict[str, str]], float, bool, str, str, int]:
     """
     Performs rollout with guidance from reflection.
@@ -106,7 +127,9 @@ def second_rollout(
     original_system_prompt = self.dapo_system_template.render()
 
     # Starting from beginning with guidance
-    merged_system_prompt = f"{original_system_prompt}\n\n# Previous Attempt Analysis & Guidance\n{guidance_prompt}"
+    merged_system_prompt = (
+        f"{original_system_prompt}\n\n# Previous Attempt Analysis & Guidance\n{guidance_prompt}"
+    )
     trajectory.append({"role": "system", "content": merged_system_prompt})
     distill_trajectory.append({"role": "system", "content": original_system_prompt})
 
@@ -124,7 +147,7 @@ def second_rollout(
     # Try up to 3 attempts
     for attempt in range(self.max_attempts):
         attempt_count = attempt + 1
-        
+
         # Get model response with guidance
         responses = self.model.chat(
             trajectory,
@@ -136,7 +159,15 @@ def second_rollout(
         # Check if tokens exceed limit
         if responses[0].tokens.shape[0] >= 20480 - 4096:
             # 由于 chat 内部 tokenizer 会做截断，所以只要>= 最长限制 就直接终止
-            return distill_trajectory, trajectory, final_reward, final_success, final_predicted_answer, self.ground_truth, attempt_count
+            return (
+                distill_trajectory,
+                trajectory,
+                final_reward,
+                final_success,
+                final_predicted_answer,
+                self.ground_truth,
+                attempt_count,
+            )
 
         response_text = responses[0].response_text.strip()
         trajectory.append({"role": "assistant", "content": response_text})
@@ -160,17 +191,25 @@ def second_rollout(
             final_reward = 1.0
             final_success = True
             final_predicted_answer = predicted_answer
-            print(f"[R3L Second Rollout] Attempt {attempt_count} - Correct answer! Reward: {final_reward}")
+            print(
+                f"[Second Rollout] Attempt {attempt_count} - Correct answer! Reward: {final_reward}"
+            )
             feedback = f"Correct! Your answer {predicted_answer} matches the expected answer."
             trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             distill_trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             break
         else:
             # Wrong answer
-            print(f"[R3L Second Rollout] Attempt {attempt_count} - Incorrect answer: {predicted_answer} (Expected: {self.ground_truth})")
+            print(
+                f"[Second Rollout] Attempt {attempt_count} - Incorrect answer: {predicted_answer} (Expected: {self.ground_truth})"
+            )
             if attempt < self.max_attempts - 1:
-                feedback = f"Incorrect. Your answer {predicted_answer} does not match. Please try again."
-                formatted_feedback = format_dapo_prompt("", attempt=attempt_count, feedback=feedback)
+                feedback = (
+                    f"Incorrect. Your answer {predicted_answer} does not match. Please try again."
+                )
+                formatted_feedback = format_dapo_prompt(
+                    "", attempt=attempt_count, feedback=feedback
+                )
                 trajectory.append({"role": "user", "content": formatted_feedback})
                 distill_trajectory.append({"role": "user", "content": formatted_feedback})
             else:
@@ -180,12 +219,20 @@ def second_rollout(
                 distill_trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
             final_predicted_answer = predicted_answer
 
-    return distill_trajectory, trajectory, final_reward, final_success, final_predicted_answer, self.ground_truth, attempt_count
+    return (
+        distill_trajectory,
+        trajectory,
+        final_reward,
+        final_success,
+        final_predicted_answer,
+        self.ground_truth,
+        attempt_count,
+    )
 
 
 def eval_dapo(self) -> List[Experience]:
     """Evaluate a single math problem"""
-    print("[R3L Eval] Starting evaluation...")
+    print("[Eval] Starting evaluation...")
     try:
         trajectory, reward, success, predicted_answer, ground_truth, attempts = first_rollout(self)
         exp = self.model.convert_messages_to_experience(trajectory[:-1])
@@ -195,8 +242,8 @@ def eval_dapo(self) -> List[Experience]:
             "reward": reward,
             "attempts": attempts,
         }
-        print(f"[R3L Eval] Completed - Reward: {reward}, Success: {success}, Attempts: {attempts}")
-        print(f"[R3L Eval] Predicted: {predicted_answer}, Ground Truth: {ground_truth}")
+        print(f"[Eval] Completed - Reward: {reward}, Success: {success}, Attempts: {attempts}")
+        print(f"[Eval] Predicted: {predicted_answer}, Ground Truth: {ground_truth}")
 
         if self.whether_save_data:
             # Save evaluation data
@@ -208,15 +255,13 @@ def eval_dapo(self) -> List[Experience]:
                 success=success,
                 predicted_answer=predicted_answer,
                 ground_truth=ground_truth,
-                attempt_type="evaluation"
+                attempt_type="evaluation",
             )
             save_experience_data(
-                task_id=f"{eval_task_id}_eval",
-                experience_data=eval_record,
-                data_dir=self.eval_dir
+                task_id=f"{eval_task_id}_eval", experience_data=eval_record, data_dir=self.eval_dir
             )
     except Exception as e:
-        print(f"[R3L Eval] Evaluation failed - Error: {str(e)}")
+        print(f"[Eval] Evaluation failed - Error: {str(e)}")
         exp = Experience(
             tokens=torch.tensor([0, 0], dtype=torch.long),
             prompt_length=1,
@@ -225,7 +270,7 @@ def eval_dapo(self) -> List[Experience]:
             metrics={
                 "success": 0.0,
                 "reward": 0.0,
-            }
+            },
         )
         exp.reward = 0.0
     return [exp]
@@ -301,14 +346,8 @@ def math_verify(predicted_answer: str, ground_truth: str) -> bool:
     if not predicted_answer or not ground_truth:
         return False
 
-    if parse is None or verify is None:
-        # Fallback: simple string comparison
-        pred_clean = str(predicted_answer).strip().lower()
-        gt_clean = str(ground_truth).strip().lower()
-        return pred_clean == gt_clean
-
     try:
-        # Parse and verify
+        # Parse and verify using math_verify library
         gold = parse(ground_truth)
         answer = parse(predicted_answer)
         return verify(gold, answer)
@@ -357,19 +396,19 @@ def validate_reflect_report(report: Dict[str, Any], total_steps: int) -> Tuple[b
         - is_perfect: Whether the report indicates the trajectory is perfect (only meaningful if is_valid is True)
     """
     if (
-            not isinstance(report, dict)
-            or "trajectory_summary" not in report
-            or "root_cause_analysis" not in report
-            or "trajectory_outcome" not in report
+        not isinstance(report, dict)
+        or "trajectory_summary" not in report
+        or "root_cause_analysis" not in report
+        or "trajectory_outcome" not in report
     ):
-        print("[R3L DAPO Validation] Report is not a dict or missing keys.")
+        print("[DAPO Validation] Report is not a dict or missing keys.")
         return False, False
 
     outcome = report["trajectory_outcome"]
 
     if outcome == "success":
         # For success, we only need summary and no flaw analysis
-        print("[R3L DAPO Validation] success report validation successful.")
+        print("[DAPO Validation] success report validation successful.")
         return True, True
 
     elif outcome in ["success_but_inefficient", "failure"]:
@@ -378,28 +417,31 @@ def validate_reflect_report(report: Dict[str, Any], total_steps: int) -> Tuple[b
         retry_from_step = report.get("retry_from_step", None)
 
         if improvement_suggestion is None or retry_from_step is None:
-            print("[R3L DAPO Validation] Missing 'improvement_suggestion' or 'retry_from_step'.")
+            print("[DAPO Validation] Missing 'improvement_suggestion' or 'retry_from_step'.")
             return False, False
 
         # check retry from step
         try:
             retry_from_step = int(retry_from_step)
         except (ValueError, TypeError):
-            print(f"[R3L DAPO Validation] 'retry_from_step' must be an integer. Got: {retry_from_step}")
+            print(f"[DAPO Validation] 'retry_from_step' must be an integer. Got: {retry_from_step}")
             return False, False
         if not isinstance(retry_from_step, int) or retry_from_step < 0:
-            print(f"[R3L DAPO Validation] 'retry_from_step' must be a non-negative integer. Got: {retry_from_step}")
+            print(
+                f"[DAPO Validation] 'retry_from_step' must be a non-negative integer. Got: {retry_from_step}"
+            )
             return False, False
         # Check trajectory bounds if total_steps is provided
         if total_steps is not None:
             if retry_from_step >= total_steps:
                 print(
-                    f"[R3L DAPO Validation] 'retry_from_step' ({retry_from_step}) exceeds trajectory bounds (0 to {total_steps - 1}).")
+                    f"[DAPO Validation] 'retry_from_step' ({retry_from_step}) exceeds trajectory bounds (0 to {total_steps - 1})."
+                )
                 return False, False
-        print(f"[R3L DAPO Validation] {outcome} report validation successful.")
+        print(f"[DAPO Validation] {outcome} report validation successful.")
         return True, False
     else:
-        print(f"[R3L DAPO Validation] Invalid trajectory_outcome: {outcome}")
+        print(f"[DAPO Validation] Invalid trajectory_outcome: {outcome}")
         return False, False
 
 
@@ -427,7 +469,7 @@ def create_experience_record(
     predicted_answer: str = "",
     ground_truth: str = "",
     attempt_type: str = "first",
-    additional_metrics: Optional[Dict] = None
+    additional_metrics: Optional[Dict] = None,
 ) -> Dict[str, Any]:
     """Create an experience record for data saving"""
     record = {
@@ -447,11 +489,7 @@ def create_experience_record(
     return record
 
 
-def save_experience_data(
-    task_id: str,
-    experience_data: Dict[str, Any],
-    data_dir: str
-):
+def save_experience_data(task_id: str, experience_data: Dict[str, Any], data_dir: str):
     """Save experience data to file"""
     os.makedirs(data_dir, exist_ok=True)
     file_path = os.path.join(data_dir, f"{task_id}.json")
@@ -468,5 +506,5 @@ def generate_default_experience() -> Experience:
         action_mask=torch.tensor([False], dtype=torch.bool),
         logprobs=torch.tensor([0.0], dtype=torch.float),
         metrics={"success": 0.0, "reward": 0.0},
-        reward=0.0
+        reward=0.0,
     )

@@ -24,10 +24,10 @@ class DAPOWebshopWorkflow(Workflow):
     can_repeat: bool = True
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -52,6 +52,7 @@ class DAPOWebshopWorkflow(Workflow):
         # Initialize WebShop environment
         try:
             import sys
+
             # Add WebShop path - can be overridden via WEBSHOP_PATH environment variable
             webshop_path = os.environ.get("WEBSHOP_PATH")
             if webshop_path:
@@ -159,7 +160,7 @@ class DAPOWebshopWorkflow(Workflow):
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
 
                 # Extract response tokens from experience
-                response_tokens = exp.tokens[exp.prompt_length:]
+                response_tokens = exp.tokens[exp.prompt_length :]
 
                 # Compute DAPO overlong penalty (format score)
                 format_score = self.compute_overlong_penalty(response_tokens)
