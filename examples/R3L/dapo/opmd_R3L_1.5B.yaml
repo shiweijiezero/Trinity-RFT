@@ -114,7 +114,7 @@ explorer:
   runner_per_model: 32
   eval_interval: 20
   rollout_model:
-    engine_num: 4
+    engine_num: 6
     tensor_parallel_size: 1
     enable_prefix_caching: false
     enforce_eager: false
