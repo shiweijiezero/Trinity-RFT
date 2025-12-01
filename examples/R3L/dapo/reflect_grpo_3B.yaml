@@ -1,8 +1,11 @@
 project: DAPO
-name: DAPO_RFT_Llama_3B_reflect_grpo
+name: DAPO_RFT_Llama_3B_Reflect_GRPO
 checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
 algorithm:
   algorithm_type: grpo
+  kl_loss_fn: k3
+  kl_loss_fn_args:
+    kl_coef: 0.01
   repeat_times: 8
   optimizer:
     lr: 1e-6
@@ -12,7 +15,7 @@ model:
   max_model_len: 20480
 cluster:
   node_num: 1
-  gpu_per_node: 6
+  gpu_per_node: 4
 buffer:
   total_epochs: 1
   batch_size: 96
@@ -101,7 +104,7 @@ buffer:
         response_key: answer
       rollout_args:
         temperature: 0.4
-    default_workflow_type: R3L_dapo_workflow
+    default_workflow_type: reflect_grpo_dapo_workflow
   trainer_input:
     experience_buffer:
       name: dapo_reflect_grpo_3B_buffer
@@ -114,7 +117,7 @@ explorer:
   runner_per_model: 32
   eval_interval: 20
   rollout_model:
-    engine_num: 3
+    engine_num: 2
     tensor_parallel_size: 1
     enable_prefix_caching: false
     enforce_eager: false

@@ -1,8 +1,11 @@
-project: "WEBSHOP"
-name: "WEBSHOP_RFT_Qwen_7B_reflect_grpo"
+project: WEBSHOP
+name: WEBSHOP_RFT_Qwen_7B_Reflect_GRPO
 checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
 algorithm:
   algorithm_type: grpo
+  kl_loss_fn: k3
+  kl_loss_fn_args:
+    kl_coef: 0.01
   repeat_times: 8
   optimizer:
     lr: 1e-6
@@ -20,23 +23,23 @@ buffer:
     taskset:
       name: webshop
       storage_type: file
-      path: 'examples/R3L/webshop/webshop_data'
-      split: 'train'
+      path: examples/R3L/webshop/webshop_data
+      split: train
       format:
-        prompt_key: 'task_id'
+        prompt_key: task_id
       rollout_args:
         temperature: 1.0
         logprobs: 0
     eval_tasksets:
-      - name: webshop-eval
-        storage_type: file
-        path: 'examples/R3L/webshop/webshop_data'
-        split: 'test'
-        format:
-          prompt_key: 'task_id'
-        rollout_args:
-          temperature: 0.4
-    default_workflow_type: 'R3L_webshop_workflow'
+    - name: webshop-eval
+      storage_type: file
+      path: examples/R3L/webshop/webshop_data
+      split: test
+      format:
+        prompt_key: task_id
+      rollout_args:
+        temperature: 0.4
+    default_workflow_type: reflect_grpo_webshop_workflow
   trainer_input:
     experience_buffer:
       name: webshop_reflect_grpo_7B_buffer
@@ -44,7 +47,7 @@ buffer:
       replay_buffer:
         enable: true
         priority_fn: decay_limit_randomization
-      path: 'sqlite:///webshop_reflect_grpo_7B.db'
+      path: sqlite:///webshop_reflect_grpo_7B.db
 explorer:
   runner_per_model: 32
   eval_interval: 20
@@ -60,10 +63,10 @@ explorer:
 data_processor:
   experience_pipeline:
     operators:
-      - name: "OPMD_filter"
+    - name: OPMD_filter
 synchronizer:
   sync_style: dynamic_by_explorer
-  sync_method: 'nccl'
+  sync_method: nccl
   sync_interval: 1
   sync_timeout: 12000
 trainer:
