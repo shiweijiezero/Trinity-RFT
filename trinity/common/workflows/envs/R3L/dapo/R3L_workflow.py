@@ -24,10 +24,10 @@ class R3LDapoWorkflow(Workflow):
     can_repeat: bool = True
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -42,7 +42,7 @@ class R3LDapoWorkflow(Workflow):
         self.task = task
         self.is_eval = task.is_eval
 
-        self.whether_save_data = False
+        self.whether_save_data = True
         # Create data directories
         self.data_dir = f"R3L_dapo_data"
         self.eval_dir = os.path.join(self.data_dir, "eval")
@@ -72,7 +72,7 @@ class R3LDapoWorkflow(Workflow):
                 "success": 0.0,
                 "reward": 0.0,
             },
-            reward=0.0
+            reward=0.0,
         )
 
         self.default_second_exp = Experience(
@@ -84,7 +84,7 @@ class R3LDapoWorkflow(Workflow):
                 "second_success": 0.0,
                 "second_reward": 0.0,
             },
-            reward=0.0
+            reward=0.0,
         )
 
         print(
@@ -100,7 +100,7 @@ class R3LDapoWorkflow(Workflow):
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
 
         # Extract prompt and ground truth from task
-        if hasattr(task, 'raw_task') and task.raw_task:
+        if hasattr(task, "raw_task") and task.raw_task:
             raw_task = task.raw_task
 
             # Format 1: prompt is a list (math_dapo format)
@@ -129,8 +129,9 @@ class R3LDapoWorkflow(Workflow):
             self.prompt = ""
             self.ground_truth = ""
 
-    def get_reflect(self, trajectory: List[Dict[str, str]]) -> tuple[
-        Optional[Dict[str, Any]], Optional[str], Optional[Any]]:
+    def get_reflect(
+        self, trajectory: List[Dict[str, str]]
+    ) -> tuple[Optional[Dict[str, Any]], Optional[str], Optional[Any]]:
         """
         Generates a comprehensive reflection report using a single, unified self-interrogation prompt.
         """
@@ -145,7 +146,12 @@ class R3LDapoWorkflow(Workflow):
             responses = self.model.chat(
                 [
                     {"role": "system", "content": reflect_prompt},
-                    {"role": "user", "content": "Here is last attempt trajectory log: \n\n" + formatted_trajectory + "\n\nPlease output in the specified JSON format."}
+                    {
+                        "role": "user",
+                        "content": "Here is last attempt trajectory log: \n\n"
+                        + formatted_trajectory
+                        + "\n\nPlease output in the specified JSON format.",
+                    },
                 ],
                 n=1,
                 temperature=self.temperature,
@@ -154,11 +160,11 @@ class R3LDapoWorkflow(Workflow):
             reflection_text = responses[0].response_text.strip()
 
             # Find first '{' and last '}'
-            first_brace = reflection_text.find('{')
-            last_brace = reflection_text.rfind('}')
+            first_brace = reflection_text.find("{")
+            last_brace = reflection_text.rfind("}")
 
             if first_brace != -1 and last_brace != -1 and first_brace < last_brace:
-                json_str = reflection_text[first_brace:last_brace + 1]
+                json_str = reflection_text[first_brace : last_brace + 1]
             else:
                 json_str = reflection_text
 
@@ -222,7 +228,14 @@ class R3LDapoWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n // 2):  # Half for rollout, half for reflection + retry
             try:
-                trajectory, reward, success, predicted_answer, ground_truth, attempts = utils.first_rollout(self)
+                (
+                    trajectory,
+                    reward,
+                    success,
+                    predicted_answer,
+                    ground_truth,
+                    attempts,
+                ) = utils.first_rollout(self)
                 print(f"[R3L] First rollout - reward: {reward}, attempts: {attempts}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
@@ -246,12 +259,12 @@ class R3LDapoWorkflow(Workflow):
                         success=success,
                         predicted_answer=predicted_answer,
                         ground_truth=ground_truth,
-                        attempt_type="first"
+                        attempt_type="first",
                     )
                     utils.save_experience_data(
                         task_id=f"{task_id}_attempt_{i}_first",
                         experience_data=first_record,
-                        data_dir=self.train_dir
+                        data_dir=self.train_dir,
                     )
 
                 # Reflect on first attempt
@@ -292,11 +305,13 @@ class R3LDapoWorkflow(Workflow):
                             second_predicted_answer,
                             second_ground_truth,
                             second_attempts,
-                        ) = utils.second_rollout(
-                            self, guidance_prompt, trajectory, retry_step
+                        ) = utils.second_rollout(self, guidance_prompt, trajectory, retry_step)
+                        print(
+                            f"[R3L] Second rollout - reward: {second_reward}, attempts: {second_attempts}, improve: {second_reward > reward}"
                         )
-                        print(f"[R3L] Second rollout - reward: {second_reward}, attempts: {second_attempts}, improve: {second_reward > reward}")
-                        second_exp = self.model.convert_messages_to_experience(distill_trajectory[:-1])
+                        second_exp = self.model.convert_messages_to_experience(
+                            distill_trajectory[:-1]
+                        )
 
                         # Adjust action_mask to exclude retry prefix from training
                         if retry_step > 0:
@@ -334,18 +349,22 @@ class R3LDapoWorkflow(Workflow):
                                     "first_reward": reward,
                                     "improvement": second_reward > reward,
                                     "reward_difference": second_reward - reward,
-                                }
+                                },
                             )
                             utils.save_experience_data(
                                 task_id=f"{task_id}_attempt_{i}_second",
                                 experience_data=second_record,
-                                data_dir=self.train_dir
+                                data_dir=self.train_dir,
                             )
 
                         # If second attempt score is higher than first, record reflection and retry data
                         if second_reward > reward and second_reward >= 1.0:
-                            print(f"[R3L] Second attempt successful improvement - Recording reflection and retry experiences")
-                            print(f"[R3L] Reward improvement: {reward} -> {second_reward} (+{second_reward - reward:.2f})")
+                            print(
+                                f"[R3L] Second attempt successful improvement - Recording reflection and retry experiences"
+                            )
+                            print(
+                                f"[R3L] Reward improvement: {reward} -> {second_reward} (+{second_reward - reward:.2f})"
+                            )
                             reflect_exp.reward = 1.0
                             # Set eid
                             reflect_exp.eid.task = str(self.task.task_id) + f"_reflect_{i}"
@@ -353,7 +372,9 @@ class R3LDapoWorkflow(Workflow):
                             exp_lst.append(reflect_exp)
 
                             # Convert retry data to exp
-                            retry_exp = self.model.convert_messages_to_experience(second_trajectory[:-1])
+                            retry_exp = self.model.convert_messages_to_experience(
+                                second_trajectory[:-1]
+                            )
 
                             retry_exp.reward = 1.0
                             # Set eid
@@ -361,11 +382,17 @@ class R3LDapoWorkflow(Workflow):
                             retry_exp.eid.run = len(exp_lst) + self.run_id_base
                             exp_lst.append(retry_exp)
 
-                            print("[R3L] Reflection and retry led to improvement, recording both...")
+                            print(
+                                "[R3L] Reflection and retry led to improvement, recording both..."
+                            )
                         elif second_reward <= reward:
-                            print(f"[R3L] Second attempt did not improve - First reward: {reward}, Second reward: {second_reward}")
+                            print(
+                                f"[R3L] Second attempt did not improve - First reward: {reward}, Second reward: {second_reward}"
+                            )
                         else:
-                            print(f"[R3L] Second attempt improved but below threshold - Reward: {second_reward} (need >= 1.0)")
+                            print(
+                                f"[R3L] Second attempt improved but below threshold - Reward: {second_reward} (need >= 1.0)"
+                            )
                     except Exception as e:
                         print(f"[R3L] Second rollout failed - Error: {str(e)}")
             except Exception as e:

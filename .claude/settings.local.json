@@ -12,7 +12,8 @@
       "Bash(done)",
       "Bash(fi)",
       "Bash(dir:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []
