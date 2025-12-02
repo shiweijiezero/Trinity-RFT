@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import copy
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -40,6 +41,14 @@ class RAFTBaselineScienceWorldWorkflow(Workflow):
         self.task = task
         self.is_eval = task.is_eval
         self.whether_save_data = False
+
+        # Create data directories
+        self.data_dir = f"raft_baseline_scienceworld_data"
+        self.eval_dir = os.path.join(self.data_dir, "eval")
+        self.train_dir = os.path.join(self.data_dir, "train")
+
+        os.makedirs(self.eval_dir, exist_ok=True)
+        os.makedirs(self.train_dir, exist_ok=True)
 
         # Initialize Jinja2 templates
         prompts_dir = Path(__file__).parent / "prompts"

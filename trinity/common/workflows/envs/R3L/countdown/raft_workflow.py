@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import copy
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -23,10 +24,10 @@ class RAFTBaselineCountdownWorkflow(Workflow):
     can_repeat: bool = True
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -42,6 +43,14 @@ class RAFTBaselineCountdownWorkflow(Workflow):
         self.is_eval = task.is_eval
         self.whether_save_data = False
 
+        # Create data directories
+        self.data_dir = f"raft_baseline_countdown_data"
+        self.eval_dir = os.path.join(self.data_dir, "eval")
+        self.train_dir = os.path.join(self.data_dir, "train")
+
+        os.makedirs(self.eval_dir, exist_ok=True)
+        os.makedirs(self.train_dir, exist_ok=True)
+
         # Initialize Jinja2 templates
         prompts_dir = Path(__file__).parent / "prompts"
         self.jinja_env = Environment(
@@ -53,9 +62,7 @@ class RAFTBaselineCountdownWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.countdown_system_template = self.jinja_env.get_template("countdown_system.j2")
 
-        print(
-            f"Initializing RAFTBaselineCountdownWorkflow, temperature={self.temperature}"
-        )
+        print(f"Initializing RAFTBaselineCountdownWorkflow, temperature={self.temperature}")
         self.reset(task)
 
         # Default experience for error cases
@@ -68,7 +75,7 @@ class RAFTBaselineCountdownWorkflow(Workflow):
                 "success": 0.0,
                 "reward": 0.0,
             },
-            reward=0.0
+            reward=0.0,
         )
 
     def reset(self, task: Task):
@@ -79,7 +86,7 @@ class RAFTBaselineCountdownWorkflow(Workflow):
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
 
         # Extract numbers and target from task
-        if hasattr(task, 'raw_task') and task.raw_task:
+        if hasattr(task, "raw_task") and task.raw_task:
             raw_task = task.raw_task
 
             # Countdown format: direct access to nums and target fields
@@ -94,7 +101,14 @@ class RAFTBaselineCountdownWorkflow(Workflow):
 
         if self.is_eval:
             try:
-                trajectory, reward, success, predicted_answer, ground_truth, attempts = utils.first_rollout(self)
+                (
+                    trajectory,
+                    reward,
+                    success,
+                    predicted_answer,
+                    ground_truth,
+                    attempts,
+                ) = utils.first_rollout(self)
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
                 exp.metrics = {
@@ -110,7 +124,14 @@ class RAFTBaselineCountdownWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n):
             try:
-                trajectory, reward, success, predicted_answer, ground_truth, attempts = utils.first_rollout(self)
+                (
+                    trajectory,
+                    reward,
+                    success,
+                    predicted_answer,
+                    ground_truth,
+                    attempts,
+                ) = utils.first_rollout(self)
                 print(f"[RAFT Countdown] Rollout {i} - reward: {reward}, attempts: {attempts}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward

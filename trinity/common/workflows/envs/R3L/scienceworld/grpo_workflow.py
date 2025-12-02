@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -22,10 +23,10 @@ class GRPOBaselineScienceWorldWorkflow(Workflow):
     can_repeat: bool = True
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -40,6 +41,14 @@ class GRPOBaselineScienceWorldWorkflow(Workflow):
         self.is_eval = task.is_eval
         self.whether_save_data = False
 
+        # Create data directories
+        self.data_dir = f"grpo_baseline_scienceworld_data"
+        self.eval_dir = os.path.join(self.data_dir, "eval")
+        self.train_dir = os.path.join(self.data_dir, "train")
+
+        os.makedirs(self.eval_dir, exist_ok=True)
+        os.makedirs(self.train_dir, exist_ok=True)
+
         # Initialize Jinja2 templates
         prompts_dir = Path(__file__).parent / "prompts"
         self.jinja_env = Environment(
@@ -51,9 +60,7 @@ class GRPOBaselineScienceWorldWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.sciworld_system_template = self.jinja_env.get_template("sciworld_system.j2")
 
-        print(
-            f"Initializing GRPOBaselineScienceWorldWorkflow, temperature={self.temperature}"
-        )
+        print(f"Initializing GRPOBaselineScienceWorldWorkflow, temperature={self.temperature}")
         self.reset(task)
 
     def reset(self, task: Task):
@@ -75,9 +82,7 @@ class GRPOBaselineScienceWorldWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n):
             try:
-                trajectory, reward, done, steps, format_valid = utils.first_rollout(
-                    self, env
-                )
+                trajectory, reward, done, steps, format_valid = utils.first_rollout(self, env)
                 print(f"[GRPO] First rollout - reward: {reward}, steps: {steps}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward

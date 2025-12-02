@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -23,10 +24,10 @@ class DAPOCountdownWorkflow(Workflow):
     can_repeat: bool = True
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -40,6 +41,14 @@ class DAPOCountdownWorkflow(Workflow):
         self.task = task
         self.is_eval = task.is_eval
         self.whether_save_data = False
+
+        # Create data directories
+        self.data_dir = f"dapo_countdown_data"
+        self.eval_dir = os.path.join(self.data_dir, "eval")
+        self.train_dir = os.path.join(self.data_dir, "train")
+
+        os.makedirs(self.eval_dir, exist_ok=True)
+        os.makedirs(self.train_dir, exist_ok=True)
 
         # DAPO overlong penalty parameters
         workflow_args = task.workflow_args or {}
@@ -124,14 +133,21 @@ class DAPOCountdownWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n):
             try:
-                trajectory, reward, success, predicted_answer, ground_truth, attempts = utils.first_rollout(self)
+                (
+                    trajectory,
+                    reward,
+                    success,
+                    predicted_answer,
+                    ground_truth,
+                    attempts,
+                ) = utils.first_rollout(self)
                 print(f"[DAPO Countdown] Rollout - reward: {reward}, attempts: {attempts}")
 
                 # Convert trajectory to experience
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
 
                 # Extract response tokens from experience
-                response_tokens = exp.tokens[exp.prompt_length:]
+                response_tokens = exp.tokens[exp.prompt_length :]
 
                 # Compute DAPO overlong penalty (format score)
                 format_score = self.compute_overlong_penalty(response_tokens)

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -21,10 +22,10 @@ class OPMDBaselineCountdownWorkflow(Workflow):
     can_repeat: bool = True
 
     def __init__(
-            self,
-            model: ModelWrapper,
-            task: Task,
-            auxiliary_models: Optional[List] = None,
+        self,
+        model: ModelWrapper,
+        task: Task,
+        auxiliary_models: Optional[List] = None,
     ):
         super().__init__(
             model=model,
@@ -40,6 +41,14 @@ class OPMDBaselineCountdownWorkflow(Workflow):
         self.is_eval = task.is_eval
         self.whether_save_data = False
 
+        # Create data directories
+        self.data_dir = f"opmd_baseline_countdown_data"
+        self.eval_dir = os.path.join(self.data_dir, "eval")
+        self.train_dir = os.path.join(self.data_dir, "train")
+
+        os.makedirs(self.eval_dir, exist_ok=True)
+        os.makedirs(self.train_dir, exist_ok=True)
+
         # Initialize Jinja2 templates
         prompts_dir = Path(__file__).parent / "prompts"
         self.jinja_env = Environment(
@@ -51,9 +60,7 @@ class OPMDBaselineCountdownWorkflow(Workflow):
         # Cache templates to avoid repeated loading
         self.countdown_system_template = self.jinja_env.get_template("countdown_system.j2")
 
-        print(
-            f"Initializing OPMDCountdownWorkflow, temperature={self.temperature}"
-        )
+        print(f"Initializing OPMDCountdownWorkflow, temperature={self.temperature}")
         self.reset(task)
 
     def reset(self, task: Task):
@@ -64,7 +71,7 @@ class OPMDBaselineCountdownWorkflow(Workflow):
         self.temperature = getattr(task.rollout_args, "temperature", 1.0)
 
         # Extract numbers and target from task
-        if hasattr(task, 'raw_task') and task.raw_task:
+        if hasattr(task, "raw_task") and task.raw_task:
             raw_task = task.raw_task
 
             # Countdown format: direct access to nums and target fields
@@ -84,7 +91,14 @@ class OPMDBaselineCountdownWorkflow(Workflow):
         exp_lst = []
         for i in range(self.n):
             try:
-                trajectory, reward, success, predicted_answer, ground_truth, attempts = utils.first_rollout(self)
+                (
+                    trajectory,
+                    reward,
+                    success,
+                    predicted_answer,
+                    ground_truth,
+                    attempts,
+                ) = utils.first_rollout(self)
                 print(f"[OPMD Countdown] First rollout - reward: {reward}, attempts: {attempts}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
