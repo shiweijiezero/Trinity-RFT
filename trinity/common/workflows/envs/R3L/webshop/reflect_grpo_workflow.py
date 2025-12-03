@@ -171,7 +171,9 @@ class ReflectGRPOWebshopWorkflow(Workflow):
         for i in range(self.n // 2, self.n):
             try:
                 # First attempt
-                trajectory, reward, done, steps, format_valid = utils.first_rollout(self)
+                trajectory, reward, done, steps, format_valid = utils.first_rollout(
+                    self, self.env, self.session_id
+                )
                 print(f"[ReflectGRPO] First attempt {i} - reward: {reward}, steps: {steps}")
 
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
