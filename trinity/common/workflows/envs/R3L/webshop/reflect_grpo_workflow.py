@@ -154,7 +154,9 @@ class ReflectGRPOWebshopWorkflow(Workflow):
         # First half: normal rollout
         for i in range(self.n // 2):
             try:
-                trajectory, reward, done, steps, format_valid = utils.first_rollout(self)
+                trajectory, reward, done, steps, format_valid = utils.first_rollout(
+                    self, self.env, self.session_id
+                )
                 print(f"[ReflectGRPO] Rollout {i} - reward: {reward}, steps: {steps}")
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
                 exp.reward = reward
