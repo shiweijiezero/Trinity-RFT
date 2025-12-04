@@ -69,7 +69,7 @@ def first_rollout(self) -> tuple[List[Dict[str, str]], float, bool, str, str, in
             continue
 
         # Verify answer
-        is_correct = math_verify(predicted_answer, self.ground_truth)
+        is_correct = my_math_verify(predicted_answer, self.ground_truth)
 
         if is_correct:
             final_reward = 1.0
@@ -185,7 +185,7 @@ def second_rollout(
             continue
 
         # Verify answer
-        is_correct = math_verify(predicted_answer, self.ground_truth)
+        is_correct = my_math_verify(predicted_answer, self.ground_truth)
 
         if is_correct:
             final_reward = 1.0
@@ -339,7 +339,7 @@ def parse_response(response: str) -> Tuple[Optional[str], Optional[str]]:
         return None, None
 
 
-def math_verify(predicted_answer: str, ground_truth: str) -> bool:
+def my_math_verify(predicted_answer: str, ground_truth: str) -> bool:
     """
     Verify if the predicted math answer matches the ground truth using math_verify library.
     """
@@ -348,6 +348,9 @@ def math_verify(predicted_answer: str, ground_truth: str) -> bool:
 
     try:
         # Parse and verify using math_verify library
+        if "#" in ground_truth:
+            # Handle cases like "### Answer"
+            ground_truth = ground_truth.split("#")[-1].strip()
         gold = parse(ground_truth)
         answer = parse(predicted_answer)
         return verify(gold, answer)

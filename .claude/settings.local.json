@@ -13,7 +13,10 @@
       "Bash(fi)",
       "Bash(dir:*)",
       "Bash(python:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(conda activate:*)",
+      "Bash(call C:Usersweijieanaconda3Scriptsactivate.bat weijie)",
+      "Bash(C:Usersweijieanaconda3envsweijiepython.exe test_math_verify.py)"
     ],
     "deny": [],
     "ask": []
