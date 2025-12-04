@@ -274,7 +274,7 @@ class ReflectGRPODapoWorkflow(Workflow):
                             exp_lst.append(second_exp)
 
                             if self.whether_save_data:
-                                # Save second attempt data
+                                # Save second attempt data with reflection information
                                 second_record = utils.create_experience_record(
                                     task_id=task_id,
                                     trajectory=second_trajectory,
@@ -287,6 +287,10 @@ class ReflectGRPODapoWorkflow(Workflow):
                                         "first_reward": reward,
                                         "improvement": second_reward > reward,
                                         "reward_difference": second_reward - reward,
+                                        "reflection_text": reflection_text,
+                                        "reflection_checklist": reflect_checklist,
+                                        "guidance_prompt": guidance_prompt,
+                                        "retry_step": retry_step,
                                     },
                                 )
                                 utils.save_experience_data(
