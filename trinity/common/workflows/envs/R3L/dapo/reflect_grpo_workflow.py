@@ -233,18 +233,19 @@ class ReflectGRPODapoWorkflow(Workflow):
                         data_dir=self.train_dir,
                     )
 
-                # If not successful, do reflection and retry
+                # If not successful, do reflection and retry from the beginning
                 if not success:
-                    print(f"[ReflectGRPO] Attempting reflection for failed attempt {i}...")
+                    print(f"[ReflectGRPO] Failed attempt {i}, attempting reflection and retry from beginning...")
                     reflect_checklist, reflection_text = self.get_reflect(trajectory)
                     is_valid, is_perfect = utils.validate_reflect_report(
                         reflect_checklist, attempts
                     )
 
                     if is_valid and not is_perfect:
-                        print(f"[ReflectGRPO] Valid reflection generated, attempting retry...")
+                        print(f"[ReflectGRPO] Valid reflection generated, retrying from the beginning...")
                         guidance_prompt = utils.reflect_report_to_guidance_prompt(reflect_checklist)
-                        retry_step = reflect_checklist.get("retry_from_step", 0)
+                        # Always retry from the beginning (retry_step = 0)
+                        retry_step = 0
 
                         try:
                             (
@@ -290,7 +291,7 @@ class ReflectGRPODapoWorkflow(Workflow):
                                         "reflection_text": reflection_text,
                                         "reflection_checklist": reflect_checklist,
                                         "guidance_prompt": guidance_prompt,
-                                        "retry_step": retry_step,
+                                        "retry_from_beginning": True,
                                     },
                                 )
                                 utils.save_experience_data(

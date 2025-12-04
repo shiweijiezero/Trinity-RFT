@@ -235,6 +235,7 @@ class R3LScienceWorldWorkflow(Workflow):
                     guidance_prompt = utils.reflect_report_to_guidance_prompt(reflect_checklist)
                     # Extract retry_step from validated reflection report (top-level field in alfworld schema)
                     retry_step = reflect_checklist.get("retry_from_step", 0)
+                    print(f"[R3L] Pivot point (retry_from_step): {retry_step}")
 
                     try:
                         second_env = utils.create_sciworld_environment(self.task_desc)
@@ -265,6 +266,7 @@ class R3LScienceWorldWorkflow(Workflow):
                             "second_reward": second_reward,
                             "second_improve": 1.0 if second_reward > reward else 0.0,
                             "second_reward_diff": second_reward - reward,
+                            "pivot_point": retry_step,
                         }
                         second_exp.eid.task = str(self.task.task_id) + f"_explore"
                         second_exp.eid.run = len(exp_lst) + self.run_id_base
