@@ -106,6 +106,9 @@ class OPMDBaselineDapoWorkflow(Workflow):
         if self.is_eval:
             return utils.eval_dapo(self)
 
+        # Generate unique task ID
+        task_id = f"{str(self.task.batch_id).replace('/', '_')}_{self.task.task_id}"
+
         # Single rollout execution
         exp_lst = []
         for i in range(self.n):
@@ -127,6 +130,23 @@ class OPMDBaselineDapoWorkflow(Workflow):
                     "attempts": attempts,
                 }
                 exp_lst.append(exp)
+
+                if self.whether_save_data:
+                    # Save training experience data
+                    train_record = utils.create_experience_record(
+                        task_id=task_id,
+                        trajectory=trajectory,
+                        reward=reward,
+                        success=success,
+                        predicted_answer=predicted_answer,
+                        ground_truth=ground_truth,
+                        attempt_type="train",
+                    )
+                    utils.save_experience_data(
+                        task_id=f"{task_id}_attempt_{i}",
+                        experience_data=train_record,
+                        data_dir=self.train_dir,
+                    )
             except Exception:
                 pass
 

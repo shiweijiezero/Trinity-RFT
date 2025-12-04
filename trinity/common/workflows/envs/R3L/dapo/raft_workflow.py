@@ -119,25 +119,10 @@ class RAFTBaselineDapoWorkflow(Workflow):
         """Run the RAFT workflow and return experiences"""
 
         if self.is_eval:
-            try:
-                (
-                    trajectory,
-                    reward,
-                    success,
-                    predicted_answer,
-                    ground_truth,
-                    attempts,
-                ) = utils.first_rollout(self)
-                exp = self.model.convert_messages_to_experience(trajectory[:-1])
-                exp.reward = reward
-                exp.metrics = {
-                    "success": 1.0 if success else 0.0,
-                    "reward": reward,
-                    "attempts": attempts,
-                }
-                return [exp]
-            except Exception:
-                return [copy.deepcopy(self.default_exp)]
+            return utils.eval_dapo(self)
+
+        # Generate unique task ID
+        task_id = f"{str(self.task.batch_id).replace('/', '_')}_{self.task.task_id}"
 
         # Single rollout execution
         exp_lst = []
@@ -162,6 +147,23 @@ class RAFTBaselineDapoWorkflow(Workflow):
                 # RAFT only uses successful samples
                 if reward >= 1.0:
                     exp_lst.append(exp)
+
+                    if self.whether_save_data:
+                        # Save training experience data (only successful samples)
+                        train_record = utils.create_experience_record(
+                            task_id=task_id,
+                            trajectory=trajectory,
+                            reward=reward,
+                            success=success,
+                            predicted_answer=predicted_answer,
+                            ground_truth=ground_truth,
+                            attempt_type="train",
+                        )
+                        utils.save_experience_data(
+                            task_id=f"{task_id}_attempt_{i}",
+                            experience_data=train_record,
+                            data_dir=self.train_dir,
+                        )
                 else:
                     exp_lst.append(copy.deepcopy(self.default_exp))
             except Exception:

@@ -148,6 +148,9 @@ class ReflectGRPODapoWorkflow(Workflow):
         if self.is_eval:
             return utils.eval_dapo(self)
 
+        # Generate unique task ID
+        task_id = f"{str(self.task.batch_id).replace('/', '_')}_{self.task.task_id}"
+
         exp_lst = []
 
         # First half: normal rollout
@@ -170,6 +173,23 @@ class ReflectGRPODapoWorkflow(Workflow):
                     "attempts": attempts,
                 }
                 exp_lst.append(exp)
+
+                if self.whether_save_data:
+                    # Save first half training data
+                    train_record = utils.create_experience_record(
+                        task_id=task_id,
+                        trajectory=trajectory,
+                        reward=reward,
+                        success=success,
+                        predicted_answer=predicted_answer,
+                        ground_truth=ground_truth,
+                        attempt_type="train_first_half",
+                    )
+                    utils.save_experience_data(
+                        task_id=f"{task_id}_attempt_{i}_first_half",
+                        experience_data=train_record,
+                        data_dir=self.train_dir,
+                    )
             except Exception as e:
                 print(f"[ReflectGRPO] Rollout {i} failed - Error: {str(e)}")
 
@@ -195,6 +215,23 @@ class ReflectGRPODapoWorkflow(Workflow):
                     "attempts": attempts,
                 }
                 exp_lst.append(exp)
+
+                if self.whether_save_data:
+                    # Save first attempt data
+                    first_record = utils.create_experience_record(
+                        task_id=task_id,
+                        trajectory=trajectory,
+                        reward=reward,
+                        success=success,
+                        predicted_answer=predicted_answer,
+                        ground_truth=ground_truth,
+                        attempt_type="first",
+                    )
+                    utils.save_experience_data(
+                        task_id=f"{task_id}_attempt_{i}_first",
+                        experience_data=first_record,
+                        data_dir=self.train_dir,
+                    )
 
                 # If not successful, do reflection and retry
                 if not success:
@@ -235,6 +272,28 @@ class ReflectGRPODapoWorkflow(Workflow):
                                 "improved": 1.0 if second_reward > reward else 0.0,
                             }
                             exp_lst.append(second_exp)
+
+                            if self.whether_save_data:
+                                # Save second attempt data
+                                second_record = utils.create_experience_record(
+                                    task_id=task_id,
+                                    trajectory=second_trajectory,
+                                    reward=second_reward,
+                                    success=second_success,
+                                    predicted_answer=second_predicted_answer,
+                                    ground_truth=second_ground_truth,
+                                    attempt_type="second",
+                                    additional_metrics={
+                                        "first_reward": reward,
+                                        "improvement": second_reward > reward,
+                                        "reward_difference": second_reward - reward,
+                                    },
+                                )
+                                utils.save_experience_data(
+                                    task_id=f"{task_id}_attempt_{i}_second",
+                                    experience_data=second_record,
+                                    data_dir=self.train_dir,
+                                )
 
                         except Exception as e:
                             print(f"[ReflectGRPO] Retry {i} failed - Error: {str(e)}")
