@@ -41,6 +41,9 @@ from trinity.common.workflows.envs.R3L.alfworld.opmd_workflow import (
     OPMDBaselineAlfworldWorkflow,
 )
 from trinity.common.workflows.envs.R3L.alfworld.R3L_workflow import R3LAlfworldWorkflow
+from trinity.common.workflows.envs.R3L.alfworld.R3L_w_o_credit_workflow import (
+    R3LAlfworldWoCreditWorkflow,
+)
 from trinity.common.workflows.envs.R3L.alfworld.raft_workflow import (
     RAFTBaselineAlfworldWorkflow,
 )
@@ -74,6 +77,9 @@ from trinity.common.workflows.envs.R3L.dapo.opmd_workflow import (
     OPMDBaselineDapoWorkflow,
 )
 from trinity.common.workflows.envs.R3L.dapo.R3L_workflow import R3LDapoWorkflow
+from trinity.common.workflows.envs.R3L.dapo.R3L_w_o_credit_workflow import (
+    R3LDapoWoCreditWorkflow,
+)
 from trinity.common.workflows.envs.R3L.dapo.raft_workflow import (
     RAFTBaselineDapoWorkflow,
 )
@@ -94,6 +100,9 @@ from trinity.common.workflows.envs.R3L.scienceworld.opmd_workflow import (
 from trinity.common.workflows.envs.R3L.scienceworld.R3L_workflow import (
     R3LScienceWorldWorkflow,
 )
+from trinity.common.workflows.envs.R3L.scienceworld.R3L_w_o_credit_workflow import (
+    R3LScienceWorldWoCreditWorkflow,
+)
 from trinity.common.workflows.envs.R3L.scienceworld.raft_workflow import (
     RAFTBaselineScienceWorldWorkflow,
 )
@@ -108,6 +117,9 @@ from trinity.common.workflows.envs.R3L.webshop.opmd_workflow import (
     OPMDBaselineWebshopWorkflow,
 )
 from trinity.common.workflows.envs.R3L.webshop.R3L_workflow import R3LWebshopWorkflow
+from trinity.common.workflows.envs.R3L.webshop.R3L_w_o_credit_workflow import (
+    R3LWebshopWoCreditWorkflow,
+)
 from trinity.common.workflows.envs.R3L.webshop.raft_workflow import (
     RAFTBaselineWebshopWorkflow,
 )
@@ -158,6 +170,7 @@ __all__ = [
     "MathWorkflow",
     "WebShopWorkflow",
     "R3LWebshopWorkflow",
+    "R3LWebshopWoCreditWorkflow",
     "GRPOBaselineWebshopWorkflow",
     "OPMDBaselineWebshopWorkflow",
     "RAFTBaselineWebshopWorkflow",
@@ -165,6 +178,7 @@ __all__ = [
     "ReflectGRPOWebshopWorkflow",
     # Alfworld R3L workflows
     "R3LAlfworldWorkflow",
+    "R3LAlfworldWoCreditWorkflow",
     "GRPOBaselineAlfworldWorkflow",
     "OPMDBaselineAlfworldWorkflow",
     "RAFTBaselineAlfworldWorkflow",
@@ -172,6 +186,7 @@ __all__ = [
     "ReflectGRPOAlfworldWorkflow",
     # DAPO R3L workflows
     "R3LDapoWorkflow",
+    "R3LDapoWoCreditWorkflow",
     "GRPOBaselineDapoWorkflow",
     "OPMDBaselineDapoWorkflow",
     "RAFTBaselineDapoWorkflow",
@@ -179,6 +194,7 @@ __all__ = [
     "ReflectGRPODapoWorkflow",
     # ScienceWorld R3L workflows
     "R3LScienceWorldWorkflow",
+    "R3LScienceWorldWoCreditWorkflow",
     "GRPOBaselineScienceWorldWorkflow",
     "OPMDBaselineScienceWorldWorkflow",
     "RAFTBaselineScienceWorldWorkflow",
