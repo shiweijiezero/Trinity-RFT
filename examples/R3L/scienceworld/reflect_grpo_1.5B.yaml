@@ -70,6 +70,8 @@ synchronizer:
   sync_interval: 1
   sync_timeout: 12000
 trainer:
+  max_actor_ckpt_to_keep: 1
+  max_critic_ckpt_to_keep: 1
   save_interval: 30
   grad_clip: 1.0
   use_dynamic_bsz: true
