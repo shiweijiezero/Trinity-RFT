@@ -159,7 +159,7 @@ class StorageConfig:
 
     # used for StorageType.QUEUE
     capacity: int = 10000
-    max_read_timeout: float = 1800
+    max_read_timeout: float = 180000 # increased
     replay_buffer: Optional[ReplayBufferConfig] = field(default_factory=ReplayBufferConfig)
 
     # used for StorageType.SQL
@@ -276,7 +276,7 @@ class ExperienceBufferConfig:
 
     # used for StorageType.QUEUE
     capacity: int = 10000
-    max_read_timeout: float = 1800
+    max_read_timeout: float = 180000 # increased
     replay_buffer: Optional[ReplayBufferConfig] = field(default_factory=ReplayBufferConfig)
 
     # used for StorageType.SQL
@@ -599,7 +599,7 @@ class ExplorerConfig:
     # for workflow runner
     # number of workflow runners.
     runner_per_model: int = 8  # number of runners per each rollout model
-    max_timeout: int = 1800  # wait each task for 30 minutes
+    max_timeout: int = 180000  # wait each task for 30 minutes Increased to 30*100 mins
     max_retry_times: int = 2  # retry each task for 2 times if it fails or timeout
     env_vars: dict = field(default_factory=dict)  # environment variables for workflow runner
     max_repeat_times_per_runner: Optional[
@@ -680,7 +680,7 @@ class SynchronizerConfig:
     # allow explorer to run `sync_offset` steps before sync
     sync_offset: int = 0
     # waiting for `sync_timeout` seconds before timeout in `nccl` method
-    sync_timeout: int = 3600
+    sync_timeout: int = 36000 # increased to 10 hours
     # wait for the lastest checkpoint to be ready  # TODO: to be used
     wait_for_checkpoint: bool = False
 
