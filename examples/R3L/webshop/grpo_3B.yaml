@@ -18,7 +18,7 @@ cluster:
   gpu_per_node: 6
 buffer:
   total_epochs: 20
-  batch_size: 96
+  batch_size: 9
   explorer_input:
     taskset:
       name: webshop

@@ -16,7 +16,12 @@
       "Bash(sed:*)",
       "Bash(conda activate:*)",
       "Bash(call C:Usersweijieanaconda3Scriptsactivate.bat weijie)",
-      "Bash(C:Usersweijieanaconda3envsweijiepython.exe test_math_verify.py)"
+      "Bash(C:Usersweijieanaconda3envsweijiepython.exe test_math_verify.py)",
+      "Bash(do)",
+      "Bash(\"examples/R3L/$env/opmd_R3L_$size.yaml\")",
+      "Bash( ls -1 trinity/common/workflows/envs/R3L/*/R3L_w_o_credit_workflow.py)",
+      "Bash(ls:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []
