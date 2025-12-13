@@ -2,7 +2,7 @@ project: WEBSHOP
 name: WEBSHOP_RFT_Llama_3B_reflect_grpo
 checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
 algorithm:
-  algorithm_type: grpo
+  algorithm_type: opmd
   repeat_times: 8
   optimizer:
     lr: 1e-6
