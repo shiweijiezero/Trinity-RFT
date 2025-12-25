@@ -1,0 +1,20 @@
+\subsection{Entropy Instability in Negative Advantage Regimes}
+\label{sec:analysis_positive}
+Standard GRPO employs variance-based normalization $A_i = (R_i - \bar{R})/\sigma$. In failure-dominated regimes, the instability is not merely a consequence of the quantity of negative samples, but rather the distributional asymmetry of the policy's probability mass combined with gradient conflict.
+
+This phenomenon can be formalized through the lens of optimization direction. Recent theoretical frameworks, such as RED \cite{yao2025group}, establish that in off-policy settings, standard REINFORCE estimators are prone to convergence issues unless the policy update direction is actively steered towards high-reward regions via data weighting. Similarly, empirical findings from DeepSeek-V3.2 \cite{liu2025deepseek32} identify that highly off-policy negative samples can be detrimental, destabilizing optimization by introducing divergence without constructive guidance. While DeepSeek-V3.2 addresses this by masking negative sequences that exhibit high KL divergence, we propose a complementary approach focused on signal dominance.
+
+Consider the critical exploration phase where the model has not yet solidified the correct reasoning path but is confident in erroneous heuristics. In this regime, the sampled group $\mathcal{G}$ is structurally dominated by negative samples ($A_{neg} < 0$) that simultaneously hold high probability mass ($\pi_\theta(y_{neg}) \gg 0$). Conversely, the correct solution $y_{pos}$ lies in the low-probability tail ($\pi_\theta(y_{pos}) \approx 0$) and is rarely sampled. Consequently, the expected gradient update becomes dominated by the destructive term:
+\begin{equation}
+\begin{split}
+\mathbb{E}[\nabla J] \approx &\underbrace{\pi_\theta(y_{neg}) A_{neg} \nabla \log \pi_\theta(y_{neg})}_{\mathcal{D}: \text{ Dominant Suppression Signal}} \\
+&+ \underbrace{\pi_\theta(y_{pos}) A_{pos} \nabla \log \pi_\theta(y_{pos})}_{\mathcal{C}: \text{ Vanishing Positive Signal}}
+\end{split}
+\end{equation}
+Since the positive signal $\mathcal{C}$ is negligible compared to the suppression signal $\mathcal{D}$, the effective update minimizes $\log \pi_\theta(y_{neg})$. This creates a mechanism of blind suppression. Decreasing the probability of the dominant mode $y_{neg}$ ($\Delta \pi(y_{neg}) < 0$) forces the redistribution of probability mass to the rest of the vocabulary $V \setminus \{y_{neg}\}$:
+\begin{equation}
+\sum_{v \neq y_{neg}} \Delta \pi(v) = - \Delta \pi(y_{neg}) > 0
+\end{equation}
+Without a strong positive attractor to capture this redistributed mass, it spreads diffusely across the vocabulary, monotonically increasing the policy entropy $H(\pi)$. The model effectively unlearns its structured (albeit incorrect) behavior and degenerates into a high-entropy uniform distribution, leading to the collapse observed in Figure \ref{fig:training_analysis}.
+
+R$^3$L counteracts this asymmetry by enforcing a gradient dominance condition. We introduce the amplification factor $\alpha$ not merely as a heuristic reward booster, but to satisfy the inequality $\alpha \cdot |\mathcal{C}| > |\mathcal{D}|$. By synthesizing a better retry trajectory $y_{retry}$ and explicitly amplifying its weight, we construct a synthetic attractor strong enough to flip the sign of the total expected gradient. This ensures that the probability mass released from suppressing $y_{neg}$ is channeled specifically to $y_{retry}$ rather than scattered, maintaining structural coherence and ensuring the optimization direction remains constructive even in failure-heavy batches.

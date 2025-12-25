@@ -146,6 +146,7 @@ class OPMDGroupAdvantage(GroupAdvantage):
     def default_args(cls) -> dict:
         return {"opmd_baseline": "mean", "tau": 1.0}
 
+
 @ADVANTAGE_FN.register_module("opmd_reweight_adv")
 class OPMDReweightAdvGroupAdvantage(GroupAdvantage):
     """OPMD Group Advantage computation with reweighting"""
@@ -159,7 +160,7 @@ class OPMDReweightAdvGroupAdvantage(GroupAdvantage):
         return group_by(exps, id_type="task")
 
     def calculate_group_advantage(
-            self, group_id: str, exps: List[Experience]
+        self, group_id: str, exps: List[Experience]
     ) -> Tuple[List[Experience], Dict]:
         with torch.no_grad():
             if len(exps) == 1:
@@ -171,14 +172,14 @@ class OPMDReweightAdvGroupAdvantage(GroupAdvantage):
                     group_baseline = torch.mean(group_rewards)
                 else:
                     group_baseline = self.tau * (
-                            torch.logsumexp(group_rewards / self.tau, dim=-1)
-                            - torch.log(torch.tensor(len(exps)))
+                        torch.logsumexp(group_rewards / self.tau, dim=-1)
+                        - torch.log(torch.tensor(len(exps)))
                     )
             for exp in exps:
                 score = exp.reward - group_baseline
                 if exp.reward >= 1.0:
                     score = 1.0
-                if score >= 0:
+                elif score >= 0:
                     score = score * 3
                 exp.advantages = score * exp.action_mask
                 exp.returns = exp.advantages.clone()

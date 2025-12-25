@@ -1,5 +1,5 @@
 project: WEBSHOP
-name: WEBSHOP_RFT_Qwen_1.5B_reflect_grpo
+name: WEBSHOP_RFT_Qwen_1.5B_R3L_w_o_reweight
 checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
 algorithm:
   algorithm_type: opmd

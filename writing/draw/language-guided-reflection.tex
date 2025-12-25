@@ -1,0 +1,126 @@
+\begin{figure}[t]
+    \centering
+    \begin{minipage}{0.48\linewidth}
+        \centering
+        \begin{tikzpicture}[scale=0.44]
+            \begin{axis}[
+                xlabel={Training Steps},
+                ylabel={Reward Gain},
+                grid=major,
+                ymin=0,
+                font=\Large,
+                yticklabel={\pgfmathprintnumber{\tick}},
+                legend pos=north west,
+                legend style={font=\large, fill=white, fill opacity=0.5, draw opacity=1, text opacity=0.8},
+            ]
+            \addplot[
+                color=blue,
+                mark=square*,
+                mark size=0pt,
+                thick,
+                smooth,
+                tension=1.0
+            ]
+            table[x=step, y=gain] {figure/src/alfworld-gain.dat};
+            \addlegendentry{ALFWorld (1.5B)}
+
+            \addplot[
+                color=red,
+                mark=*,
+                mark size=0pt,
+                thick,
+                smooth,
+                tension=1.0
+            ]
+            table[x=step, y=gain] {figure/src/alfworld-7b-gain.dat};
+            \addlegendentry{ALFWorld (7B)}
+
+            \addplot[
+                color=green!70!black,
+                mark=triangle*,
+                mark size=0pt,
+                thick,
+                smooth,
+                tension=1.0
+            ]
+            table[x=step, y=gain] {figure/src/webshop-gain.dat};
+            \addlegendentry{WebShop (7B)}
+
+            \addplot[
+                color=orange,
+                mark=diamond*,
+                mark size=0pt,
+                thick,
+                smooth,
+                tension=1.0
+            ]
+            table[x=step, y=gain] {figure/src/dapo-gain.dat};
+            \addlegendentry{DAPO (7B)}
+            \end{axis}
+        \end{tikzpicture}
+        \centerline{\footnotesize (a) Avg. Reward Gain}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\linewidth}
+        \centering
+        \begin{tikzpicture}[scale=0.44]
+            \begin{axis}[
+                xlabel={Training Steps},
+                ylabel={Improvement Rate (\%)},
+                grid=major,
+                ymin=0,
+                font=\Large,
+                yticklabel={\pgfmathprintnumber{\tick}},
+                legend pos=north west,
+                legend style={font=\large, fill=white, fill opacity=0.5, draw opacity=1, text opacity=0.8},
+            ]
+            \addplot[
+                color=blue,
+                mark=square*,
+                mark size=0pt,
+                thick,
+                smooth,
+                tension=1.0
+            ]
+            table[x=step, y=rir] {figure/src/alfworld-rir.dat};
+            \addlegendentry{ALFWorld (1.5B)}
+
+            \addplot[
+                color=red,
+                mark=*,
+                mark size=0pt,
+                thick,
+                smooth,
+                tension=1.0
+            ]
+            table[x=step, y=rir] {figure/src/alfworld-7b-rir.dat};
+            \addlegendentry{ALFWorld (7B)}
+
+            \addplot[
+                color=green!70!black,
+                mark=triangle*,
+                mark size=0pt,
+                thick,
+                smooth,
+                tension=1.0
+            ]
+            table[x=step, y=rir] {figure/src/webshop-rir.dat};
+            \addlegendentry{WebShop (7B)}
+
+            \addplot[
+                color=orange,
+                mark=diamond*,
+                mark size=0pt,
+                thick,
+                smooth,
+                tension=1.0
+            ]
+            table[x=step, y=rir] {figure/src/dapo-rir.dat};
+            \addlegendentry{DAPO (7B)}
+            \end{axis}
+        \end{tikzpicture}
+        \centerline{\footnotesize (b) Retry Improvement Rate}
+    \end{minipage}
+    \caption{Evolution of exploration metrics across environments. \textbf{(a)} The average Reward Gain relative to the base policy. \textbf{(b)} The percentage of retry trajectories that successfully improved upon the base attempt.}
+    \label{fig:exploration_metrics}
+\end{figure}

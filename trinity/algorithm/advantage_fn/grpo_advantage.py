@@ -234,3 +234,92 @@ class GRPOGroupedAdvantage(GroupAdvantage):
             "rank_penalty": None,
             "std_cal_level": "group",
         }
+
+
+@ADVANTAGE_FN.register_module("grpo_reweight_adv")
+class GRPOReweightAdvGroupAdvantage(GroupAdvantage):
+    """GRPO Group Advantage computation with reweighting.
+
+    Reweighting rules:
+    - If reward >= 1.0, set score = 1.0
+    - If score >= 0, multiply by 3
+    - If score < 0, keep unchanged
+    """
+
+    def __init__(
+        self,
+        epsilon: float = 1e-6,
+        std_cal_level: str = "group",
+    ) -> None:
+        self.epsilon = epsilon
+        self.std_cal_level = std_cal_level
+        if self.std_cal_level not in ["group", "batch"]:
+            raise ValueError("std_cal_level must be either 'group' or 'batch'")
+
+    def group_experiences(self, exps):
+        return group_by(exps, id_type="task")
+
+    def calculate_group_advantage(
+        self,
+        group_id: str,
+        exps: List[Experience],
+        precomputed_std: Optional[torch.Tensor] = None,
+    ) -> Tuple[List[Experience], Dict]:
+        with torch.no_grad():
+            if len(exps) == 1:
+                group_reward_mean = torch.tensor(0.0)
+                group_reward_std = torch.tensor(1.0)
+            else:
+                rewards = torch.tensor([exp.reward for exp in exps], dtype=torch.float32)
+                group_reward_mean = torch.mean(rewards)
+                group_reward_std = torch.std(rewards)
+
+            for exp in exps:
+                if self.std_cal_level == "batch" and precomputed_std is not None:
+                    score = (exp.reward - group_reward_mean) / (precomputed_std + self.epsilon)
+                else:
+                    score = (exp.reward - group_reward_mean) / (group_reward_std + self.epsilon)
+
+                # Reweighting logic
+                if exp.reward >= 1.0:
+                    score = 1.0
+                elif score >= 0:
+                    score = score * 3
+                # Negative scores remain unchanged
+
+                exp.advantages = score * exp.action_mask
+                exp.returns = exp.advantages.clone()
+
+            metrics = {
+                "reward_mean": group_reward_mean.item(),
+                "reward_std": group_reward_std.item(),
+            }
+
+        return exps, metrics
+
+    def process(self, exps):
+        exp_groups = self.group_experiences(exps)
+        metric_list = []
+        precomputed_std = None
+        if self.std_cal_level == "batch":
+            all_rewards = torch.tensor([exp.reward for exp in exps], dtype=torch.float32)
+            if len(all_rewards) <= 1:
+                precomputed_std = torch.tensor(1.0)
+            else:
+                precomputed_std = torch.std(all_rewards)
+        for group_id, group_exps in exp_groups.items():
+            group_exps, group_metrics = self.calculate_group_advantage(
+                group_id, group_exps, precomputed_std=precomputed_std
+            )
+            metric_list.append(group_metrics)
+
+        metrics = gather_metrics(metric_list, "group_advantages")
+        exps = [exp for group in exp_groups.values() for exp in group]
+        return exps, metrics
+
+    @classmethod
+    def default_args(cls) -> dict:
+        return {
+            "epsilon": 1e-6,
+            "std_cal_level": "group",
+        }
