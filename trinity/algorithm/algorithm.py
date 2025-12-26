@@ -137,6 +137,40 @@ class GRPOReweightAdvAlgorithm(AlgorithmType):
         }
 
 
+@ALGORITHM_TYPE.register_module("critique_grpo")
+class CritiqueGRPOAlgorithm(AlgorithmType):
+    """Critique-GRPO algorithm.
+
+    This algorithm extends GRPO with critique-based refinement:
+    - Initial responses are generated and critiqued
+    - Refinements are generated based on critiques
+    - Training uses both on-policy (initial) and off-policy (refined) samples
+    - Off-policy samples use shaping function f(pi) = pi / (pi + gamma)
+    """
+
+    use_critic: bool = False
+    use_reference: bool = True
+    compute_advantage_in_trainer: bool = False
+    can_balance_batch: bool = True
+    schema: str = "experience"
+
+    @classmethod
+    def default_config(cls) -> Dict:
+        return {
+            "repeat_times": 8,
+            "advantage_fn": "grpo",
+            "sample_strategy": "critique_grpo",
+            "policy_loss_fn": "critique_grpo",
+            "policy_loss_fn_args": {
+                "clip_range": 0.2,
+                "gamma": 0.1,
+            },
+            "kl_penalty_fn": "none",
+            "kl_loss_fn": "k3",
+            "entropy_loss_fn": "default",
+        }
+
+
 @ALGORITHM_TYPE.register_module("opmd")
 class OPMDAlgorithm(AlgorithmType):
     """OPMD algorithm."""
