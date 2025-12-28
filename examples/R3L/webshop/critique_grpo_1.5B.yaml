@@ -16,7 +16,7 @@ model:
   max_model_len: 20480
 cluster:
   node_num: 1
-  gpu_per_node: 8
+  gpu_per_node: 4
 buffer:
   total_epochs: 20
   batch_size: 96
@@ -53,7 +53,7 @@ explorer:
   runner_per_model: 32
   eval_interval: 20
   rollout_model:
-    engine_num: 5
+    engine_num: 2
     tensor_parallel_size: 1
     enable_prefix_caching: false
     enforce_eager: false
@@ -74,7 +74,7 @@ trainer:
   save_interval: 30
   grad_clip: 1.0
   use_dynamic_bsz: true
-  max_token_len_per_gpu: 10240
+  max_token_len_per_gpu: 16384
   ulysses_sequence_parallel_size: 1
   trainer_config:
     trainer:
