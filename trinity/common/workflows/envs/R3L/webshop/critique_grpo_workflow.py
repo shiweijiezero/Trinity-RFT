@@ -46,6 +46,34 @@ class CritiqueGRPOWebShopWorkflow(Workflow):
         os.makedirs(self.eval_dir, exist_ok=True)
         os.makedirs(self.train_dir, exist_ok=True)
 
+        # Initialize WebShop environment
+        try:
+            import sys
+
+            # Add WebShop path - can be overridden via WEBSHOP_PATH environment variable
+            webshop_path = os.environ.get("WEBSHOP_PATH")
+            if webshop_path:
+                sys.path.append(webshop_path)
+            else:
+                sys.path.append("/home/wshiah/code/shiweijie/weijie/trinity/webshop")
+            import gym
+            from web_agent_site.envs import WebAgentTextEnv  # noqa: F401
+
+            # NOTE: Hosting the env requires ~15GB CPU memory.
+            self.env = gym.make(
+                "WebAgentTextEnv-v0",
+                observation_mode="text_rich",
+                num_products=None,
+                human_goals=True,
+            )
+        except Exception as e:
+            error_message = (
+                f"Error importing WebAgentTextEnv {str(e)}. "
+                f"Please make sure you have installed the web_agent_site package, "
+                f"following the instructions in https://github.com/princeton-nlp/WebShop"
+            )
+            raise ImportError(error_message)
+
         prompts_dir = Path(__file__).parent / "prompts"
         self.jinja_env = Environment(
             loader=FileSystemLoader(str(prompts_dir)),
@@ -60,6 +88,7 @@ class CritiqueGRPOWebShopWorkflow(Workflow):
 
     def reset(self, task: Task):
         self.task_desc = task.task_desc or "0"
+        self.session_id = int(task.task_desc or "0")
         self.is_eval = task.is_eval
         self.task = task
         self.n = task.repeat_times
@@ -88,9 +117,11 @@ class CritiqueGRPOWebShopWorkflow(Workflow):
             return None, None
 
     def generate_refinement(
-        self, env, critique_text: str
+        self, critique_text: str
     ) -> Tuple[List[Dict[str, str]], float, bool, int, bool]:
-        observation, info = env.reset()
+        """Generate a refinement rollout with critique guidance."""
+        self.env.reset(session=self.session_id)
+        observation = self.env.observation
         trajectory = []
         action_history = []
 
@@ -104,28 +135,19 @@ Use the above analysis to avoid similar mistakes."""
         merged_system_prompt = f"{original_system_prompt}\n\n{guidance}"
         trajectory.append({"role": "system", "content": merged_system_prompt})
 
-        default_reward = 0.0
+        default_reward = -0.1
         done = False
         reward = default_reward
         valid_format = True
-
-        task_description = utils.extract_task_description(observation)
+        step = 0
 
         for step in range(self.max_env_steps):
-            admissible_actions = (
-                info.get("admissible_commands", []) if isinstance(info, dict) else []
-            )
+            available_actions = self.env.get_available_actions()
 
             trajectory.append(
                 {
                     "role": "user",
-                    "content": utils.format_observation(
-                        current_observation=observation,
-                        task_description=task_description,
-                        current_step=step,
-                        action_history=action_history,
-                        admissible_actions=admissible_actions,
-                    ),
+                    "content": utils.format_observation(observation, available_actions),
                 }
             )
 
@@ -142,29 +164,42 @@ Use the above analysis to avoid similar mistakes."""
             response_text = responses[0].response_text.strip()
             trajectory.append({"role": "assistant", "content": response_text})
 
-            think, action, error_msg = utils.parse_response(response_text)
-            if error_msg is not None:
-                trajectory.append({"role": "user", "content": f"Feedback: {error_msg}"})
-                return trajectory, default_reward, False, step + 1, False
+            think, action = utils.parse_response(response_text)
+            if action is None:
+                valid_format = False
+                feedback = "Invalid response format, missing valid <think> or <action> tags"
+                trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
+                return trajectory, default_reward, False, step + 1, valid_format
 
-            observation, reward, done, info = env.step(action)
-
-            if action not in admissible_actions:
-                trajectory.append({"role": "user", "content": f"Feedback: Invalid action"})
-                return trajectory, default_reward, False, step + 1, False
-
+            # Check for consecutive action repetition
             action_history.append(action)
+            if len(action_history) > 2:
+                action_history.pop(0)
 
-            if len(action_history) >= 3 and all(
-                a == action_history[-1] for a in action_history[-3:]
-            ):
-                trajectory.append({"role": "user", "content": "Feedback: Repeated action"})
-                return trajectory, default_reward, False, step + 1, False
+            if len(action_history) >= 2 and all(
+                a == action_history[0] for a in action_history
+            ) and "next" not in action.lower() and "prev" not in action.lower() and "search" not in action.lower():
+                feedback = f"Repeated invalid action {action} multiple times, shopping task failed"
+                trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
+                valid_format = False
+                return trajectory, default_reward, False, step + 1, valid_format
+
+            # Validate and execute action
+            action_valid, error_msg = utils.validate_action(action, available_actions)
+            if action_valid:
+                observation, reward, done, info = self.env.step(action)
+            else:
+                observation, reward, done = error_msg, default_reward, False
 
             if done:
                 break
 
-        feedback = f"Shopping completed with reward: {reward}"
+        # Generate feedback
+        if reward >= 1.0:
+            feedback = f"Shopping task completed successfully (reward: {reward}/1.0)"
+        else:
+            feedback = f"Shopping task not completed (reward: {reward}/1.0)"
+
         trajectory.append({"role": "user", "content": f"Feedback: {feedback}"})
         return trajectory, reward, done, step + 1, valid_format
 
@@ -172,13 +207,13 @@ Use the above analysis to avoid similar mistakes."""
         if self.is_eval:
             return utils.eval_webshop(self)
 
-        env = utils.create_webshop_environment(self.task_desc)
-
         # Step 1: Generate n initial trajectories
         initial_results = []
         for i in range(self.n):
             try:
-                trajectory, reward, done, steps, valid = utils.first_rollout(self, env)
+                trajectory, reward, done, steps, valid = utils.first_rollout(
+                    self, self.env, self.session_id
+                )
                 print(f"[Critique-GRPO] Initial {i+1}/{self.n} - reward: {reward}")
 
                 exp = self.model.convert_messages_to_experience(trajectory[:-1])
@@ -209,12 +244,16 @@ Use the above analysis to avoid similar mistakes."""
                 if critique_text is None:
                     continue
 
+                print(f"[Critique-GRPO] Generated critique for initial {i+1}")
+
+                # Re-execute with guidance
                 ref_traj, ref_reward, ref_done, ref_steps, ref_valid = self.generate_refinement(
-                    env, critique_text
+                    critique_text
                 )
                 print(f"[Critique-GRPO] Refinement for initial {i+1} - reward: {ref_reward}")
 
                 if ref_reward > result["reward"]:
+                    # Create clean trajectory without guidance
                     clean_traj = []
                     for msg in ref_traj:
                         if msg["role"] == "system":
@@ -227,7 +266,9 @@ Use the above analysis to avoid similar mistakes."""
                     ref_exp = self.model.convert_messages_to_experience(clean_traj[:-1])
                     ref_exp.reward = ref_reward
                     ref_exp.metrics = {
+                        "refined_success": 1.0 if ref_reward >= 1.0 else 0.0,
                         "refined_reward": ref_reward,
+                        "refined_steps": ref_steps,
                         "improvement": ref_reward - result["reward"],
                     }
                     ref_exp.eid.task = str(self.task.task_id) + "_refined"
@@ -251,8 +292,13 @@ Use the above analysis to avoid similar mistakes."""
         # Step 4: Construct final experience list
         exp_lst = []
         if best_refinement is not None:
-            best_refinement["exp"].info["is_off_policy"] = True
-            exp_lst.append(best_refinement["exp"])
+            ref_exp = best_refinement["exp"]
+            ref_exp.info["is_off_policy"] = True
+            exp_lst.append(ref_exp)
+            print(
+                f"[Critique-GRPO] Using refined response (reward={best_refinement['reward']}) as off-policy sample"
+            )
+
             for i, result in enumerate(initial_results):
                 if i == best_refinement["original_idx"]:
                     continue
@@ -261,6 +307,7 @@ Use the above analysis to avoid similar mistakes."""
                 result["exp"].info["is_off_policy"] = False
                 exp_lst.append(result["exp"])
         else:
+            print("[Critique-GRPO] No improvement from refinement, using all initial responses")
             for result in initial_results:
                 if len(exp_lst) >= self.n:
                     break
