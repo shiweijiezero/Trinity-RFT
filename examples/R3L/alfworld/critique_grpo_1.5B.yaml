@@ -81,4 +81,4 @@ trainer:
       max_actor_ckpt_to_keep: 1
       max_critic_ckpt_to_keep: 1
 monitor:
-  monitor_type: wandb
+  monitor_type: tensorboard
