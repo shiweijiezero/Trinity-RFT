@@ -1,0 +1,110 @@
+\begin{figure}[t]
+    \centering
+    \begin{minipage}{0.48\linewidth}
+        \centering
+        \begin{tikzpicture}[scale=0.44]
+            \begin{axis}[
+                xlabel={Training Steps},
+                ylabel={Avg. Pivot Point},
+                grid=major,
+                ymin=0,
+                ymax=8,
+                ytick={0,2,4,6,8},
+                font=\Large,
+                yticklabel={\pgfmathprintnumber{\tick}},
+            ]
+            \addplot[
+                color=blue,
+                mark=square*,
+                mark size=0pt,
+                line width=1.2pt,
+                smooth,
+                tension=1.0
+            ]
+            table[x=step, y=pivot] {figure/src/alfworld-pivot.dat};
+            \end{axis}
+        \end{tikzpicture}
+        \centerline{\footnotesize (a) ALFWorld}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\linewidth}
+        \centering
+        \begin{tikzpicture}[scale=0.44]
+            \begin{axis}[
+                xlabel={Training Steps},
+                ylabel={Avg. Pivot Point},
+                grid=major,
+                ymin=0,
+                font=\Large,
+                yticklabel={\pgfmathprintnumber{\tick}},
+            ]
+            \addplot[
+                color=green!70!black,
+                mark=triangle*,
+                mark size=0pt,
+                line width=1.2pt,
+                smooth,
+                tension=1.0
+            ]
+            table[x=step, y=pivot] {figure/src/webshop-pivot.dat};
+            \end{axis}
+        \end{tikzpicture}
+        \centerline{\footnotesize (b) WebShop}
+    \end{minipage}
+
+    \vspace{0.5em}
+
+    \begin{minipage}{0.48\linewidth}
+        \centering
+        \begin{tikzpicture}[scale=0.44]
+            \begin{axis}[
+                xlabel={Training Steps},
+                ylabel={Avg. Pivot Point},
+                grid=major,
+                ymin=0,
+                ymax=15,
+                ytick={0,3,6,9,12,15},
+                font=\Large,
+                yticklabel={\pgfmathprintnumber{\tick}},
+            ]
+            \addplot[
+                color=red,
+                mark=*,
+                mark size=0pt,
+                line width=1.2pt,
+                smooth,
+                tension=1.0
+            ]
+            table[x=step, y=pivot] {figure/src/scienceworld-pivot.dat};
+            \end{axis}
+        \end{tikzpicture}
+        \centerline{\footnotesize (c) ScienceWorld}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\linewidth}
+        \centering
+        \begin{tikzpicture}[scale=0.44]
+            \begin{axis}[
+                xlabel={Training Steps},
+                ylabel={Avg. Pivot Point},
+                grid=major,
+                ymin=0,
+                font=\Large,
+                yticklabel={\pgfmathprintnumber{\tick}},
+            ]
+            \addplot[
+                color=orange,
+                mark=diamond*,
+                mark size=0pt,
+                line width=1.2pt,
+                smooth,
+                tension=1.0
+            ]
+            table[x=step, y=pivot] {figure/src/dapo-pivot.dat};
+            \end{axis}
+        \end{tikzpicture}
+        \centerline{\footnotesize (d) DAPO (Math)}
+    \end{minipage}
+    \caption{Evolution of average pivot points across training. The pivot point indicates the step where the model's initial trajectory fails and requires correction. An increasing trend suggests the model learns to succeed at earlier stages, pushing failure points further into the trajectory.}
+    \label{fig:pivot_evolution}
+\end{figure}

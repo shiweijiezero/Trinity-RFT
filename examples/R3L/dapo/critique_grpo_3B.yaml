@@ -42,6 +42,69 @@ buffer:
           response_key: 'reward_model'
         rollout_args:
           temperature: 0.4
+      - name: math-aime24
+        storage_type: file
+        path: 'weijiezz/math-datasets-100k'
+        split: 'test_aime24'
+        format:
+          prompt_key: 'question'
+          response_key: 'answer'
+        rollout_args:
+          temperature: 0.4
+      - name: math-aime25
+        storage_type: file
+        path: 'weijiezz/math-datasets-100k'
+        split: 'test_aime25'
+        format:
+          prompt_key: 'question'
+          response_key: 'answer'
+        rollout_args:
+          temperature: 0.4
+      - name: math-amc23
+        storage_type: file
+        path: 'weijiezz/math-datasets-100k'
+        split: 'test_amc23'
+        format:
+          prompt_key: 'question'
+          response_key: 'answer'
+        rollout_args:
+          temperature: 0.4
+      - name: math-gsm8k
+        storage_type: file
+        path: 'weijiezz/math-datasets-100k'
+        split: 'test_gsm8k'
+        format:
+          prompt_key: 'question'
+          response_key: 'answer'
+        rollout_args:
+          temperature: 0.4
+      - name: math-math500
+        storage_type: file
+        path: 'weijiezz/math-datasets-100k'
+        split: 'test_math500'
+        format:
+          prompt_key: 'question'
+          response_key: 'answer'
+        rollout_args:
+          temperature: 0.4
+      - name: math-minervamath
+        storage_type: file
+        path: 'weijiezz/math-datasets-100k'
+        split: 'test_minervamath'
+        format:
+          prompt_key: 'question'
+          response_key: 'answer'
+        rollout_args:
+          temperature: 0.4
+      - name: math-olympiadbench
+        storage_type: file
+        path: 'weijiezz/math-datasets-100k'
+        split: 'test_olympiadbench'
+        format:
+          prompt_key: 'question'
+          response_key: 'answer'
+        rollout_args:
+          temperature: 0.4
     default_workflow_type: 'critique_grpo_dapo_workflow'
   trainer_input:
     experience_buffer:

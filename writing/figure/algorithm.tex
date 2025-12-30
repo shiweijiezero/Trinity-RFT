@@ -1,0 +1,53 @@
+\begin{algorithm*}[t]
+\small
+\caption{R$^3$L: Reflect, Retry, and Reinforce Learning}
+\label{alg:r3l}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} Policy $\pi_{\theta}$, Reference $\pi_{ref}$, Reward function $R$, Prompt dataset $\mathcal{D}$
+\STATE \textbf{Hyperparameters:} Group size $N$, Amplification factor $\alpha$, KL coefficient $\beta$
+\STATE \textbf{Initialize:} $\theta \leftarrow \theta_{old}$
+\WHILE{not converged}
+    \FOR{each prompt $x$ in batch $\mathcal{B} \sim \mathcal{D}$}
+        \STATE $\mathcal{G} \leftarrow \emptyset$ \COMMENT{Initialize trajectory group}
+
+        \STATE \textcolor{blue}{\textit{// Phase 1: Language-Guided Exploration}}
+        \STATE Sample $N/2$ base trajectories: $\{\tau_1, \dots, \tau_{N/2}\} \sim \pi_{\theta_{old}}(\cdot|x)$
+        \FOR{each base trajectory $\tau_i$}
+
+            \STATE \textcolor{gray}{\textit{// Reflection step}}
+            \STATE Generate reflection $r_i \sim \pi_{\theta_{old}}(\cdot | \tau_i, \text{prompt}_{reflect})$
+            \STATE Parse $r_i$ to get pivot step $t_{pivot}$ and guidance $g_i$
+
+            \STATE \textcolor{gray}{\textit{// Retry step with guidance}}
+            \STATE Sample retry trajectory $\tau'_i$ starting from $t_{pivot}$: $\tau'_i \sim \pi_{\theta_{old}}(\cdot | x, \tau_i[0:t_{pivot}], g_i)$
+            \STATE \textbf{Context Distillation:} Remove $g_i$ from input context for training
+
+            \STATE \textcolor{blue}{\textit{// Phase 2: Pivotal Credit Assignment}}
+            \STATE Define pivot mask $M_{pivot}[t] = 0$ if $t < t_{pivot}$ else $1$
+            \STATE Add $\tau_i$ to $\mathcal{G}$ with mask $M_i = M_{pivot}$ \COMMENT{Mask shared prefix for base}
+            \STATE Add $\tau'_i$ to $\mathcal{G}$ with mask $M'_i = M_{pivot}$ \COMMENT{Mask shared prefix for retry}
+        \ENDFOR
+
+        \STATE \textcolor{blue}{\textit{// Phase 3: Positive Preference Optimization}}
+        \STATE Compute rewards $R(\tau)$ for all $\tau \in \mathcal{G}$
+        \STATE Compute group baseline $\bar{R} = \text{mean}(\{R(\tau) | \tau \in \mathcal{G}\})$
+        \FOR{each $\tau_j \in \mathcal{G}$}
+            \STATE Calculate advantage $A_j = R(\tau_j) - \bar{R}$
+            \STATE \textcolor{gray}{\textit{// Apply advantage amplification}}
+            \IF{$R(\tau_j) \ge 1.0$}
+                \STATE $\hat{A}_j \leftarrow \alpha$ \COMMENT{Fixed high score for success}
+            \ELSIF{$A_j > 0$}
+                \STATE $\hat{A}_j \leftarrow A_j \cdot \alpha$ \COMMENT{Amplify positive signals}
+            \ELSE
+                \STATE $\hat{A}_j \leftarrow A_j$ \COMMENT{Keep negative signals as is}
+            \ENDIF
+        \ENDFOR
+
+        \STATE \textcolor{gray}{\textit{// Policy Update}}
+        \STATE Compute loss with pivotal masks and reweighted advantages:
+        \STATE $\mathcal{L}(\theta) = -\frac{1}{|\mathcal{G}|} \sum_{\tau_j \in \mathcal{G}} \sum_{t} M_j[t] \cdot \hat{A}_j \cdot \log \pi_{\theta}(y_t | x, y_{<t})$
+        \STATE Update $\theta$ via gradient descent
+    \ENDFOR
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm*}

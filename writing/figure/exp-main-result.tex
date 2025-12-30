@@ -1,35 +1,44 @@
 \begin{table*}[t]
 \centering
-\caption{Main results on agentic environments and mathematical reasoning benchmarks. All metrics are success rate. R$^3$L significantly outperforms baselines on complex tasks.}
-\label{tab:main_results}
-\resizebox{\textwidth}{!}{%  <--- 关键：强制缩放表格以适应页面宽度
+\resizebox{\textwidth}{!}{% 强制缩放表格以适应页面宽度
 \begin{tabular}{ll ccc cccccc}
 \toprule
 & & \multicolumn{3}{c}{\textbf{Agentic Environments}} & \multicolumn{6}{c}{\textbf{Mathematical Reasoning}} \\
 \cmidrule(lr){3-5} \cmidrule(lr){6-11}
 \textbf{Model} & \textbf{Method} & \textbf{ALFWorld} & \textbf{WebShop} & \textbf{ScienceWorld} & \textbf{GSM8K} & \textbf{Math500} & \textbf{MinervaMath} & \textbf{Olympiad} & \textbf{AMC23} & \textbf{DAPO} \\
 \midrule
-
 % --- 1.5B Model Data ---
-\multirow{6}{*}{\texttt{Qwen2.5-1.5B-Ins}}
-& RAFT & 0.826 & 0.450 & 0.001 & 0.434 & 0.204 & 0.051 & 0.053 & 0.125 & 0.086 \\
-& OPMD & 0.835 & 0.224 & 0.016 & 0.465 & 0.292 & 0.063 & 0.123 & 0.125 & 0.070 \\
-& GRPO & 0.720 & 0.260 & 0.049 & 0.474 & 0.304 & 0.099 & 0.090 & 0.200 & 0.136 \\
-& DAPO & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
-& GSPO & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
-& \textbf{R$^3$L (Ours)} & \textbf{0.810} & \textbf{0.355} & \textbf{0.122} & \textbf{0.721} & \textbf{0.439} & \textbf{0.120} & \textbf{0.168} & \textbf{0.250} & \textbf{0.156} \\
+\multirow{7}{*}{\texttt{Qwen2.5-1.5B-Ins}}
+& RAFT & 0.826 & 0.450 & 0.110 & 0.434 & 0.204 & 0.051 & 0.053 & 0.125 & 0.086 \\
+& OPMD & 0.835 & 0.561 & 0.356 & 0.463 & 0.292 & 0.062 & 0.123 & 0.125 & 0.070 \\
+& GRPO & 0.720 & \underline{0.614} & \underline{0.366} & 0.474 & 0.368 & 0.099 & 0.114 & 0.250 & 0.123 \\
+& GSPO & 0.857 & 0.566 & 0.200 & 0.518 & 0.196 & 0.077 & 0.087 & 0.275 & \underline{0.142} \\
+& Reflect-GRPO & \underline{0.878} & 0.559 & 0.347 & 0.672 & 0.376 & 0.102 & \underline{0.130} & \underline{0.300} & 0.136 \\
+& Critique-GRPO & 0.xx & 0.xx & 0.xx & \textbf{0.798} & \underline{0.404} & \underline{0.110} & 0.124 & 0.275 & 0.133 \\
+\rowcolor{cyan!10} & \textbf{R$^3$L (Ours)} & \textbf{0.928} & \textbf{0.663} & \textbf{0.385} & \underline{0.721} & \textbf{0.424} & \textbf{0.125} & \textbf{0.151} & \textbf{0.325} & \textbf{0.156} \\
 \midrule
-
-% --- 7B Model Data (Placeholders) ---
-\multirow{6}{*}{\texttt{Qwen2.5-7B-Ins}}
-& RAFT & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
-& OPMD & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
-& GRPO & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
-& DAPO & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
-& GSPO & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} & \textit{xx.x} \\
-& \textbf{R$^3$L (Ours)} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} & \textbf{\textit{xx.x}} \\
-
+% --- 3B Model Data (Llama-3.2-3B-Instruct) ---
+\multirow{7}{*}{\texttt{Llama3.2-3B-Ins}}
+& RAFT & 0.064 & 0.434 & 0.074 & 0.620 & 0.336 & 0.095 & 0.096 & 0.275 & 0.156 \\
+& OPMD & 0.385 & 0.492 & \underline{0.117} & 0.548 & 0.310 & 0.084 & 0.094 & 0.125 & 0.186 \\
+& GRPO & \textbf{0.521} & 0.520 & 0.076 & 0.664 & \underline{0.398} & \underline{0.128} & \textbf{0.121} & \textbf{0.325} & \underline{0.213} \\
+& GSPO & 0.285 & 0.497 & 0.082 & 0.574 & 0.308 & 0.110 & 0.106 & 0.225 & 0.163 \\
+& Reflect-GRPO & 0.321 & \underline{0.536} & 0.072 & \underline{0.669} & 0.392 & \underline{0.128} & 0.112 & \textbf{0.325} & 0.193 \\
+& Critique-GRPO & 0.xx & 0.xx & 0.xx & 0.xx & 0.xx & 0.xx & 0.xx & 0.xx & 0.xx \\
+\rowcolor{cyan!10} & \textbf{R$^3$L (Ours)} & \underline{0.495} & \textbf{0.569} & \textbf{0.123} & \textbf{0.688} & \textbf{0.408} & \textbf{0.147} & \underline{0.118} & \textbf{0.325} & \textbf{0.216} \\
+\midrule
+% --- 7B Model Data  ---
+\multirow{7}{*}{\texttt{Qwen2.5-7B-Ins}}
+& RAFT & 0.914 & 0.682 & 0.201 & \underline{0.884} & \underline{0.592} & \underline{0.257} & 0.210 & 0.575 & 0.383 \\
+& OPMD & 0.914 & 0.684 & 0.359 & 0.836 & 0.352 & 0.252 & 0.133 & 0.225 & 0.270 \\
+& GRPO & 0.933 & 0.709 & \underline{0.378} & 0.846 & 0.572 & 0.239 & 0.277 & \underline{0.675} & 0.393 \\
+& GSPO & 0.895 & 0.720 & 0.363 & 0.866 & 0.548 & 0.209 & \underline{0.284} & \underline{0.675} & \underline{0.413} \\
+& Reflect-GRPO & \underline{0.942} & \underline{0.723} & 0.356 & 0.765 & 0.532 & 0.194 & 0.250 & 0.550 & 0.396 \\
+& Critique-GRPO & 0.xx & 0.xx & 0.xx & 0.xx & 0.xx & 0.xx & 0.xx & 0.xx & 0.xx \\
+\rowcolor{cyan!10} & \textbf{R$^3$L (Ours)} & \textbf{0.948} & \textbf{0.757} & \textbf{0.403} & \textbf{0.897} & \textbf{0.658} & \textbf{0.275} & \textbf{0.301} & \textbf{0.700} & \textbf{0.436} \\
 \bottomrule
 \end{tabular}
 } % <-- 结束 \resizebox
+\caption{Main results on agentic environments and mathematical reasoning benchmarks. \textbf{Bold} indicates the best performance and \underline{underline} indicates the second best.}
+\label{tab:main_results}
 \end{table*}

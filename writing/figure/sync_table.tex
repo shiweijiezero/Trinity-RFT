@@ -1,0 +1,36 @@
+\begin{table}[t]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Task} & \textbf{Method} & $S=1$ & $S=5$ & $S=10$ & $S=20$ \\
+\midrule
+\multirow{4}{*}{ALFWorld}
+& OPMD & 0.835 & \textcolor{red}{0.357} & xx & xx \\
+& GRPO & 0.720 & xx & xx & xx \\
+& GRPO+Positive & xx & xx & xx & xx \\
+& \textbf{R$^3$L} & \textbf{0.928} & \textbf{xx} & \textbf{xx} & \textbf{xx} \\
+\midrule
+\multirow{4}{*}{WebShop}
+& OPMD & 0.561 & xx & \textcolor{red}{xx} & \textcolor{red}{xx} \\
+& GRPO & 0.614 & xx & \textcolor{red}{xx} & \textcolor{red}{xx} \\
+& GRPO+Positive & xx & xx & xx & xx \\
+& \textbf{R$^3$L} & \textbf{0.663} & \textbf{xxx} & \textbf{xx} & \textbf{xx} \\
+\midrule
+\multirow{4}{*}{GSM8K}
+& OPMD & \textcolor{red}{0.463} & \textcolor{red}{0.604} & \textcolor{red}{0.655} & \textcolor{red}{0.499} \\
+& GRPO & 0.474 & 0.673 & 0.692 & 0.712 \\
+& GRPO+Positive & 0.504 & xx & xx & xx \\
+& \textbf{R$^3$L} & \textbf{0.721} & \textbf{0.779} & \textbf{0.756} & \textbf{0.753} \\
+\midrule
+\multirow{4}{*}{Math500}
+& OPMD & \textcolor{red}{0.292} & \textcolor{red}{0.354} & \textcolor{red}{0.332} & \textcolor{red}{0.336} \\
+& GRPO & 0.368 & 0.406 & 0.408 & 0.406 \\
+& GRPO+Positive & 0.377 & xx & xx & xx \\
+& \textbf{R$^3$L} & \textbf{0.424} & \textbf{0.464} & \textbf{0.441} & \textbf{0.426} \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Effect of synchronization frequency ($S$) across benchmarks. OPMD lacks importance sampling and KL constraints, leading to rapid collapse as policy drift increases (marked in \textcolor{red}{red}). GRPO also degrades due to unbounded importance ratios. In contrast, R$^3$L maintains robustness despite also lacking importance sampling for retry data, as Positive Preference Optimization acts as a stable anchor.}
+\label{tab:sync_analysis}
+\end{table}
