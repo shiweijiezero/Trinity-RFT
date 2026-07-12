@@ -25,24 +25,23 @@ pip install 'alfworld==0.4.2'
 ```
 
 This R3L workflow uses ALFWorld's TextWorld environment, not the THOR visual environment, so an
-X server and `DISPLAY` are not required. Keep the repository and ALFWorld data at the agreed
-shared CPFS paths, and export `ALFWORLD_DATA` on both nodes:
+X server and `DISPLAY` are not required. Keep ALFWorld's own game files under `./alfworld`, while
+the generated Trinity tasksets remain under `./examples/R3L/alfworld/alfworld_data`:
 
 ```bash
 cd /mnt/cpfs/shiweijie/Trinity-RFT-Exp
-export ALFWORLD_DATA="$(pwd)/examples/R3L/alfworld/alfworld_data"
-mkdir -p "$ALFWORLD_DATA"
-alfworld-download --data-dir "$ALFWORLD_DATA"
+mkdir -p ./alfworld ./examples/R3L/alfworld/alfworld_data
+alfworld-download --data-dir ./alfworld
 python examples/R3L/alfworld/get_alfworld_data.py
 wc -l examples/R3L/alfworld/alfworld_data/train.jsonl
 wc -l examples/R3L/alfworld/alfworld_data/test.jsonl
 ```
 
 The expected full taskset contains 3553 training games and 140 `valid_seen` evaluation games.
-The raw `json_2.1.1` files and generated JSONL tasksets coexist under
-`examples/R3L/alfworld/alfworld_data`. Games stored inside the checkout are written as paths
-relative to the repository root, so the taskset remains valid if the shared repository is moved.
-Configure persistent outputs and WandB before launching:
+The raw games live under `alfworld/json_2.1.1`; only `train.jsonl`, `test.jsonl`, and
+`dataset_dict.json` are generated under `examples/R3L/alfworld/alfworld_data`. Game paths are
+written relative to the repository root, so the taskset remains valid if the shared repository is
+moved. Configure persistent outputs and WandB before launching:
 
 ```bash
 export TRINITY_CHECKPOINT_ROOT_DIR=/mnt/cpfs/shiweijie/checkpoints/r3l_rebuttal

@@ -12,8 +12,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 def _default_data_root() -> Path:
     """Return the directory containing ALFWorld's train/valid_seen splits."""
-    project_data_dir = Path(__file__).resolve().parent / "alfworld_data"
-    data_dir = Path(os.environ.get("ALFWORLD_DATA", str(project_data_dir))).expanduser()
+    alfworld_data_dir = PROJECT_ROOT / "alfworld"
+    data_dir = Path(os.environ.get("ALFWORLD_DATA", str(alfworld_data_dir))).expanduser()
     if data_dir.name == "json_2.1.1":
         return data_dir
     return data_dir / "json_2.1.1"

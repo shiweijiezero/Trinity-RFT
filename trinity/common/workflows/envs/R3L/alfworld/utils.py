@@ -463,7 +463,7 @@ def _resolve_alfworld_game_file(game_file: str) -> str:
     """Resolve portable paths and relocate tasksets containing stale absolute paths."""
     original_path = Path(game_file).expanduser()
     project_root = Path(__file__).resolve().parents[6]
-    project_data_dir = project_root / "examples" / "R3L" / "alfworld" / "alfworld_data"
+    project_data_dir = project_root / "alfworld"
 
     candidates = []
     if original_path.is_absolute():
