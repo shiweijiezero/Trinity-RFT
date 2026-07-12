@@ -9,6 +9,53 @@ The eight ALFWorld training configs below require a two-node Ray cluster with 8 
 They reserve one complete node (8 GPUs) for rollout and one complete node (8 GPUs) for training.
 Before starting a run, verify that `ray status` reports exactly the intended two nodes and 16 GPUs.
 
+## 0. New Machine and ALFWorld Setup
+
+Use Python 3.10 and CUDA 12.6 or newer. Run these commands from the repository root. If the two
+nodes do not share the same environment and repository path, repeat the package installation on
+both nodes.
+
+```bash
+conda create -n r3l python=3.10 -y
+conda activate r3l
+python -m pip install --upgrade pip setuptools wheel
+pip install -e .
+pip install flash-attn==2.8.1 --no-build-isolation
+pip install 'alfworld==0.4.2'
+```
+
+This R3L workflow uses ALFWorld's TextWorld environment, not the THOR visual environment, so an
+X server and `DISPLAY` are not required. Download the ALFWorld games to shared CPFS storage and
+keep `ALFWORLD_DATA` exported on both nodes:
+
+```bash
+export ALFWORLD_DATA=/mnt/cpfs/shiweijie/alfworld
+mkdir -p "$ALFWORLD_DATA"
+alfworld-download --data-dir "$ALFWORLD_DATA"
+python examples/R3L/alfworld/get_alfworld_data.py
+wc -l examples/R3L/alfworld/alfworld_data/train.jsonl
+wc -l examples/R3L/alfworld/alfworld_data/test.jsonl
+```
+
+The expected full taskset contains 3553 training games and 140 `valid_seen` evaluation games.
+Every generated JSONL record contains an absolute game path under `/mnt/cpfs`, so both Ray nodes
+must mount that path identically. Configure persistent outputs and WandB before launching:
+
+```bash
+export TRINITY_CHECKPOINT_ROOT_DIR=/mnt/cpfs/shiweijie/checkpoints/r3l_rebuttal
+mkdir -p "$TRINITY_CHECKPOINT_ROOT_DIR"
+wandb login
+```
+
+Verify the runtime before allocating both nodes:
+
+```bash
+python -c "import torch, ray, vllm, verl, alfworld, textworld; print(torch.__version__, torch.version.cuda); print(ray.__version__, vllm.__version__)"
+python -c "import torch; assert torch.cuda.is_available(); print(torch.cuda.device_count(), torch.cuda.get_device_name(0))"
+test -f /mnt/cpfs/shiweijie/hf_cache/qwen2.5-1.5b-ins/config.json
+test -f examples/R3L/alfworld/alfworld_data/train.jsonl
+```
+
 ## 1. Focused Three-Seed Study
 
 The submitted seed-0 runs are reused only if their code, config, training budget, evaluation split,
