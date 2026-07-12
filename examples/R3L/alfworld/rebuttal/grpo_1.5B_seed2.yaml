@@ -15,8 +15,8 @@ model:
   max_response_tokens: 512
   max_model_len: 20480
 cluster:
-  node_num: 1
-  gpu_per_node: 4
+  node_num: 2
+  gpu_per_node: 8
 buffer:
   total_epochs: 20
   batch_size: 96
@@ -53,7 +53,7 @@ explorer:
   runner_per_model: 32
   eval_interval: 20
   rollout_model:
-    engine_num: 2
+    engine_num: 8
     tensor_parallel_size: 1
     enable_prefix_caching: false
     enforce_eager: false

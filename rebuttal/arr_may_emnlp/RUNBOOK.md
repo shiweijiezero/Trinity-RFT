@@ -5,10 +5,15 @@ Run every command from the repository root on the GPU cluster and record the act
 All newly prepared runs use WandB project `weijie_r3l`; the config `group` separates each
 experiment family and `name` identifies the method and seed.
 
+The eight ALFWorld training configs below require a two-node Ray cluster with 8 GPUs per node.
+They reserve one complete node (8 GPUs) for rollout and one complete node (8 GPUs) for training.
+Before starting a run, verify that `ray status` reports exactly the intended two nodes and 16 GPUs.
+
 ## 1. Focused Three-Seed Study
 
 The submitted seed-0 runs are reused only if their code, config, training budget, evaluation split,
 and checkpoint-selection rule match the new runs. Otherwise rerun seed 0 as well.
+Each command below occupies two 8-GPU nodes: 8 GPUs for trainer and 8 GPUs for rollout.
 
 ```bash
 trinity run --config examples/R3L/alfworld/rebuttal/opmd_R3L_1.5B_seed1.yaml
@@ -31,7 +36,7 @@ column; do not select a different reporting rule per seed.
 ## 2. ALFWorld KL x IS Safeguard Ablation
 
 Run the four Qwen2.5-1.5B configurations with the same seed and training budget. Each run uses
-8 GPUs and logs to WandB project `weijie_r3l`, group
+16 GPUs across two nodes (8 trainer + 8 rollout) and logs to WandB project `weijie_r3l`, group
 `alfworld_qwen25_1.5b_kl_is_ablation`.
 
 ```bash
@@ -41,7 +46,8 @@ trinity run --config examples/R3L/alfworld/rebuttal/r3l_1.5B_is_only_seed0.yaml
 trinity run --config examples/R3L/alfworld/rebuttal/r3l_1.5B_kl_is_seed0.yaml
 ```
 
-Use four separate 8-GPU nodes to run them concurrently, or run sequentially on one 8-GPU node.
+Use eight separate 8-GPU nodes to run all four concurrently, or run them sequentially on one
+two-node allocation.
 Fill `rebuttal/arr_may_emnlp/results/alfworld_kl_is_ablation_template.csv` with final and best
 evaluation scores. Before claiming that the variants are similar, inspect reward, gradient norm,
 entropy, KL loss for KL variants, and `actor/is_clipfrac` for IS variants. Record failed runs,
