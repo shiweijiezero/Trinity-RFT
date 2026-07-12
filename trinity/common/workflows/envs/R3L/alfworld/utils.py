@@ -459,6 +459,43 @@ def parse_response(response):
         return None, None, "Unexpected error occurred while parsing response format."
 
 
+def _resolve_alfworld_game_file(game_file: str) -> str:
+    """Resolve portable paths and relocate tasksets containing stale absolute paths."""
+    original_path = Path(game_file).expanduser()
+    project_root = Path(__file__).resolve().parents[6]
+    project_data_dir = project_root / "examples" / "R3L" / "alfworld" / "alfworld_data"
+
+    candidates = []
+    if original_path.is_absolute():
+        candidates.append(original_path)
+    else:
+        candidates.extend([Path.cwd() / original_path, project_root / original_path])
+
+    path_parts = original_path.parts
+    if "json_2.1.1" in path_parts:
+        suffix = Path(*path_parts[path_parts.index("json_2.1.1") :])
+        candidates.append(project_data_dir / suffix)
+        if alfworld_data := os.environ.get("ALFWORLD_DATA"):
+            configured_data_dir = Path(alfworld_data).expanduser()
+            if configured_data_dir.name == "json_2.1.1":
+                configured_data_dir = configured_data_dir.parent
+            candidates.append(configured_data_dir / suffix)
+
+    checked_paths = []
+    for candidate in candidates:
+        normalized_candidate = candidate.resolve()
+        if normalized_candidate in checked_paths:
+            continue
+        checked_paths.append(normalized_candidate)
+        if normalized_candidate.is_file():
+            return str(normalized_candidate)
+
+    checked = "\n  - ".join(str(path) for path in checked_paths)
+    raise FileNotFoundError(
+        f"Unable to find ALFWorld game from task path '{game_file}'. Checked:\n  - {checked}"
+    )
+
+
 def create_alfworld_environment(game_file, max_episode_steps=25):
     """
     Create alfworld environment
@@ -480,6 +517,8 @@ def create_alfworld_environment(game_file, max_episode_steps=25):
         request_infos = textworld.EnvInfos(
             description=True, inventory=True, admissible_commands=True
         )
+
+        game_file = _resolve_alfworld_game_file(game_file)
 
         env_id = textworld.gym.register_game(
             game_file, request_infos,

@@ -7,6 +7,9 @@ from pathlib import Path
 from typing import Optional
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
+
 def _default_data_root() -> Path:
     """Return the directory containing ALFWorld's train/valid_seen splits."""
     project_data_dir = Path(__file__).resolve().parent / "alfworld_data"
@@ -16,6 +19,15 @@ def _default_data_root() -> Path:
     return data_dir / "json_2.1.1"
 
 
+def _portable_game_path(path: str) -> str:
+    """Prefer a repository-relative path when the game is stored in this checkout."""
+    resolved_path = Path(path).resolve()
+    try:
+        return resolved_path.relative_to(PROJECT_ROOT).as_posix()
+    except ValueError:
+        return str(resolved_path)
+
+
 def create_dataset_files(
     output_dir: Path,
     alfworld_data_root: Path,
@@ -23,7 +35,7 @@ def create_dataset_files(
     test_size: Optional[int] = None,
     seed: int = 42,
 ) -> None:
-    """Create Trinity FILE tasksets containing absolute ALFWorld game paths."""
+    """Create Trinity FILE tasksets containing portable ALFWorld game paths."""
     train_pattern = str(alfworld_data_root / "train" / "*" / "*" / "game.tw-pddl")
     test_pattern = str(alfworld_data_root / "valid_seen" / "*" / "*" / "game.tw-pddl")
 
@@ -53,8 +65,14 @@ def create_dataset_files(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     splits = {
-        "train": [{"game_file": path, "target": ""} for path in selected_train_files],
-        "test": [{"game_file": path, "target": ""} for path in selected_test_files],
+        "train": [
+            {"game_file": _portable_game_path(path), "target": ""}
+            for path in selected_train_files
+        ],
+        "test": [
+            {"game_file": _portable_game_path(path), "target": ""}
+            for path in selected_test_files
+        ],
     }
     for split, records in splits.items():
         output_file = output_dir / f"{split}.jsonl"

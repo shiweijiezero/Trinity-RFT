@@ -40,9 +40,9 @@ wc -l examples/R3L/alfworld/alfworld_data/test.jsonl
 
 The expected full taskset contains 3553 training games and 140 `valid_seen` evaluation games.
 The raw `json_2.1.1` files and generated JSONL tasksets coexist under
-`examples/R3L/alfworld/alfworld_data`. Every JSONL record contains an absolute path under the
-shared repository, so both Ray nodes must mount it identically. Configure persistent outputs and
-WandB before launching:
+`examples/R3L/alfworld/alfworld_data`. Games stored inside the checkout are written as paths
+relative to the repository root, so the taskset remains valid if the shared repository is moved.
+Configure persistent outputs and WandB before launching:
 
 ```bash
 export TRINITY_CHECKPOINT_ROOT_DIR=/mnt/cpfs/shiweijie/checkpoints/r3l_rebuttal
