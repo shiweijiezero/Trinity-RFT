@@ -29,9 +29,8 @@ X server and `DISPLAY` are not required. Keep the repository and ALFWorld data a
 shared CPFS paths, and export `ALFWORLD_DATA` on both nodes:
 
 ```bash
-export REPO_ROOT=/mnt/cpfs/shiweijie/Trinity-RFT-Exp
-export ALFWORLD_DATA="$REPO_ROOT/examples/R3L/alfworld/alfworld_data"
-cd "$REPO_ROOT"
+cd /mnt/cpfs/shiweijie/Trinity-RFT-Exp
+export ALFWORLD_DATA="$(pwd)/examples/R3L/alfworld/alfworld_data"
 mkdir -p "$ALFWORLD_DATA"
 alfworld-download --data-dir "$ALFWORLD_DATA"
 python examples/R3L/alfworld/get_alfworld_data.py
