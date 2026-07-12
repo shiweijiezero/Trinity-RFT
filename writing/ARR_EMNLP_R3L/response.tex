@@ -1,0 +1,67 @@
+\documentclass[11pt]{article}
+\usepackage[left=1in, right=1in, top=1in, bottom=1in]{geometry}
+\usepackage{times}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\begin{document}
+\noindent Dear Area Chair and Reviewers,\\
+
+We have carefully considered each comment and made substantial revisions to address the concerns raised. Below, we provide an overview of the main changes, followed by a point-by-point response to each reviewer.\\
+
+\noindent \textbf{Overview of Changes} (corresponding to the Area Chair's suggestions):
+\begin{enumerate}[label=(\arabic*), itemsep=1pt]
+    \item Modern backbone (Qwen3-4B) added to the main results, best or tied-best on all 9 benchmarks. [Table 1, Section 5.2]
+    \item Quantitative compute-efficiency analysis: per-step token and wall-clock breakdown on four model/task settings. [Appendix D]
+    \item Direct pivot-localization-accuracy evaluation against oracle labels across three agentic benchmarks. [Appendix H.2]
+    \item Evaluation protocol clarification that resolves the apparent baseline-discrepancy concern via a format-vs-distribution-shift decomposition. [Section 5.1, Appendix J]
+    \item Additional ablations: retry count, group size, and a complexity-drop study isolating Positive Amplification. [Appendix C]
+    \item Structured four-axis comparison with related methods (Critique-GRPO, Reflect-GRPO, PRM, GiGPO, VinePPO, BAPO, GSPO, OPMD). [Appendix E]
+\end{enumerate}
+
+\noindent \textbf{Point-by-Point Response:}\\
+
+\noindent \textbf{Reviewer iAPy:}
+\begin{enumerate}[label=(\arabic*), itemsep=2pt]
+    \item \textbf{[Novelty.]} Appendix E consolidates the design distinctions along four axes (exploration mechanism, credit granularity, external supervision, rollout cost, hyperparameter count). R$^3$L is the only method in the comparison that simultaneously achieves step-level credit without external supervision, keeps rollouts within $N$, and introduces a single scalar $\alpha$ (while dropping $\beta$ and $\epsilon$ from GRPO). Table 2 confirms the three components provide independent and additive gains. [Appendix E, Table 2]
+
+    \item \textbf{[No direct pivot-accuracy evaluation.]} Added in Appendix H.2. ScienceWorld provides automatic oracle labels via step-level subtask rewards; ALFWorld and WebShop oracles are annotated on 100 failed trajectories per benchmark via human judgment plus DeepSeek labeling. Oracle Agreement rises from 36--57\% at step 100 to 61--76\% at step 400, and retry success rate conditioned on a correct pivot is consistently 2--3$\times$ higher than on a wrong pivot (e.g., 85\% vs 43\% on ALFWorld 7B at step 400). [Appendix H.2]
+
+    \item \textbf{[No wall-clock or token-budget analysis.]} Added in Appendix D as a structural rollout-cost table plus per-training-step measurements on four settings. R$^3$L's rollout time is lowest across all four; training tokens on multi-step tasks are roughly halved (e.g., 22{,}300 vs GRPO 44{,}141 on Qwen2.5-1.5B/ALFWorld); Critique-GRPO is 1.8--2.0$\times$ slower due to its $2N$ rollouts. The Limitations section now cites these figures explicitly. [Appendix D, Limitations]
+\end{enumerate}
+
+\noindent \textbf{Reviewer 4viW:}
+\begin{enumerate}[label=(\arabic*), itemsep=2pt]
+    \item \textbf{[System complexity and rollout overhead.]} The structural comparison shows R$^3$L's rollout budget stays within $N$ (vs $2N$ for Critique-GRPO), and per-step measurements confirm rollout time is lower than GRPO's across all four tested settings. Removing KL additionally eliminates the reference-model forward pass. [Appendix D]
+
+    \item \textbf{[Cold-start for small models.]} For Qwen2.5-1.5B the cold-start phase lasts approximately 80 steps, under 20\% of the 400-step training budget. During this phase R$^3$L does not degrade: retries driven by inaccurate reflection receive negative advantages and are suppressed, while group-level contrastive learning continues on the base trajectories. [Limitations, Section 5.4]
+
+    \item \textbf{[Reflection errors reinforcing wrong behavior.]} Three safeguards layered: (a) auxiliary SFT ingests only reflection-retry pairs where the retry strictly improves over the base, filtering misdiagnoses at the data level; (b) distilled retry trajectories with negative advantages are suppressed by group-relative normalization; (c) Positive Amplification weights only successful retries. Empirically, roughly 35\% of retries on 1.5B fail to improve, yet robust gains are obtained across all benchmarks. [Appendix H]
+
+    \item \textbf{[Explicit compute comparison.]} We address this concern in detail in our response to Reviewer iAPy's weakness (3); in short, Appendix D provides a structural rollout-cost table together with per-training-step wall-clock and token measurements on four model/task settings. [Appendix D]
+
+    \item \textbf{[Pivot quality analysis.]} We address this concern in detail in our response to Reviewer iAPy's weakness (2); in short, Appendix H.2 reports oracle-agreement trends over training and retry-success rates conditioned on whether the pivot matches the oracle, across all three agentic benchmarks. [Appendix H.2]
+
+    \item \textbf{[Sensitivity for $\alpha$, group size, retry count.]} $\alpha = 3.0$ is robust across all models and tasks; pushing $\alpha > 5.0$ causes overfitting (Appendix C.1). Under $N \in \{4, 8, 16\}$, R$^3$L leads every $(N, \text{benchmark})$ setting on five benchmarks (new Appendix C.4). One retry per base is optimal: two or four sequential retries hurt (0.928 $\to$ 0.913 $\to$ 0.896 on ALFWorld) because they dilute base diversity and because each reflection is an independent one-shot diagnosis (new Appendix C.3). [Appendix C]
+\end{enumerate}
+
+\noindent \textbf{Reviewer XSY9:}
+\begin{enumerate}[label=(\arabic*), itemsep=2pt]
+    \item \textbf{[Baseline numbers lower than Qwen2.5 technical report.]} Our numbers are \emph{post-RL-training} under the \texttt{<think>/<answer>} format (following DeepSeek-R1 and DAPO), whereas the technical report reports \emph{zero-shot} under \texttt{\textbackslash boxed\{\}}; the two differ along two independent dimensions. For Qwen2.5-1.5B GSM8K specifically, the 0.258 gap between our GRPO (0.474) and the report (0.732) decomposes into a 0.073 format effect (about 28\%) and a 0.191 cross-domain-training effect (about 72\%). In-domain training controls (GSM8K-on-GSM8K; MATH-on-Math500) show all methods improve over zero-shot under both formats, confirming the degradation is distribution shift, not methodological. Section 5.1 now states the protocol explicitly, and Appendix J provides the full decomposition with four-backbone zero-shot tables under both formats. [Section 5.1, Appendix J]
+
+    \item \textbf{[Legacy backbones (Qwen2.5, Llama-3.2).]} Qwen3-4B added to Table 1 as a fourth backbone. R$^3$L attains best or tied-best on all 9 benchmarks. On this stronger backbone, GRPO already reaches 0.934 on GSM8K and GSPO reaches 0.722 on Math500, yet R$^3$L still lifts these to 0.948 and 0.753 respectively, indicating the structural bottlenecks persist across model generations rather than being resolved by scale. [Table 1, Section 5.2]
+
+    \item \textbf{[Multiple moving parts; can Positive Amplification alone match full R$^3$L?]} The complexity-drop study in Appendix C.1 shows GRPO+PA alone reaches 0.807 on ALFWorld (vs GRPO 0.720, R$^3$L 0.928): Positive Amplification contributes roughly 40\% of R$^3$L's total gain over GRPO, while Reflect-then-Retry combined with Pivotal Credit Assignment provides the remaining 60\%. R$^3$L also drops $\beta$ (KL) and $\epsilon$ (IS clipping) from GRPO, so the net change in hyperparameter count is small. [Appendix C.1]
+
+    \item \textbf{[Compute efficiency under equal budget.]} Appendix D reports per-step token counts and wall-clock on four settings. R$^3$L's rollout time is consistently below GRPO's; training tokens on multi-step tasks are roughly halved; Critique-GRPO is 1.8--2.0$\times$ slower due to its $2N$ rollouts. The KL-free objective further eliminates the reference-model forward pass, which is why the rollout-time advantage holds even on single-step math tasks where rollout-turn savings are minimal. [Appendix D]
+\end{enumerate}
+
+\vspace{0.1in}
+\noindent Thank you once again for your time and consideration.
+
+\vspace{0.1in}
+\noindent Sincerely,\\
+The Authors
+
+\end{document}

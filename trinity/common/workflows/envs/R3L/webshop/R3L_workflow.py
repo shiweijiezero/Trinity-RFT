@@ -10,6 +10,11 @@ from jinja2 import Environment, FileSystemLoader
 
 from trinity.common.experience import Experience
 from trinity.common.models.model import ModelWrapper
+from trinity.common.workflows.envs.R3L.rebuttal_metrics import (
+    initialize_base_metrics,
+    record_reflection_decision,
+    record_retry_completion,
+)
 from trinity.common.workflows.envs.R3L.webshop import utils
 from trinity.common.workflows.workflow import WORKFLOWS, Task, Workflow
 
@@ -143,6 +148,8 @@ class R3LWebshopWorkflow(Workflow):
         reflect_prompt = self.reflection_template.render()
 
         # 调用模型并解析结果
+        reflection_text = None
+        reflection_experience = None
         try:
             responses = self.model.chat(
                 [
@@ -158,7 +165,8 @@ class R3LWebshopWorkflow(Workflow):
                 temperature=self.temperature,
                 max_tokens=self.max_reflect_tokens,
             )
-            reflection_text = responses[0].response_text.strip()
+            reflection_experience = responses[0]
+            reflection_text = reflection_experience.response_text.strip()
 
             # print(f"raw reflection text: {reflection_text}")
 
@@ -172,11 +180,11 @@ class R3LWebshopWorkflow(Workflow):
                 json_str = reflection_text
 
             reflection_data = json.loads(json_str)
-            return reflection_data, reflection_text, responses[0]
+            return reflection_data, reflection_text, reflection_experience
 
         except Exception as e:
             # print(f"Failed during unified reflection process: {e}")
-            return None, None, None
+            return None, reflection_text, reflection_experience
 
     def _adjust_action_mask_for_retry(self, experience: Experience, retry_step: int):
         """
@@ -247,6 +255,7 @@ class R3LWebshopWorkflow(Workflow):
                     "steps": steps,
                     "reward": reward,
                 }
+                initialize_base_metrics(exp)
                 # 设置eid
                 exp.eid.task = str(self.task.task_id) + f"_explore"
                 exp_run_id = len(exp_lst) + self.run_id_base
@@ -272,6 +281,9 @@ class R3LWebshopWorkflow(Workflow):
                 # 对首次尝试进行反思
                 reflect_checklist, reflection_text, reflect_exp = self.get_reflect(trajectory)
                 is_valid, is_perfect = utils.validate_reflect_report(reflect_checklist, steps)
+                record_reflection_decision(
+                    exp, reflect_exp, is_valid=is_valid, is_perfect=is_perfect
+                )
 
                 if not is_valid or is_perfect:
                     # 如果第一次尝试的reward是1.0且反思给出完美，则记录反思exp
@@ -315,6 +327,8 @@ class R3LWebshopWorkflow(Workflow):
                                 if existing_exp.eid.run == exp_run_id:
                                     self._adjust_action_mask_for_retry(existing_exp, retry_step)
                                     break
+
+                        record_retry_completion(exp, second_exp)
 
                         second_exp.reward = second_reward
                         # second_exp.info = {"valid": second_format_valid}

@@ -1,0 +1,377 @@
+\section{Implementation Details}
+\label{app:implementation}
+
+\subsection{Training Configuration}
+We implement R$^3$L and all baselines using the Trinity-RFT framework \cite{pan2025trinity}, utilizing VLLM for high-throughput inference and Fully Sharded Data Parallel for distributed training across 40 NVIDIA A100 PCIe GPUs and 56 NVIDIA H20 GPUs. Main experiments are conducted on Qwen2.5-1.5B-Instruct, Qwen2.5-7B-Instruct, and Qwen3-4B; cross-architecture evaluation on Llama-3.2-3B-Instruct is reported in Appendix~\ref{sec:cross_arch}. All models are used directly without any prior supervised fine-tuning.
+
+\textbf{Hyperparameters.} We use the Adam optimizer with a learning rate of $1\text{e-}6$ for all models. The global batch size is set to 96 with a group size of $N=8$. We train for up to 20 epochs with manual early stopping based on reward curve monitoring, terminating when the reward plateaus for multiple consecutive steps or exhibits signs of collapse. To manage the off-policy nature of the data, we synchronize the behavior policy with the learner policy at every update step with synchronization interval $S=1$. During training, we set the sampling temperature to 1.0 to encourage exploration. During evaluation, we reduce the temperature to 0.4 for stability, and during reflection we use 0.7 to balance diversity with coherence. Regarding computational costs on the ALFWorld task, training the 1.5B model for the full 20 epochs requires approximately 420 GPU hours, while the 3B Llama model requires 2304 GPU hours. The detailed training hyperparameters are shown in Figure \ref{tab:hyperparams}.
+
+\textbf{Sequence Lengths.} The maximum context length is set to 20,480 tokens to accommodate long interaction histories. For generation, the maximum response length is restricted to 512 tokens for agentic tasks including ALFWorld, WebShop, and ScienceWorld, and 4,096 tokens for mathematical reasoning tasks and reflection outputs.
+
+\textbf{Multi-turn Trajectory Modeling.} A fundamental distinction in our experimental setting compared to recent works like GiGPO \cite{feng2025group} lies in the definition of the state space. Approaches focusing on step-level optimization often employ context compression or memory summarization modules that reduce past history into a concise state representation. This strategy effectively transforms a multi-turn session into a sequence of quasi-independent single-turn interactions, allowing the model to revisit identical compressed states across different trajectories to compute local baselines. While computationally efficient, this introduces a dependency on the compression policy and risks losing critical historical details required for causal diagnosis.
+
+In contrast, R$^3$L adopts full history concatenation to preserve complete temporal causality. We condition the policy on the exact uncompressed cumulative history at each step. This ensures that our reflection mechanism has access to the precise sequence of errors leading to failure. Consequently, since unique histories rarely repeat across samples, we strictly perform trajectory-level optimization rather than state-based step-level grouping. This difference in context modeling means our method operates on a more complex long-context distribution compared to compression-based baselines.
+
+\textbf{Experience Replay.} We employ an experience replay buffer with decay-limit randomization priority sampling, which balances recency and diversity to stabilize off-policy training. This mechanism activates only when the synchronization interval $S$ exceeds 1, allowing the model to learn from a mixture of recent and historical trajectories.
+
+\begin{table}[h]
+\centering
+\small
+\adjustbox{max width=\linewidth}{%
+\begin{tabular}{lc}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Global Batch Size & 96 \\
+Learning Rate & $1\text{e-}6$ \\
+Total Epochs & 20 with Early Stop \\
+Group Size $N$ & 8 \\
+Sync Interval $S$ & 1 \\
+Gradient Clipping & 1.0 \\
+Max Model Length & 20,480 \\
+Max Response for Agentic & 512 \\
+Max Response for Math & 4,096 \\
+Max Response for Reflection & 4,096 \\
+Train Temperature & 1.0 \\
+Test Temperature & 0.4 \\
+Reflection Temperature & 0.7 \\
+\bottomrule
+\end{tabular}
+}
+\caption{Summary of training hyperparameters shared across all methods.}
+\label{tab:hyperparams}
+\end{table}
+
+\subsection{Method-Specific Configurations}
+We show all method-specific hyperparameters in Table \ref{tab:method_params}.
+
+\textbf{GRPO and GSPO.} We incorporate a KL divergence penalty with coefficient $\beta = 0.01$ to constrain policy updates. The importance sampling ratio is clipped to the range $[1-\epsilon, 1+\epsilon]$ with $\epsilon=0.2$ following the standard PPO configuration. For GSPO specifically, which utilizes sequence-level importance sampling, we set the adaptive clipping range with $\epsilon_{low}=0.0003$ and $\epsilon_{high}=0.0004$ as per the original implementation.
+
+\textbf{OPMD.} Online Policy Mirror Descent sets the KL coefficient to zero, effectively functioning as a group-relative variant of REINFORCE. This design omits the importance sampling ratios required for rigorous off-policy correction, rendering it susceptible to distribution shift when the policy deviates from the sampling distribution.
+
+\textbf{Critique-GRPO.} Following the original implementation, we set the shaping parameter $\gamma=0.1$ for off-policy sample weighting. The shaping function $f(\pi) = \pi / (\pi + \gamma)$ moderates the contribution of samples with high importance weights. For refinement selection within each group, the method prioritizes refinements achieving reward $\geq 1.0$. If no refinement reaches this threshold, the refinement with the highest reward is selected.
+
+\textbf{R$^3$L-Specific Components.} R$^3$L does not employ an explicit KL penalty term in the loss function, relying instead on Positive Amplification to prevent entropy collapse. This design eliminates the need to maintain a frozen reference model during training, reducing memory and computational overhead.
+
+Positive Amplification applies the following reweighting rule to trajectory advantages. For a trajectory $\tau$ with normalized advantage score $s$, the amplified advantage $\hat{A}(\tau)$ is computed as follows. Trajectories achieving maximum reward in the group with $R(\tau) \geq 1.0$ receive $\hat{A}(\tau) = 1.0$. Trajectories with positive advantage $s \geq 0$ receive $\hat{A}(\tau) = \alpha \cdot s$ with amplification factor $\alpha = 3.0$. Trajectories with negative advantage remain unchanged with $\hat{A}(\tau) = s$.
+
+Pivotal Credit Assignment masks the first $t$ assistant response segments in the action mask, where $t$ equals the pivot step identified by reflection. These masked segments are excluded from gradient computation while preserved as context for subsequent generation. The implementation identifies all assistant response segments where the action mask equals 1, then sets the action mask to 0 for the first $t$ segments corresponding to the shared prefix.
+
+\begin{table}[h]
+\centering
+\small
+\adjustbox{max width=\linewidth}{%
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & \textbf{Parameter} & \textbf{Value} \\
+\midrule
+GRPO & KL Coefficient $\beta$ & 0.01 \\
+GRPO & IS Clip $\epsilon$ & 0.2 \\
+GSPO & KL Coefficient $\beta$ & 0.01 \\
+GSPO & Adaptive Clip Range & [0.0003, 0.0004] \\
+OPMD & KL Coefficient $\beta$ & 0.0 \\
+Critique-GRPO & Shaping $\gamma$ & 0.1 \\
+R$^3$L & Amplification $\alpha$ & 3.0 \\
+R$^3$L & KL Coefficient $\beta$ & None \\
+\bottomrule
+\end{tabular}
+}
+\caption{Method-specific hyperparameters. R$^3$L omits KL regularization entirely.}
+\label{tab:method_params}
+\end{table}
+
+\subsection{Reward and Feedback Mechanisms}
+
+\textbf{Agentic Tasks.} The reward signal characteristics vary by domain. ALFWorld utilizes a strictly binary outcome, returning 1.0 solely for successful goal achievement and 0.0 otherwise. WebShop and ScienceWorld provide dense scalar rewards upon episode termination, reflecting the quality of the solution such as the percentage of matched product attributes in WebShop or the completion rate of sub-goals in ScienceWorld. In our experimental setting, none of these environments provide explicit intermediate step-rewards during execution. The scalar score is only revealed at the end of the trajectory. To ensure a unified optimization objective, we normalize these terminal scalar scores to the range $[0, 1]$ to serve as the trajectory reward $R(\tau)$. For feedback, we capture the textual observations including error messages and state updates directly from the environment to drive the reflection process.\looseness=-1
+
+\textbf{Mathematical Reasoning.} We use the math\_verify library to verify the final answer. The reward is binary with 1.0 for a correct answer and 0.0 otherwise. For the language-guided retry, since there is no environment error message, we generate guidance based on comparison with the ground truth. This guidance does not reveal the answer but points out the type of error to simulate a high-quality critique without data leakage.
+
+
+\subsection{Baselines}
+We compare R$^3$L against the following representative methods.
+
+\textbf{RAFT} \cite{dongraft} performs Rejection Sampling Fine-Tuning by sampling multiple trajectories, filtering for the highest-reward solutions, and fine-tuning the policy using standard supervised fine-tuning on these successful samples.
+
+\textbf{GRPO} \cite{shao2024deepseekmath} implements Group Relative Policy Optimization, a critic-free PPO variant that estimates the baseline using the average reward of a group of sampled outputs from the same prompt.
+
+\textbf{OPMD} \cite{yao2025group} functions as Online Policy Mirror Descent by directly maximizing the likelihood of high-reward trajectories. With KL coefficient set to zero, OPMD is effectively a group-relative variant of REINFORCE, omitting importance sampling ratios and rendering it susceptible to distribution shift.
+
+\textbf{GSPO} \cite{zheng2025group} introduces Group Sequence Policy Optimization with sequence-level ratios to reduce the high variance typically associated with trajectory-level reward estimates in group optimization.
+
+\textbf{Reflect-GRPO} derives from the Reflect-Retry-Reward methodology \cite{bensal2025reflect} by integrating the language-guided reflect-then-retry mechanism to synthesize corrected trajectories during exploration. Unlike R$^3$L, it incorporates these samples into the training group using the standard GRPO objective without Pivotal Credit Assignment or Positive Amplification. We exclude Agent-RLVR \cite{da2025agent} from our baselines as it functions as a DPO-based variant of Reflect-GRPO that can be viewed as GRPO with group size $N=2$.
+
+\textbf{Critique-GRPO} adapts the methodology from \cite{zhang2025critique} by using natural language critiques to guide refinements and applying weighted advantages to the best refinement in each group. The shaping function moderates off-policy sample contributions.
+
+\subsection{Task Specifications and Prompts}
+As shown in Figure \ref{tab:dataset_stats}, the specific interaction limits are 25 steps for ALFWorld, 15 steps for WebShop, 30 steps for ScienceWorld, and 3 attempts for mathematical reasoning tasks.
+
+\textbf{ALFWorld} \cite{shridhar2020alfworld} is a text-based interactive environment that combines textual observations with embodied AI challenges. Agents must complete household tasks such as finding objects, manipulating items, and achieving specific goals through natural language commands. The training set contains 3,553 tasks spanning 6 task types including pick, examine, clean, heat, cool, and put. The test set contains 140 tasks in the valid\_seen set.
+
+\textbf{WebShop} \cite{yao2022webshop} simulates realistic online shopping scenarios where agents navigate e-commerce websites to purchase products matching user-specified requirements. The task involves searching, comparing attributes, and making purchasing decisions. The environment contains 1.18 million products in total. We use sessions 0 through 4095 for training with 4,096 tasks and evaluate on 100 held-out test sessions.
+
+\textbf{ScienceWorld} \cite{wang2022scienceworld} provides interactive simulated environments for scientific reasoning. Agents must formulate hypotheses, conduct experiments, and manipulate laboratory equipment across domains like biology and chemistry. We use the easy simplification mode and evaluate on held-out task types for task-type-level generalization. The training set covers 17 task types with 2,294 tasks, while the test set covers 13 non-overlapping task types with 1,308 tasks.
+
+\textbf{Mathematical Reasoning.} We evaluate on benchmarks including GSM8K \cite{cobbe2021training}, Math500 \cite{lightman2023let}, MinervaMath \cite{lewkowycz2022solving}, OlympiadBench \cite{gao2024omni}, AMC23 \cite{amc}, and the DAPO test set \cite{yu2025dapo}. These tasks require multi-step arithmetic reasoning with a strict chain-of-thought format. In math tasks, we train the model on the DAPO training set and evaluate across these diverse benchmarks to assess generalization.
+
+\begin{table}[h]
+\centering
+\small
+\adjustbox{max width=\linewidth}{%
+\begin{tabular}{llcc}
+\toprule
+\textbf{Environment} & \textbf{Split} & \textbf{Size} & \textbf{Max Steps} \\
+\midrule
+\multirow{2}{*}{ALFWorld} & Train & 3,553 & \multirow{2}{*}{25 steps} \\
+ & Test & 140 & \\
+\midrule
+\multirow{2}{*}{WebShop} & Train & 4,096 & \multirow{2}{*}{15 steps} \\
+ & Test & 100 & \\
+\midrule
+\multirow{2}{*}{ScienceWorld} & Train & 2,294 & \multirow{2}{*}{30 steps} \\
+ & Test & 1,308 & \\
+\midrule
+\multirow{7}{*}{Math} & Train (DAPO) & 1.79M & \multirow{7}{*}{3 attempts} \\
+ & Test: DAPO & 300 & \\
+ & Test: AMC23 & 40 & \\
+ & Test: GSM8K & 1,320 & \\
+ & Test: Math500 & 500 & \\
+ & Test: MinervaMath & 272 & \\
+ & Test: OlympiadBench & 674 & \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Dataset statistics and interaction limits for each environment. The Math training set contains 1.79 million problems from DAPO though training typically converges before exhausting the full dataset.}
+\label{tab:dataset_stats}
+\end{table}
+
+\subsection{Reflection and Retry Mechanism}
+
+To synthesize high-quality exploration data, we implement a two-stage language-guided reflect-then-retry mechanism.
+
+In the reflection phase, we prompt the model to analyze all trajectories using the unified reflection prompt shown in Figure \ref{fig:reflect_prompt_full}. The model examines the interaction log and outputs a structured JSON report containing a trajectory outcome classification, root cause analysis, and a suggested retry step. The outcome classification determines whether retry is warranted, with trajectories classified as success requiring no further action while those classified as failure or success\_but\_inefficient proceed to the retry phase.
+
+In the retry phase, we rollback the environment and conversation history to the specified retry step. A guidance prompt is constructed by embedding the raw JSON reflection report into a self-correction template shown in Figure \ref{fig:guidance_prompt}. The model then continues generation from the pivot point conditioned on this guidance.
+
+Context distillation ensures that while retry generation is conditioned on the guidance, the resulting successful trajectory is stored for training without the guidance prompt. This maps the original prefix directly to the corrected response, ensuring the policy learns to internalize the correction logic rather than depending on explicit guidance at inference time.
+
+
+\begin{figure*}[t]
+    \centering
+    \begin{tcolorbox}[
+        colback=white,
+        colframe=black!70,
+        title=\textbf{ALFWorld System Prompt},
+        fonttitle=\bfseries\small,
+        width=\textwidth,
+        boxrule=0.5pt
+    ]
+    \begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true]
+You are an agent interacting with a virtual text-based environment.
+
+## Response Format:
+You MUST use this exact format for every response. Both tags are REQUIRED in sequential order:
+
+<think>your analytical reasoning and thought process</think>
+<action>exactly one specific action command</action>
+
+## Action Commands:
+Your <action> must be one of the following, strictly following the command (argument) format.
+
+### Navigation & Observation:
+- look: Look around your current location to get more details.
+- inventory: Check the object you are currently holding (you can only hold one).
+- go to (receptacle): Move to a receptacle (e.g., table, fridge, sink).
+
+### Interacting with Receptacles:
+- open (receptacle): Open a receptacle.
+- close (receptacle): Close a receptacle.
+
+### Interacting with Objects:
+- take (object) from (receptacle): Pick up an object from a receptacle.
+- move (object) to (receptacle): Place the object you are holding into or onto a receptacle.
+- examine (object): Examine an object closely to learn its properties.
+
+### Changing Object States:
+- heat (object) with (receptacle): Heat an object with a device (e.g., microwave).
+- cool (object) with (receptacle): Cool an object with a device (e.g., fridge).
+- clean (object) with (receptacle): Clean an object with a device (e.g., sink).
+- slice (object) with (object): Slice an object using a sharp object (e.g., knife).
+
+## Critical Rules & Constraints
+- Single Item Inventory: You can only hold one object at a time.
+- Use Exact Names: Arguments MUST exactly match names in Observation, including numbers.
+- Step Limit: You must complete the task within 25 steps.
+    \end{lstlisting}
+    \end{tcolorbox}
+    \caption{System prompt used for the ALFWorld environment.}
+    \label{fig:prompt_alfworld}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \begin{tcolorbox}[
+        colback=white,
+        colframe=black!70,
+        title=\textbf{WebShop System Prompt},
+        fonttitle=\bfseries\small,
+        width=\textwidth,
+        boxrule=0.5pt
+    ]
+    \begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true]
+You are an agent interacting with a virtual text-based web shopping environment.
+
+## Response Format:
+You MUST use this exact format for every response. All tags are REQUIRED in sequential order:
+
+<think>your analytical reasoning and thought process</think>
+<action>exactly one specific action command</action>
+
+## Environment States:
+This environment contains five types of webpages:
+1. Start/Index page - Initial page with search functionality and task instruction
+2. Search Results page - Lists products returned by search engine with pagination
+3. Item page - Shows product details, options, and purchase button
+4. Item Sub-page - Shows additional product information
+5. Done page - Final confirmation page after purchase
+
+## Available Actions:
+1. search[your_query_here] - To search for products from any page with a search bar
+2. click[exact_button_text_here] - To click on any clickable element
+
+## Task Completion:
+Goal: Find and purchase an item matching the given instruction within 15 steps
+Success: Episode ends when you click "Buy Now" with appropriate product and options
+    \end{lstlisting}
+    \end{tcolorbox}
+    \caption{System prompt used for the WebShop environment.}
+    \label{fig:prompt_webshop}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \begin{tcolorbox}[
+        colback=white,
+        colframe=black!70,
+        title=\textbf{ScienceWorld System Prompt},
+        fonttitle=\bfseries\small,
+        width=\textwidth,
+        boxrule=0.5pt
+    ]
+    \begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true]
+You are an agent, your job is to do some scientific experiment in a virtual text-based environment.
+
+## Response Format:
+You MUST use this exact format for every response. All tags are REQUIRED in sequential order:
+<think>your analytical reasoning and thought process</think>
+<action>exactly one specific action command</action>
+
+## Notes:
+At each step, you should first think then perform action to fulfill the instruction.
+You should ALWAYS take one action each step.
+DO NOT try to interact with the user at anytime. Finish the task by yourself.
+
+## Available Commands:
+[Navigation] look, look around, look at OBJ, go to LOC, teleport to LOC
+[Interaction] open OBJ, close OBJ, pick up OBJ, put OBJ in CONTAINER, pour OBJ into CONTAINER
+[Task] focus on OBJ, wait, wait1
+    \end{lstlisting}
+    \end{tcolorbox}
+    \caption{System prompt used for the ScienceWorld environment.}
+    \label{fig:prompt_science}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \begin{tcolorbox}[
+        colback=white,
+        colframe=black!70,
+        title=\textbf{Mathematical Reasoning System Prompt},
+        fonttitle=\bfseries\small,
+        width=\textwidth,
+        boxrule=0.5pt
+    ]
+    \begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true]
+You are a mathematical problem solver. Your task is to solve mathematical problems step by step.
+
+## Response Format:
+You MUST use this exact format for every response. All tags are REQUIRED in sequential order:
+
+<think>your step-by-step reasoning and solution process</think>
+<answer>your final answer</answer>
+
+## Instructions:
+1. Carefully read and understand the problem
+2. Show your reasoning step by step in the <think> tags
+3. Provide your final answer in the <answer> tags
+4. For numerical answers, provide the exact value
+5. If the problem asks for a specific format, use that format in your answer
+    \end{lstlisting}
+    \end{tcolorbox}
+    \caption{System prompt used for mathematical reasoning tasks.}
+    \label{fig:prompt_math}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\begin{tcolorbox}[
+    colback=white,
+    colframe=black!70,
+    title=\textbf{Unified Reflection Prompt Template},
+    fonttitle=\bfseries\small,
+    width=\textwidth,
+    boxrule=0.5pt
+]
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true]
+You are a Reflector that analyzes trajectory logs based on user and environment feedback. 
+Your goal is to identify what went wrong, trace root causes, and extract reusable principles 
+for future improvement. Through Socratic-style iterative "why" questioning, trace issues back 
+to their fundamental flawed assumptions or mental models.
+
+Please output in the following JSON format:
+
+{
+"trajectory_summary": "Concise overview covering: (1) strategy employed, (2) final result, 
+    (3) key observations about execution quality.",
+"root_cause_analysis": "Deep causal analysis using iterative 'why' questioning to trace 
+    from observable symptoms to the fundamental root cause. Chain reasoning explicitly.",
+"trajectory_outcome": "One of: 'success', 'success_but_inefficient', 'failure'",
+"improvement_suggestion": "Generalizable, context-complete principle for avoiding similar 
+    issues. Must be self-contained and actionable.",
+"retry_from_step": "Integer identifying the earliest step where the root cause first 
+    manifested. Use 0 when root cause traces to initial strategy selection."
+}
+\end{lstlisting}
+\end{tcolorbox}
+\caption{The unified reflection prompt template used across all tasks.}
+\label{fig:reflect_prompt_full}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\begin{tcolorbox}[
+    colback=white,
+    colframe=black!70,
+    title=\textbf{Retry Guidance Template},
+    fonttitle=\bfseries\small,
+    width=\textwidth,
+    boxrule=0.5pt
+]
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, breaklines=true]
+Your previous attempt encountered issues. Below is a reflection based on user and 
+environment feedback:
+
+{
+    "trajectory_summary": "...",
+    "root_cause_analysis": "...",
+    "trajectory_outcome": "...",
+    "improvement_suggestion": "...",
+    "retry_from_step": ...
+}
+
+Apply the lessons learned from this reflection to avoid repeating the same mistakes.
+Do not mention or reference this guidance in your response.
+\end{lstlisting}
+\end{tcolorbox}
+\caption{The guidance prompt template used during the retry phase. The full JSON output from the reflection step is embedded into this template.}
+\label{fig:guidance_prompt}
+\end{figure*}

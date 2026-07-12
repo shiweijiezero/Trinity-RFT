@@ -1,0 +1,55 @@
+\begin{wrapfigure}{r}{0.55\textwidth}
+    \centering
+    \begin{minipage}{0.49\linewidth}
+        \centering
+        \begin{tikzpicture}
+            \begin{axis}[
+                width=\linewidth, height=3.8cm,
+                xlabel={Training Steps}, ylabel={Reward Gain},
+                grid=major, ymin=0,
+                font=\scriptsize, yticklabel={\pgfmathprintnumber{\tick}},
+            ]
+            \addplot[color=blue, mark=square*, mark size=0pt, thick, smooth, tension=1.0]
+            table[x=step, y=gain] {figure/src/alfworld-gain.dat};
+            \addplot[color=red, mark=*, mark size=0pt, thick, smooth, tension=1.0]
+            table[x=step, y=gain] {figure/src/alfworld-7b-gain.dat};
+            \addplot[color=green!70!black, mark=triangle*, mark size=0pt, thick, smooth, tension=1.0]
+            table[x=step, y=gain] {figure/src/webshop-gain.dat};
+            \addplot[color=orange, mark=diamond*, mark size=0pt, thick, smooth, tension=1.0]
+            table[x=step, y=gain] {figure/src/dapo-gain.dat};
+            \end{axis}
+        \end{tikzpicture}
+        \centerline{\scriptsize (a) Avg. Reward Gain}
+    \end{minipage}\hfill
+    \begin{minipage}{0.49\linewidth}
+        \centering
+        \begin{tikzpicture}
+            \begin{axis}[
+                width=\linewidth, height=3.8cm,
+                xlabel={Training Steps}, ylabel={Improv. Rate (\%)},
+                grid=major, ymin=0,
+                font=\scriptsize, yticklabel={\pgfmathprintnumber{\tick}},
+            ]
+            \addplot[color=blue, mark=square*, mark size=0pt, thick, smooth, tension=1.0]
+            table[x=step, y=rir] {figure/src/alfworld-rir.dat};
+            \addplot[color=red, mark=*, mark size=0pt, thick, smooth, tension=1.0]
+            table[x=step, y=rir] {figure/src/alfworld-7b-rir.dat};
+            \addplot[color=green!70!black, mark=triangle*, mark size=0pt, thick, smooth, tension=1.0]
+            table[x=step, y=rir] {figure/src/webshop-rir.dat};
+            \addplot[color=orange, mark=diamond*, mark size=0pt, thick, smooth, tension=1.0]
+            table[x=step, y=rir] {figure/src/dapo-rir.dat};
+            \end{axis}
+        \end{tikzpicture}
+        \centerline{\scriptsize (b) Retry Improvement Rate}
+    \end{minipage}
+
+    \vspace{0.4em}
+    {\scriptsize
+    \textcolor{blue}{\rule[0.35ex]{1.1em}{1.3pt}}\,ALFWorld (1.5B)\quad
+    \textcolor{red}{\rule[0.35ex]{1.1em}{1.3pt}}\,ALFWorld (7B)\par
+    \textcolor{green!70!black}{\rule[0.35ex]{1.1em}{1.3pt}}\,WebShop (7B)\quad
+    \textcolor{orange}{\rule[0.35ex]{1.1em}{1.3pt}}\,DAPO (7B)\par}
+
+    \caption{Evolution of exploration metrics across environments by the Reflect-then-Retry mechanism. \textbf{(a)} The average Reward Gain of retry trajectory relative to the base trajectory. \textbf{(b)} The percentage of retry trajectories that successfully improved upon the base attempt.}
+    \label{fig:exploration_metrics}
+\end{wrapfigure}

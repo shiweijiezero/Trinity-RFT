@@ -1,0 +1,23 @@
+\begin{table*}[t]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l ccc cccccc}
+\toprule
+& \multicolumn{3}{c}{\textbf{Agentic Environments}} & \multicolumn{6}{c}{\textbf{Mathematical Reasoning}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-10}
+\textbf{Method} & \textbf{ALFWorld} & \textbf{WebShop} & \textbf{ScienceWorld} & \textbf{GSM8K} & \textbf{Math500} & \textbf{MinervaMath} & \textbf{Olympiad} & \textbf{AMC23} & \textbf{DAPO} \\
+\midrule
+RAFT & 0.064 & 0.434 & 0.074 & 0.620 & 0.336 & 0.095 & 0.096 & 0.275 & 0.156 \\
+OPMD & 0.385 & 0.492 & \underline{0.117} & 0.548 & 0.310 & 0.084 & 0.094 & 0.125 & 0.186 \\
+GRPO & \textbf{0.521} & 0.520 & 0.076 & 0.664 & 0.398 & 0.128 & \textbf{0.121} & \underline{0.325} & \underline{0.213} \\
+GSPO & 0.285 & 0.497 & 0.082 & 0.574 & 0.308 & 0.110 & 0.106 & 0.225 & 0.163 \\
+Reflect-GRPO & 0.321 & 0.536 & 0.072 & \underline{0.669} & 0.392 & 0.128 & 0.112 & \underline{0.325} & 0.193 \\
+Critique-GRPO & 0.321 & \underline{0.549} & 0.071 & 0.662 & \textbf{0.426} & \underline{0.137} & 0.116 & \textbf{0.375} & 0.208 \\
+\rowcolor{cyan!10} \textbf{R$^3$L (Ours)} & \underline{0.495} & \textbf{0.569} & \textbf{0.123} & \textbf{0.688} & \underline{0.408} & \textbf{0.147} & \underline{0.118} & \underline{0.325} & \textbf{0.216} \\
+\bottomrule
+\end{tabular}
+}
+\caption{Results on Llama-3.2-3B-Instruct across agentic environments and mathematical reasoning benchmarks. We report Average Reward for all tasks. \textbf{Bold} indicates the best performance and \underline{underline} indicates the second best.}
+\label{tab:llama_results}
+\vspace{-0.5em}
+\end{table*}

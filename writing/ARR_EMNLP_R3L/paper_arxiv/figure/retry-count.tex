@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\small
+\adjustbox{max width=\linewidth}{%
+\begin{tabular}{l l c}
+\toprule
+\textbf{Retry count} & \textbf{Trajectory allocation} & \textbf{ALFWorld} \\
+\midrule
+0 (GRPO + PA) & 8 base                  & 0.807 \\
+\rowcolor{cyan!10} 1 (R$^3$L default) & 4 base + 4 retry        & \textbf{0.928} \\
+2             & 4 base + 2$\times$2 retry & 0.913 \\
+4             & 4 base + 4$\times$1 retry & 0.896 \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Retry count ablation on Qwen2.5-1.5B, ALFWorld, with total trajectory budget $N=8$. All multi-retry settings keep 4 base trajectories and 4 retry trajectories. The notation $a \times b$ in the allocation column denotes $a$ sequential retries applied to each of $b$ base trajectories (so $a \times b = 4$ retry trajectories total); each additional retry restarts from the pivot identified by a fresh reflection on the previous attempt.}
+\label{tab:retry_count}
+\end{table}

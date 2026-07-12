@@ -1,0 +1,36 @@
+\begin{table}[h]
+\centering
+\adjustbox{max width=\linewidth}{%
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Task} & \textbf{Method} & $S=1$ & $S=5$ & $S=10$ & $S=20$ \\
+\midrule
+\multirow{4}{*}{ALFWorld} 
+& OPMD & 0.835 & 0.357$^\dagger$ & 0.257$^\dagger$ & 0.341$^\dagger$ \\
+& GRPO & 0.720 & 0.716 & 0.389$^\dagger$ & 0.742 \\
+& GRPO+Positive & 0.807 & 0.864 & 0.778 & 0.764 \\
+& \textbf{R$^3$L} & \textbf{0.928} & \textbf{0.945} & \textbf{0.922} & \textbf{0.934} \\
+\midrule
+\multirow{4}{*}{WebShop} 
+& OPMD & 0.561 & 0.619 & 0.518$^\dagger$ & 0.460$^\dagger$ \\
+& GRPO & 0.614 & 0.638 & 0.612 & 0.610 \\
+& GRPO+Positive & 0.648 & 0.633 & 0.632 & 0.622 \\
+& \textbf{R$^3$L} & \textbf{0.663} & \textbf{0.663} & \textbf{0.672} & \textbf{0.657} \\
+\midrule
+\multirow{4}{*}{GSM8K} 
+& OPMD & 0.463$^\dagger$ & 0.604$^\dagger$ & 0.655$^\dagger$ & 0.499$^\dagger$ \\
+& GRPO & 0.474 & 0.673 & 0.692 & 0.712 \\
+& GRPO+Positive & 0.504 & 0.520 & 0.714 & 0.713 \\
+& \textbf{R$^3$L} & \textbf{0.721} & \textbf{0.779} & \textbf{0.756} & \textbf{0.753} \\
+\midrule
+\multirow{4}{*}{Math500} 
+& OPMD & 0.292$^\dagger$ & 0.354$^\dagger$ & 0.332$^\dagger$ & 0.336$^\dagger$ \\
+& GRPO & 0.368 & 0.406 & 0.408 & 0.406 \\
+& GRPO+Positive & 0.377 & 0.409 & 0.411 & 0.406 \\
+& \textbf{R$^3$L} & \textbf{0.424} & \textbf{0.464} & \textbf{0.441} & \textbf{0.426} \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Effect of synchronization frequency $S$ across benchmarks. $S$ denotes the number of training steps between behavior policy updates. $^\dagger$ denotes collapsed training where we report the peak score before collapse.}
+\label{tab:sync_analysis}
+\end{table}

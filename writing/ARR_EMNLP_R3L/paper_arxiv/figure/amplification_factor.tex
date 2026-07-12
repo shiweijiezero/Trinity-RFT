@@ -1,0 +1,19 @@
+\begin{table}[h]
+\centering
+\adjustbox{max width=\linewidth}{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Task} & $\alpha=1.0$ & $\alpha=2.0$ & $\alpha=3.0$ & $\alpha=5.0$ & $\alpha=7.0$ \\
+\midrule
+ALFWorld & 0.921 & 0.914 & 0.928 & 0.921 & \textbf{0.942} \\
+WebShop & 0.647 & 0.650 & \textbf{0.663} & 0.638 & 0.614 \\
+ScienceWorld & 0.375 & 0.382 & \textbf{0.385} & 0.366 & 0.353 \\
+GSM8K & \textbf{0.732} & 0.718 & 0.721 & 0.671 & 0.717 \\
+Math500 & 0.414 & 0.420 & \textbf{0.424} & 0.372 & 0.404 \\
+Olympiad & 0.143 & \textbf{0.154} & 0.151 & 0.145 & 0.132 \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Impact of amplification factor $\alpha$ on task performance. All configurations assign advantage 1 to trajectories achieving maximum reward in the group, ensuring positive signals even at $\alpha=1.0$.}
+\label{tab:alpha_analysis}
+\end{table}

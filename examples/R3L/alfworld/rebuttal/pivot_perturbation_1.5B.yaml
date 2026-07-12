@@ -1,0 +1,58 @@
+mode: bench
+project: "weijie_r3l"
+group: "alfworld_qwen25_1.5b_pivot_perturbation"
+name: "ALFWORLD_RFT_Qwen_1.5B_R3L_pivot_perturbation"
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+algorithm:
+  algorithm_type: opmd_reweight_adv
+  repeat_times: 1
+model:
+  model_path: /mnt/cpfs/shiweijie/hf_cache/qwen2.5-1.5b-ins
+  max_response_tokens: 512
+  max_model_len: 20480
+cluster:
+  node_num: 1
+  gpu_per_node: 4
+buffer:
+  batch_size: 1
+  explorer_input:
+    taskset:
+      name: alfworld-unused-train-input
+      storage_type: file
+      path: 'examples/R3L/alfworld/alfworld_data'
+      split: 'test'
+      format:
+        prompt_key: 'task_id'
+    eval_tasksets:
+      - name: alfworld-pivot-perturbation
+        storage_type: file
+        path: 'examples/R3L/alfworld/alfworld_data'
+        split: 'test'
+        total_steps: 200
+        format:
+          prompt_key: 'task_id'
+        rollout_args:
+          temperature: 0.0
+          logprobs: 0
+        default_workflow_type: 'pivot_perturbation_alfworld_workflow'
+        workflow_args:
+          output_dir: 'rebuttal/arr_may_emnlp/results/pivot_perturbation_alfworld'
+          experiment_seed: 2026
+          variants: ['model', 'early', 'late', 'start', 'random']
+          save_trajectories: false
+    default_eval_workflow_type: 'pivot_perturbation_alfworld_workflow'
+explorer:
+  runner_per_model: 8
+  eval_on_startup: true
+  bench_on_latest_checkpoint: false
+  rollout_model:
+    engine_num: 4
+    tensor_parallel_size: 1
+    enable_prefix_caching: false
+    enforce_eager: false
+    dtype: bfloat16
+    seed: 2026
+    gpu_memory_utilization: 0.7
+    enable_chunked_prefill: true
+monitor:
+  monitor_type: wandb

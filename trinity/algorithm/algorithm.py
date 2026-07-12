@@ -218,6 +218,93 @@ class OPMDReweightAdvAlgorithm(AlgorithmType):
         }
 
 
+def _r3l_safeguard_ablation_config(
+    *, policy_loss_fn: str, kl_loss_fn: str
+) -> Dict:
+    """Shared defaults for the ARR May KL x IS ablation."""
+    return {
+        "repeat_times": 2,
+        "advantage_fn": "opmd_reweight_adv",
+        "sample_strategy": "default",
+        "policy_loss_fn": policy_loss_fn,
+        "kl_penalty_fn": "none",
+        "kl_loss_fn": kl_loss_fn,
+        "entropy_loss_fn": "default",
+    }
+
+
+@ALGORITHM_TYPE.register_module("r3l_no_kl_no_is")
+class R3LNoKLNoISAlgorithm(AlgorithmType):
+    """R3L objective without KL or importance sampling."""
+
+    use_critic: bool = False
+    use_reference: bool = False
+    compute_advantage_in_trainer: bool = False
+    can_balance_batch: bool = True
+    schema: str = "experience"
+
+    @classmethod
+    def default_config(cls) -> Dict:
+        return _r3l_safeguard_ablation_config(
+            policy_loss_fn="opmd",
+            kl_loss_fn="none",
+        )
+
+
+@ALGORITHM_TYPE.register_module("r3l_kl_only")
+class R3LKLOnlyAlgorithm(AlgorithmType):
+    """R3L objective with KL but without importance sampling."""
+
+    use_critic: bool = False
+    use_reference: bool = True
+    compute_advantage_in_trainer: bool = False
+    can_balance_batch: bool = True
+    schema: str = "experience"
+
+    @classmethod
+    def default_config(cls) -> Dict:
+        return _r3l_safeguard_ablation_config(
+            policy_loss_fn="opmd",
+            kl_loss_fn="k3",
+        )
+
+
+@ALGORITHM_TYPE.register_module("r3l_is_only")
+class R3LISOnlyAlgorithm(AlgorithmType):
+    """R3L objective with clipped importance sampling but without KL."""
+
+    use_critic: bool = False
+    use_reference: bool = False
+    compute_advantage_in_trainer: bool = False
+    can_balance_batch: bool = True
+    schema: str = "experience"
+
+    @classmethod
+    def default_config(cls) -> Dict:
+        return _r3l_safeguard_ablation_config(
+            policy_loss_fn="opmd_clipped_is",
+            kl_loss_fn="none",
+        )
+
+
+@ALGORITHM_TYPE.register_module("r3l_kl_is")
+class R3LKLISAlgorithm(AlgorithmType):
+    """R3L objective with both KL and clipped importance sampling."""
+
+    use_critic: bool = False
+    use_reference: bool = True
+    compute_advantage_in_trainer: bool = False
+    can_balance_batch: bool = True
+    schema: str = "experience"
+
+    @classmethod
+    def default_config(cls) -> Dict:
+        return _r3l_safeguard_ablation_config(
+            policy_loss_fn="opmd_clipped_is",
+            kl_loss_fn="k3",
+        )
+
+
 @ALGORITHM_TYPE.register_module("asymre")
 class AsymREAlgorithm(AlgorithmType):
     """AsymRE algorithm."""

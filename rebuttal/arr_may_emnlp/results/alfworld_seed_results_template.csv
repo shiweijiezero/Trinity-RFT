@@ -1,0 +1,7 @@
+method,seed,final_score,best_score,config_path,commit
+R3L,0,,,examples/R3L/alfworld/opmd_R3L_1.5B.yaml,
+R3L,1,,,examples/R3L/alfworld/rebuttal/opmd_R3L_1.5B_seed1.yaml,
+R3L,2,,,examples/R3L/alfworld/rebuttal/opmd_R3L_1.5B_seed2.yaml,
+GRPO,0,,,examples/R3L/alfworld/grpo_1.5B.yaml,
+GRPO,1,,,examples/R3L/alfworld/rebuttal/grpo_1.5B_seed1.yaml,
+GRPO,2,,,examples/R3L/alfworld/rebuttal/grpo_1.5B_seed2.yaml,

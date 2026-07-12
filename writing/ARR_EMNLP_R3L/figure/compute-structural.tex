@@ -1,0 +1,20 @@
+\begin{table*}[t]
+\centering
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l llll}
+\toprule
+& \textbf{GRPO} & \textbf{Reflect-GRPO} & \textbf{Critique-GRPO} & \textbf{R$^3$L} \\
+\midrule
+Base rollout & $N$ full & $N$ full & $N$ full & $N/2$ full \\
+Reflect & --- & in-trajectory tokens & $N$ independent critiques & $N/2$ JSON ($\sim$500 tok) \\
+Retry rollout & --- & in-trajectory & $N$ full refinements & $N/2$ partial from pivot$^\dagger$ \\
+Total rollouts & $N$ & $N$ & $2N$ & $N$ to $2N^\dagger$ \\
+Enters training & $N$ trajectories & $N$ with reflect tokens & $N$ initial + best refinement & base + distilled, all in group \\
+Ref.\ model forward & required (KL) & required (KL) & required (KL) & not required \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Rollout structure per training step. Critique-GRPO issues $2N$ rollouts and discards $N{-}1$ refinements; R$^3$L splits $N$ rollouts into $N/2$ base and $N/2$ conditionally triggered partial retries, and removes the reference-model forward pass by dropping KL. $^\dagger$R$^3$L's retry is triggered only when reflection deems the base trajectory non-successful, so total rollouts lie between $N$ and $2N$ depending on the trigger rate.}
+\label{tab:compute_structural}
+\end{table*}

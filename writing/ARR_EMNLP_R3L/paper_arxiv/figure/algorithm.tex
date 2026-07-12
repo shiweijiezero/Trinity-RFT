@@ -1,0 +1,54 @@
+\begin{algorithm*}[t]
+\small
+\caption{R$^3$L: Reflect-then-Retry Reinforcement Learning with Language-Guided Exploration, Pivotal Credit and Positive Amplification}
+\label{alg:R3L}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} Policy $\pi_{\theta}$, Reward function $R$, Prompt dataset $\mathcal{D}$
+\STATE \textbf{Hyperparameters:} Group size $N$, Amplification factor $\alpha$
+\STATE \textbf{Initialize:} $\theta \leftarrow \theta_{old}$
+\WHILE{not converged}
+    \FOR{each prompt $x$ in batch $\mathcal{B} \sim \mathcal{D}$}
+        \STATE $\mathcal{G} \leftarrow \emptyset$, $\mathcal{D}_{reflect} \leftarrow \emptyset$, $\mathcal{D}_{retry} \leftarrow \emptyset$ \hfill $\triangleright$ Initialize exploration group and SFT datasets
+        
+        \STATE \textcolor{blue}{\textit{// Phase 1: Language-Guided Exploration}}
+        \STATE Sample $N/2$ base trajectories: $\{\tau_1, \dots, \tau_{N/2}\} \sim \pi_{\theta_{old}}(\cdot|x)$
+        \FOR{each base trajectory $\tau_i$ with environment feedback $f_i$}
+            \STATE Generate reflection $r_i \sim \pi_{\theta_{old}}(\cdot | \tau_i, f_i, \text{prompt}_{reflect})$
+            \STATE Parse $r_i$ to obtain pivot turn $k_{pivot}$ and guidance $g_i$
+            \STATE Sample retry suffix from $k_{pivot}$: $\tau'_{i,\geq k_{pivot}} \sim \pi_{\theta_{old}}(\cdot | \tau_{i,<k_{pivot}}, g_i)$
+            \STATE \textbf{Context Distillation:} Construct $\tau'_i = (\tau_{i,<k_{pivot}}, \tau'_{i,\geq k_{pivot}})$ without $g_i$
+            
+            \STATE \textcolor{blue}{\textit{// Phase 2: Pivotal Credit Assignment}}
+            \STATE Define pivot mask: $M[k] = 0$ if $k < k_{pivot}$ else $1$
+            \STATE Add $(\tau_i, M)$ to $\mathcal{G}$
+            \STATE Add $(\tau'_i, M)$ to $\mathcal{G}$
+            
+            \STATE \textcolor{blue}{\textit{// Collect SFT Data for Meta-Tasks (verified successful corrections)}}
+            \IF{$R(\tau'_i) > R(\tau_i)$}
+                \STATE Add $([\tau_i, f_i], r_i)$ to $\mathcal{D}_{reflect}$ \hfill $\triangleright$ Learn to reflect
+                \STATE Add $(\tau_{i,<k_{pivot}} \oplus g_i, \tau'_{i,\geq k_{pivot}})$ to $\mathcal{D}_{retry}$ \hfill $\triangleright$ Learn to retry
+            \ENDIF
+        \ENDFOR
+        
+        \STATE \textcolor{blue}{\textit{// Phase 3: Positive Amplification}}
+        \STATE Compute rewards $\{R(\tau) | \tau \in \mathcal{G}\}$
+        \STATE Compute group statistics: $\bar{R} = \text{mean}$, $\sigma_R = \text{std}$, $R_{max} = \max$
+        \FOR{each $(\tau_j, M_j) \in \mathcal{G}$}
+            \STATE $A_j \leftarrow (R(\tau_j) - \bar{R}) / \sigma_R$
+            \IF{$R(\tau_j) = R_{max}$}
+                \STATE $\hat{A}_j \leftarrow \alpha$
+            \ELSIF{$A_j > 0$}
+                \STATE $\hat{A}_j \leftarrow \alpha \cdot A_j$
+            \ELSE
+                \STATE $\hat{A}_j \leftarrow A_j$
+            \ENDIF
+        \ENDFOR
+        
+        \STATE \textcolor{blue}{\textit{// Policy Update with RL and Auxiliary SFT Objectives}}
+        \STATE $\mathcal{L}_{RL}(\theta) = -\frac{1}{|\mathcal{G}|} \sum_{(\tau_j, M_j) \in \mathcal{G}} \frac{1}{|\tau_j|} \sum_{k,t} M_j[k] \cdot \hat{A}_j \cdot \log \pi_{\theta}(y_k^t | h_k, y_k^{<t})$
+        \STATE $\mathcal{L}_{SFT}(\theta) = - \sum_{(x,y) \in \mathcal{D}_{reflect} \cup \mathcal{D}_{retry}} \log \pi_{\theta}(y|x)$ \hfill $\triangleright$ Maintain reflection and retry skills
+        \STATE Update $\theta$ via gradient descent on $\mathcal{L}_{RL}(\theta) + \mathcal{L}_{SFT}(\theta)$
+    \ENDFOR
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm*}

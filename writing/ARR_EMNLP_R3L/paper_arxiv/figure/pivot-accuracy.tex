@@ -1,0 +1,34 @@
+\begin{table}[t]
+\centering
+\small
+\adjustbox{max width=\linewidth}{%
+\begin{tabular}{ll rrr rrr}
+\toprule
+\multirow{2}{*}{\textbf{Task (Model)}} & \multirow{2}{*}{\textbf{Step}}
+ & \textbf{Oracle} & \textbf{Retry SR} & \textbf{Retry SR}
+ & \multirow{2}{*}{\textbf{Accurate}} & \multirow{2}{*}{\textbf{Partial}} & \multirow{2}{*}{\textbf{Misdiag.}} \\
+ & & \textbf{Agr.} & \textbf{(Correct)} & \textbf{(Wrong)} & & & \\
+\midrule
+\multirow{2}{*}{ALFWorld (1.5B)}
+ & 100 & 43\% & 71\% & 34\% & 27\% & 39\% & 34\% \\
+ & 400 & 63\% & 81\% & 37\% & 47\% & 34\% & 18\% \\
+\midrule
+\multirow{2}{*}{ALFWorld (7B)}
+ & 100 & 57\% & 81\% & 41\% & 43\% & 35\% & 22\% \\
+ & 400 & 76\% & 85\% & 43\% & 57\% & 31\% & 12\% \\
+\midrule
+\multirow{2}{*}{WebShop (7B)}
+ & 100 & 45\% & 39\% & 13\% & 33\% & 39\% & 28\% \\
+ & 400 & 60\% & 51\% & 14\% & 46\% & 33\% & 22\% \\
+\midrule
+\multirow{4}{*}{ScienceWorld (1.5B)}
+ & 100 & 36\% & 57\% & 21\% & 23\% & 39\% & 38\% \\
+ & 200 & 44\% & 64\% & 24\% & 31\% & 39\% & 30\% \\
+ & 300 & 53\% & 71\% & 27\% & 41\% & 36\% & 23\% \\
+ & 400 & 61\% & 76\% & 29\% & 49\% & 33\% & 18\% \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Pivot localization accuracy against oracle labels at selected training steps. \textbf{Oracle Agr.}: model's pivot within one step of the oracle. \textbf{Retry SR (Correct/Wrong)}: retry success rate conditioned on whether the pivot matches the oracle. \textbf{Accurate / Partial / Misdiag.}: diagnosis categorization (Partial = within 3 steps of oracle; Misdiag.\ = off by more than 3 or wrong cause). ScienceWorld oracles are derived from step-level subtask rewards; ALFWorld and WebShop oracles are annotated via human judgment and DeepSeek labeling on 100 failed trajectories per benchmark.}
+\label{tab:pivot_accuracy}
+\end{table}

@@ -11,6 +11,11 @@ from jinja2 import Environment, FileSystemLoader
 from trinity.common.experience import Experience
 from trinity.common.models.model import ModelWrapper
 from trinity.common.workflows.envs.R3L.alfworld import utils
+from trinity.common.workflows.envs.R3L.rebuttal_metrics import (
+    initialize_base_metrics,
+    record_reflection_decision,
+    record_retry_completion,
+)
 from trinity.common.workflows.workflow import WORKFLOWS, Task, Workflow
 
 
@@ -114,6 +119,8 @@ class R3LAlfworldWorkflow(Workflow):
         reflect_prompt = self.reflection_template.render()
 
         # Call model and parse results
+        reflection_text = None
+        reflection_experience = None
         try:
             responses = self.model.chat(
                 [
@@ -129,7 +136,8 @@ class R3LAlfworldWorkflow(Workflow):
                 temperature=self.temperature,
                 max_tokens=self.max_reflect_tokens,
             )
-            reflection_text = responses[0].response_text.strip()
+            reflection_experience = responses[0]
+            reflection_text = reflection_experience.response_text.strip()
 
             # Find first '{' and last '}'
             first_brace = reflection_text.find("{")
@@ -141,10 +149,10 @@ class R3LAlfworldWorkflow(Workflow):
                 json_str = reflection_text
 
             reflection_data = json.loads(json_str)
-            return reflection_data, reflection_text, responses[0]
+            return reflection_data, reflection_text, reflection_experience
 
         except Exception as e:
-            return None, None, None
+            return None, reflection_text, reflection_experience
 
     def _adjust_action_mask_for_retry(self, experience: Experience, retry_step: int):
         """
@@ -209,6 +217,7 @@ class R3LAlfworldWorkflow(Workflow):
                     "steps": steps,
                     "reward": reward,
                 }
+                initialize_base_metrics(exp)
                 # Set eid
                 exp.eid.task = str(self.task.task_id) + f"_explore"
                 exp_run_id = len(exp_lst) + self.run_id_base
@@ -234,6 +243,9 @@ class R3LAlfworldWorkflow(Workflow):
                 # Reflect on first attempt
                 reflect_checklist, reflection_text, reflect_exp = self.get_reflect(trajectory)
                 is_valid, is_perfect = utils.validate_reflect_report(reflect_checklist, steps)
+                record_reflection_decision(
+                    exp, reflect_exp, is_valid=is_valid, is_perfect=is_perfect
+                )
 
                 if not is_valid or is_perfect:
                     # If first attempt reward is 1.0 and reflection gives perfect, record reflection exp
@@ -277,6 +289,8 @@ class R3LAlfworldWorkflow(Workflow):
                                 if existing_exp.eid.run == exp_run_id:
                                     self._adjust_action_mask_for_retry(existing_exp, retry_step)
                                     break
+
+                        record_retry_completion(exp, second_exp)
 
                         second_exp.reward = second_reward
                         second_exp.metrics = {

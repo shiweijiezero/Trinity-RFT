@@ -1,0 +1,212 @@
+\begin{figure*}[thb]
+\centering
+
+\begin{tcolorbox}[
+    colback=white,
+    colframe=black!70,
+    title=\textbf{ALFWorld: Put a keychain in dresser},
+    fonttitle=\bfseries\small,
+    width=\textwidth,
+    boxrule=0.5pt
+]
+
+\textbf{Base Trajectory} \hfill \textcolor{red!70!black}{\textbf{Failed after 25 steps}}
+
+\vspace{0.5em}
+\footnotesize
+\begin{tabular}{@{}r@{\hspace{0.8em}}p{13cm}@{}}
+Step 0 & \texttt{go to dresser 1} \\
+       & \textit{Observation: On dresser 1, you see a houseplant 1, a laptop 1, and a television 1.} \\[0.3em]
+Step 1 & \texttt{go to coffeetable 1} \\
+       & \textit{Observation: On coffeetable 1, you see a statue 3, statue 2, statue 1, watch 2, watch 1.} \\[0.3em]
+Step 2 & \texttt{go to sidetable 1} \\
+       & \textit{Observation: On sidetable 1, you see nothing.} \\[0.3em]
+Step 3 & \texttt{go to sofa 1} \\
+       & \textit{Observation: On sofa 1, you see a pillow 1.} \\[0.3em]
+Step 4 & \texttt{go to dresser 1} \quad (revisiting) \\[0.3em]
+Step 5 & \texttt{go to garbagecan 1} \\
+       & \textit{Observation: On garbagecan 1, you see nothing.} \\[0.3em]
+Step 6 & \texttt{go to armchair 1} \\
+       & \textit{Observation: On armchair 1, you see a pillow 2.} \\[0.3em]
+Step 7--24 & Cycles repeatedly: coffeetable 1 $\rightarrow$ sidetable 1 $\rightarrow$ sofa 1 $\rightarrow$ dresser 1 $\rightarrow$ armchair 1 ... \\[0.3em]
+Step 25 & Task timeout \\
+\end{tabular}
+
+\vspace{0.3em}
+\textit{Failure: Agent visited armchair 1 but never checked \textbf{armchair 2}, where the keychain was located.}
+
+\end{tcolorbox}
+
+\vspace{0.5em}
+
+\begin{tcolorbox}[
+    colback=gray!8,
+    colframe=black!70,
+    title=\textbf{Reflection Output},
+    fonttitle=\bfseries\small,
+    width=\textwidth,
+    boxrule=0.5pt
+]
+\footnotesize
+
+\textbf{Trajectory Summary:} The agent attempted to put a keychain in a dresser but made multiple incorrect moves due to incorrect mental models and environmental interactions, resulting in failure to complete the task within the step limit.
+
+\vspace{0.5em}
+\textbf{Root Cause Analysis:} Why was the approach suboptimal? Because the agent jumped directly into navigation without considering the keychain's starting location and environmental context. The agent treated exploration as open-ended wandering rather than systematic enumeration. Critical oversight: armchair 2 was never visited despite being a valid receptacle.
+
+\vspace{0.5em}
+\textbf{Pivot Point:} Step 0 
+
+\vspace{0.5em}
+\textbf{Guidance:} Adopt systematic search ensuring complete coverage of all receptacles.
+
+\end{tcolorbox}
+
+\vspace{0.5em}
+
+\begin{tcolorbox}[
+    colback=white,
+    colframe=black!70,
+    title=\textbf{Retry Trajectory (guidance removed for training)},
+    fonttitle=\bfseries\small,
+    width=\textwidth,
+    boxrule=0.5pt
+]
+
+\hfill \textcolor{green!50!black}{\textbf{Success in 8 steps}}
+
+\vspace{0.5em}
+\footnotesize
+\begin{tabular}{@{}r@{\hspace{0.8em}}p{13cm}@{}}
+Step 0 & \texttt{go to armchair 1} \\
+       & \textit{Observation: On armchair 1, you see a pillow 2.} \\[0.3em]
+Step 1 & \texttt{go to cabinet 1} \\
+       & \textit{Observation: The cabinet 1 is closed.} \\[0.3em]
+Step 2 & \texttt{open cabinet 1} \\
+       & \textit{Observation: In cabinet 1, you see a box 1.} \\[0.3em]
+Step 3 & \texttt{go to dresser 1} \\
+       & \textit{Observation: On dresser 1, you see a houseplant 1, laptop 1, television 1.} \\[0.3em]
+Step 4 & \texttt{go to armchair 2} \\
+       & \textit{Observation: On armchair 2, you see a \textbf{keychain 1}.} \\[0.3em]
+Step 5 & \texttt{take keychain 1 from armchair 2} \\
+       & \textit{Observation: You pick up the keychain 1 from the armchair 2.} \\[0.3em]
+Step 6 & \texttt{go to dresser 1} \\[0.3em]
+Step 7 & \texttt{move keychain 1 to dresser 1} \\
+       & \textit{Feedback: Task completed successfully (reward: 1/1.0)} \\
+\end{tabular}
+
+\vspace{0.3em}
+\textit{Key difference: Retry trajectory visits armchair 2 on step 4, which base trajectory never explored.}
+
+\end{tcolorbox}
+
+\caption{ALFWorld case study showing base trajectory failure and successful retry. The base trajectory exhausts 25 steps cycling through a subset of locations while missing armchair 2. After reflection identifies the systematic coverage failure, the retry trajectory efficiently explores new receptacles and completes the task in 8 steps. Trajectories are simplified for clarity.}
+\label{fig:case_alfworld}
+\end{figure*}
+
+\begin{figure*}[b]
+\centering
+
+\begin{tcolorbox}[
+    colback=white,
+    colframe=black!70,
+    title=\textbf{DAPO: How many integers from 1 to 120 are divisible by 3 or 5 but not both?},
+    fonttitle=\bfseries\small,
+    width=\textwidth,
+    boxrule=0.5pt
+]
+
+\textbf{Base Trajectory} \hfill \textcolor{red!70!black}{\textbf{Failed after 3 attempts}}
+
+\vspace{0.5em}
+
+% Step 1
+\footnotesize
+\textbf{Step 1:}
+\begin{tabular}{@{}p{14.5cm}@{}}
+\textit{I need to find integers from 1 to 120 divisible by 3 or 5.} \\[0.2em]
+Divisible by 3: $\lfloor 120/3 \rfloor = 40$ \quad Divisible by 5: $\lfloor 120/5 \rfloor = 24$ \quad Both: $\lfloor 120/15 \rfloor = 8$ \\[0.2em]
+By inclusion-exclusion: $|A \cup B| = 40 + 24 - 8 = 56$ \\[0.2em]
+\textbf{Answer: 56} \quad \textcolor{red!70!black}{Feedback: Incorrect.}
+\end{tabular}
+
+\vspace{0.5em}
+
+% Step 2
+\textbf{Step 2:}
+\footnotesize
+\begin{tabular}{@{}p{14.5cm}@{}}
+\textit{Previous attempt was wrong. ``But not both'' means I should exclude the intersection.} \\[0.2em]
+$|A \cup B| - |A \cap B| = 56 - 8 = 48$... wait, that subtracts intersection twice from the union. \\[0.2em]
+\textit{Let me subtract twice:} $56 - 8 - 8 = 40$ \\[0.2em]
+\textbf{Answer: 40} \quad \textcolor{red!70!black}{Feedback: Incorrect.}
+\end{tabular}
+
+\vspace{0.5em}
+
+% Step 3
+\textbf{Step 3:}
+\footnotesize
+\begin{tabular}{@{}p{14.5cm}@{}}
+\textit{Still wrong. Maybe the problem wants only the intersection?} \\[0.2em]
+$|A \cap B| = 8$ \\[0.2em]
+\textbf{Answer: 8} \quad \textcolor{red!70!black}{Feedback: Incorrect. Maximum attempts reached.}
+\end{tabular}
+
+\end{tcolorbox}
+
+\vspace{0.5em}
+
+\begin{tcolorbox}[
+    colback=gray!8,
+    colframe=black!70,
+    title=\textbf{Reflection Output},
+    fonttitle=\bfseries\small,
+    width=\textwidth,
+    boxrule=0.5pt
+]
+\footnotesize
+
+\textbf{Trajectory Summary:} Three attempts all failed. The model repeatedly manipulated the inclusion-exclusion formula without correctly interpreting the constraint.
+
+\vspace{0.3em}
+\textbf{Root Cause:} ``But not both'' means exclusive-or, requiring elements in exactly one set. All attempts adjusted overlap arithmetic rather than reframing the problem as disjoint partitions.
+
+\vspace{0.3em}
+\textbf{Pivot:} Step 1
+
+\vspace{0.3em}
+\textbf{Guidance:} Count ``divisible by 3 only'' and ``divisible by 5 only'' as separate disjoint cases.
+
+\end{tcolorbox}
+
+\vspace{0.5em}
+
+\begin{tcolorbox}[
+    colback=white,
+    colframe=black!70,
+    title=\textbf{Retry Trajectory (guidance removed for training)},
+    fonttitle=\bfseries\small,
+    width=\textwidth,
+    boxrule=0.5pt
+]
+
+\hfill \textcolor{green!50!black}{\textbf{Success in 1 attempt}}
+
+\vspace{0.5em}
+
+\textbf{Step 1:}
+\footnotesize
+\begin{tabular}{@{}p{14.5cm}@{}}
+\textit{``Divisible by 3 or 5 but not both'' means exactly one of them. I should count each case separately.} \\[0.2em]
+Divisible by 3: $\lfloor 120/3 \rfloor = 40$ \quad Divisible by 5: $\lfloor 120/5 \rfloor = 24$ \quad Both: $\lfloor 120/15 \rfloor = 8$ \\[0.2em]
+Divisible by 3 only: $40 - 8 = 32$ \quad Divisible by 5 only: $24 - 8 = 16$ \\[0.2em]
+These are disjoint: $32 + 16 = 48$ \\[0.2em]
+\textbf{Answer: 48} \quad \textcolor{green!50!black}{Feedback: Correct.}
+\end{tabular}
+
+\end{tcolorbox}
+
+\caption{DAPO case study showing base trajectory failure and successful retry. The base trajectory exhausts three attempts, all failing due to manipulating formulas rather than reframing problem structure. Reflection identifies the semantic misunderstanding and provides corrective guidance. The retry trajectory succeeds on the first attempt by partitioning into disjoint cases. Trajectories are simplified for clarity.}
+\label{fig:case_dapo}
+\end{figure*}

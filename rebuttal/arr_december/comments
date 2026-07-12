@@ -1,0 +1,232 @@
+OpenReview.net
+Search OpenReview...
+Notifications66
+Activity
+Tasks
+Weijie Shi
+back arrowGo to ACL ARR 2026 January homepage
+R
+L: Reflect-then-Retry Reinforcement Learning with Language-Guided Exploration, Pivotal Credit, and Positive Amplification
+Download PDF
+Weijie Shi, Yanxi Chen, Zexi Li, Xuchen Pan, Yuchang Sun, Jiajie Xu, Xiaofang Zhou, Yaliang Li
+05 Jan 2026 (modified: 08 Feb 2026)
+ACL ARR 2026 January Submission
+January, Senior Area Chairs, Area Chairs, Reviewers, Authors
+Revisions
+BibTeX
+CC BY 4.0
+Keywords: reinforcement learning, LLM agents, credit assignment, language-guided exploration
+Abstract:
+Reinforcement learning drives recent advances in LLM reasoning and agentic capabilities, yet current approaches struggle with both exploration and exploitation. Exploration suffers from low success rates on difficult tasks and high costs of repeated rollouts from scratch. Exploitation suffers from coarse credit assignment and training instability: Trajectory-level rewards penalize valid prefixes for later errors, and failure-dominated groups overwhelm the few positive signals, leaving optimization without constructive direction. To this end, we propose R
+L, Reflect-then-Retry Reinforcement Learning with Language-Guided Exploration, Pivotal Credit, and Positive Amplification. To synthesize high-quality trajectories, R
+L shifts from stochastic sampling to active synthesis via reflect-then-retry, leveraging language feedback to diagnose errors, transform failed attempts into successful ones, and reduce rollout costs by restarting from identified failure points. With errors diagnosed and localized, Pivotal Credit Assignment updates only the diverging suffix where contrastive signals exist, excluding the shared prefix from gradient update. Since failures dominate on difficult tasks and reflect-then-retry produces off-policy data, risking training instability, Positive Amplification upweights successful trajectories to ensure positive signals guide the optimization process. Experiments on agentic and reasoning tasks demonstrate 5% to 52% relative improvements over baselines while maintaining training stability. Our code is released at \url{https://anonymous.4open.science/r/R3L}.
+
+Paper Type: Long
+Research Area: AI/LLM Agents
+Research Area Keywords: reinforcement learning in agents, reinforcement learning, optimization methods, LLM/AI agents
+Contribution Types: Model analysis & interpretability, NLP engineering experiment, Publicly available software and/or pre-trained models
+Languages Studied: English
+TLDR: R³L enables stable and effective RL training for LLMs via (1) language-guided reflect-then-retry exploration, (2) pivotal credit assignment on diverging suffixes, and (3) positive amplification to upweight successful trajectories.
+Reassignment Request Area Chair: This is not a resubmission
+Reassignment Request Reviewers: This is not a resubmission
+Software:  zip
+Preprint: yes
+Preprint Status: We plan to release a non-anonymous preprint in the next two months (i.e., during the reviewing process).
+Preferred Venue: ACL
+Consent To Share Data: no
+Consent To Share Submission Details: On behalf of all authors, we agree to the terms above to share our submission details.
+A1 Limitations Section: This paper has a limitations section.
+A2 Potential Risks: N/A
+A2 Elaboration: The work focuses on methodological improvements for RL training and does not introduce direct societal risks.
+B Use Or Create Scientific Artifacts: Yes
+B4 Data Contains Personally Identifying Info Or Offensive Content: N/A
+B4 Elaboration: We use publicly available benchmarks (ALFWorld, WebShop, ScienceWorld, GSM8K, etc.) that do not contain personally identifying information or offensive content.
+B6 Statistics For Data: Yes
+B6 Elaboration: Section 5.1 and Appendix G (Table 8)
+C Computational Experiments: Yes
+C2 Experimental Setup And Hyperparameters: Yes
+C2 Elaboration: Section 5.1 and Appendix G
+C3 Descriptive Statistics: Yes
+C3 Elaboration: Section 5.2 (Tables 1-2) and Section 5.3-5.4
+D Human Subjects Including Annotators: No
+D1 Instructions Given To Participants: N/A
+D1 Elaboration: No human subjects were used.
+D2 Recruitment And Payment: N/A
+D2 Elaboration: No human subjects were used.
+D3 Data Consent: N/A
+D3 Elaboration: No human subjects were used.
+D4 Ethics Review Board Approval: N/A
+D4 Elaboration: No human subjects were used.
+E Ai Assistants In Research Or Writing: Yes
+E1 Information About Use Of Ai Assistants: N/A
+E1 Elaboration: We only use AI to refine the writing and the contents are checked by authors.
+Author Submission Checklist: yes
+Association For Computational Linguistics - Blind Submission License Agreement: On behalf of all authors, I agree
+B1 Cite Creators Of Artifacts: Yes
+B1 Elaboration: Section 5.1 and References.
+B2 Discuss The License For Artifacts: No
+B2 Elaboration: We use publicly available benchmarks and open-source models (Qwen2.5-Instruct, Llama-3.2-Instruct) that are released for research purposes. Our code will be released at the anonymous repository linked in the paper.
+B3 Artifact Use Consistent With Intended Use: Yes
+B3 Elaboration: Section 5.1. All benchmarks (ALFWorld, WebShop, ScienceWorld, GSM8K, Math500, etc.) are used for their intended purpose of evaluating agent and reasoning capabilities.
+B5 Documentation Of Artifacts: Yes
+B5 Elaboration: Section 5.1 and Appendix G.5 (Table 8) provide documentation of all datasets including task types, sizes, and evaluation splits. Appendix G provides comprehensive implementation details.
+C1 Model Size And Budget: Yes
+C1 Elaboration: Section 5.1 and Appendix G.1. We use Qwen2.5-1.5B-Instruct, Qwen2.5-7B-Instruct, and Llama-3.2-3B-Instruct. Computing infrastructure: 40 NVIDIA A100 PCIe GPUs and 56 NVIDIA H20 GPUs. GPU hours reported: approximately 420 GPU hours for 1.5B model and 2304 GPU hours for 3B model on ALFWorld (Appendix G.1).
+C4 Parameters For Packages: Yes
+C4 Elaboration: Appendix G.1 and G.3. We use Trinity-RFT framework (Pan et al., 2025) for implementation, VLLM for inference, and math_verify library for answer verification. Hyperparameters are detailed in Tables 6-7.
+D5 Characteristics Of Annotators: N/A
+D5 Elaboration: No human subjects or annotators were used in this research.
+Submission Number: 4731
+Discussion
+Filter by reply type...
+Filter by author...
+Search keywords...
+
+Sort: Newest First
+3 / 3 replies shown
+Add:
+Official Review of Submission4731 by Reviewer iAPy
+Official Reviewby Reviewer iAPy12 Feb 2026, 11:18 (modified: 16 Feb 2026, 07:00)Program Chairs, Senior Area Chairs, Area Chairs, Reviewers Submitted, Reviewer iAPy, AuthorsRevisions
+Paper Summary:
+This paper proposes R³L, a reinforcement learning framework for LLMs that addresses three structural issues in group-relative RL methods such as GRPO: inefficient exploration, coarse trajectory-level credit assignment, and instability in failure-dominated regimes. R³L introduces (1) a language-guided reflect-then-retry mechanism to actively synthesize improved trajectories by identifying pivot points and restarting generation from failure locations; (2) Pivotal Credit Assignment, which masks shared prefixes between base and retry trajectories to focus gradient updates on diverging suffixes; and (3) Positive Amplification, which scales positive advantages to prevent destructive gradients from dominating optimization. Experiments on agentic environments and mathematical reasoning benchmarks show consistent improvements over GRPO and language-feedback baselines, alongside improved training stability. The paper also provides theoretical analysis of entropy collapse and gradient dominance conditions.
+
+Summary Of Strengths:
+Pivot-Based Credit Masking Effectively Addresses Prefix Mis-Credit.The turn-level pivot identification and masking of shared prefixes provide a concrete and practical solution to trajectory-level mis-crediting. Results on long-horizon tasks support its effectiveness in preventing valid early reasoning from being penalized.
+
+Positive Amplification is Theoretically Grounded and Empirically Robust.The gradient dominance analysis offers a clear explanation of entropy collapse and justifies the amplification factor. A single fixed α works across models and tasks, suggesting the mechanism addresses a structural imbalance rather than requiring heavy tuning.
+
+Reflect-then-Retry Shows Sustained Exploration Gains During Training.The reported retry improvement rate and reward gain over time demonstrate that retry trajectories consistently outperform base samples after warm-up, providing stronger evidence of exploration quality than final accuracy alone.
+
+Summary Of Weaknesses:
+While the integration is coherent, elements such as retry-based refinement, advantage reweighting, and partial masking have precedents in related literature.
+
+The framework assumes that the model can reliably identify the true error turn and generate an effective correction. However, self-reflection may mislocalize failures or produce superficial diagnoses, and the paper does not provide direct evaluation of pivot accuracy or correction validity beyond final task reward.
+
+The reflection step requires an extra inference pass and auxiliary supervision. The paper does not provide a detailed wall-clock or cost analysis comparing R³L with strong baselines under equal compute budgets.
+
+Comments Suggestions And Typos:
+The paper would benefit from a more direct evaluation of the self-reflection component. In particular, reporting metrics such as pivot identification accuracy, correction success rate conditioned on detected pivots, or agreement with oracle error locations would strengthen the claim that reflection reliably localizes and fixes errors, rather than merely improving outcomes indirectly.
+
+Confidence: 3 =  Pretty sure, but there's a chance I missed something. Although I have a good feel for this area in general, I did not carefully check the paper's details, e.g., the math or experimental design.
+Soundness: 3 = Acceptable: This study provides sufficient support for its main claims. Some minor points may need extra support or details.
+Excitement: 3 = Interesting: I might mention some points of this paper to others and/or attend its presentation in a conference if there's time.
+Overall Assessment: 2.5 = Borderline Findings
+Ethical Concerns:
+There are no concerns with this submission
+
+Needs Ethics Review: No
+Reproducibility: 4 = They could mostly reproduce the results, but there may be some variation because of sample variance or minor variations in their interpretation of the protocol or method.
+Datasets: 1 = No usable datasets submitted.
+Software: 1 = No usable software released.
+Knowledge Of Or Educated Guess At Author Identity: No
+Knowledge Of Paper: N/A, I do not know anything about the paper from outside sources
+Knowledge Of Paper Source: N/A, I do not know anything about the paper from outside sources
+Impact Of Knowledge Of Paper: N/A, I do not know anything about the paper from outside sources
+Reviewer Certification: I certify that the review I entered accurately reflects my assessment of the work. If you used any type of automated tool to help you craft your review, I hereby certify that its use was restricted to improving grammar and style, and the substance of the review is either my own work or the work of an acknowledged secondary reviewer.
+Publication Ethics Policy Compliance: I used a privacy-preserving tool exclusively for the use case(s) approved by PEC policy, such as language edits
+Add:
+Official Review of Submission4731 by Reviewer 4viW
+Official Reviewby Reviewer 4viW11 Feb 2026, 14:48 (modified: 16 Feb 2026, 07:00)Program Chairs, Senior Area Chairs, Area Chairs, Reviewers Submitted, Reviewer 4viW, AuthorsRevisions
+Paper Summary:
+This paper argues that RL for LLM reasoning/agents struggles with both: exploration and exploitation. They have noticed that trajectory-level rewards penalize valid prefixes for later errors, and failure-heavy batches create “avoid this” gradients but few “do this” gradients, causing probability mass to disperse (they describe this as an entropy-collapse style issue).
+
+In this work, authors propose R3L, where they combine the following:
+
+Reflect-then-Retry: first run a base attempt. If it fails, do a reflection pass to diagnose the error and identify a pivot/failure point. Retry generation starting from the pivot with corrective guidance (cheaper than restarting).
+Pivotal Credit Assignment: Mask the shared prefix so gradients update only the diverging suffix, preventing “good prefix punished by later mistake.”
+Positive Amplification: Scale positive advantages by a factor α (they use α=3) so successful signals dominate even if failures are more common, preventing unstable dispersion.
+They also include auxiliary SFT on verified corrections to maintain reflection/retry skills during policy updates. Their final objective removes importance sampling and KL constraints (they argue retry trajectories are behavior-shifted anyway, and amplification stabilizes drift).
+
+The authors evaluate their methods over various benchmarks and models, and show R3L is best/second-best across most settings; ablations show Reflect-then-Retry is the biggest contributor.
+
+Summary Of Strengths:
+tackles a real RL pathology: penalizing valid prefixes is a big issue in long trajectories; pivot masking is a strong and intuitive fix.
+
+reduces wasted rollouts: Restarting from a pivot can plausibly cut exploration cost substantially.
+
+Strong empirical evaluation: They test across both agentic and math reasoning tasks and multiple model families/sizes.
+
+Summary Of Weaknesses:
+additional system complexity and overhead: Reflection + retry adds extra inference steps (even if cheaper than full rollouts),
+
+(minor) cold-start for small models: the paper itself notes small models initially can’t reflect well and need warm-up.
+
+Risk of reflection errors: Incorrect pivot identification or low-quality reflections could reinforce wrong behavior.
+
+Comments Suggestions And Typos:
+Provide explicit compute comparisons: wall-clock, environment steps, and token budget vs baselines?
+
+Analyze pivot quality: where do reflections fail, and how often are pivots correct?
+
+Sensitivity analysis for α and group size, and for how many retries are allowed?
+
+Confidence: 3 =  Pretty sure, but there's a chance I missed something. Although I have a good feel for this area in general, I did not carefully check the paper's details, e.g., the math or experimental design.
+Soundness: 3.5
+Excitement: 4 = Exciting: I would mention this paper to others and/or make an effort to attend its presentation in a conference.
+Overall Assessment: 3.5 = Borderline Conference
+Ethical Concerns:
+There are no concerns with this submission
+
+Reproducibility: 4 = They could mostly reproduce the results, but there may be some variation because of sample variance or minor variations in their interpretation of the protocol or method.
+Datasets: 1 = No usable datasets submitted.
+Software: 1 = No usable software released.
+Knowledge Of Or Educated Guess At Author Identity: No
+Knowledge Of Paper: N/A, I do not know anything about the paper from outside sources
+Knowledge Of Paper Source: N/A, I do not know anything about the paper from outside sources
+Impact Of Knowledge Of Paper: N/A, I do not know anything about the paper from outside sources
+Reviewer Certification: I certify that the review I entered accurately reflects my assessment of the work. If you used any type of automated tool to help you craft your review, I hereby certify that its use was restricted to improving grammar and style, and the substance of the review is either my own work or the work of an acknowledged secondary reviewer.
+Publication Ethics Policy Compliance: I used a privacy-preserving tool exclusively for the use case(s) approved by PEC policy, such as language edits
+Add:
+Official Review of Submission4731 by Reviewer XSY9
+Official Reviewby Reviewer XSY908 Feb 2026, 15:58 (modified: 16 Feb 2026, 07:00)Program Chairs, Senior Area Chairs, Area Chairs, Reviewers Submitted, Reviewer XSY9, AuthorsRevisions
+Paper Summary:
+The paper proposes
+ (Reflect-then-Retry Reinforcement Learning), a framework designed to improve the exploration efficiency and training stability of Large Language Models (LLMs) in reinforcement learning (RL) settings, particularly for tasks with sparse rewards. The method is evaluated on agentic tasks (ALFWorld, WebShop, ScienceWorld) and mathematical reasoning benchmarks, utilizing Qwen2.5 and Llama 3.2 models.
+
+Summary Of Strengths:
+The paper correctly identifies a critical bottleneck in LLM Reinforcement Learning: the "valid prefix penalization" problem. The intuition that a failure in the final steps of a long reasoning chain should not lead to the penalization of the entire trajectory is sound and addresses a known limitation of standard PPO/GRPO.
+
+The idea of using a "pivot point" to create a contrastive pair (a failed base trajectory vs. a successful retry trajectory) is a reasonable way to perform credit assignment. This structural symmetry provides a clear signal for the model to learn exactly where the reasoning went astray.
+
+Summary Of Weaknesses:
+The reported results for the baselines are significantly lower than that in Qwen2.5 technical report, casting doubt on the entire empirical evaluation. According to the Qwen2.5 technical report, Qwen2.5-1.5B-Instruct achieves 73.2 on GSM8K and 55.2 on MATH. However, the authors report a baseline (GRPO) of only 47.4 on GSM8K and 36.7 on MATH. For Qwen2.5-7B-Instruct, the official report is 91.6 on GSM8K, while the authors report 84.6. These discrepancies suggest that the baseline models were either severely undertrained, evaluated using suboptimal prompts, or tested on a non-standard subset. Since the "gains" of
+ are measured against these weakened baselines, the claimed improvements (e.g., 52% relative gain) are likely artifactual and do not reflect the method's true performance on a competitive, well-tuned model.
+The paper focuses on Qwen2.5 and Llama 3.2, which were released in 2024. In the current landscape of 2026, these models are considered legacy. To demonstrate the value of a new RL framework, it is essential to evaluate it on contemporary SOTA models such as Qwen3, Gemma-3, and Olmo-3. If the method only shows gains on older, smaller models with poor baseline performance, its generalizability to modern, more capable architectures remains unproven.
+The method introduces several "moving parts" (reflection, retry, guidance distillation, pivotal masking, and positive amplification). While the authors present this as a unified framework, it appears to be a collection of heuristics added atop existing ideas (like [1,2]).Given the unreliable baseline results mentioned in point #1, it is unclear whether this high degree of complexity is actually necessary or if a simple, well-tuned standard RL approach would outperform it. The "Positive Amplification" (
+) introduces an additional hyperparameter that likely requires task-specific tuning, potentially making the training process more brittle rather than more stable.
+Flawed Compute-Efficiency Comparison: The "Reflect-then-Retry" mechanism involves multiple inference passes (reflection + guided generation). The authors claim to control for this by adjusting the number of trajectories, but they do not seem to account for the increased sequence length (token count) incurred by generating natural language reflections and guidance. A true comparison of "Exploration Efficiency" should be conducted under a strict total token budget, as the current setup may be giving
+ an unfair advantage in terms of total compute used during the rollout phase. [1] Critique-grpo: Advancing llm reasoning with natural language and numerical feedback [2] Vl-rethinker: Incentivizing self-reflection of vision-language models with reinforcement learning
+Comments Suggestions And Typos:
+Address Baseline Discrepancy: The authors must provide a detailed explanation for why their baseline numbers for Qwen2.5 are ~25-30 points lower (on GSM8K/MATH) than official figures. If this is due to a specific evaluation protocol (e.g., strict matching vs. flexible parsing), it must be standardized to allow comparison with existing literature.
+Modernize the Backbone: For a 2026 publication, providing results on Qwen3 or Llama 4 is necessary to confirm that the "Reflect-then-Retry" mechanism isn't just fixing flaws that have already been solved by more advanced base models.
+Simplification Study: I suggest the authors perform a "complexity-drop" study. For instance, can similar gains be achieved by further refining the "Positive Amplification" on top of standard GRPO without the expensive reflection/retry loop?
+Detailed Token Accounting: Please include a table comparing the average tokens generated per training step for
+ vs. GRPO to ensure a fair comparison of exploration costs.
+Confidence: 4 = Quite sure. I tried to check the important points carefully. It's unlikely, though conceivable, that I missed something that should affect my ratings.
+Soundness: 3 = Acceptable: This study provides sufficient support for its main claims. Some minor points may need extra support or details.
+Excitement: 2 = Potentially Interesting: this paper does not resonate with me, but it might with others in the *ACL community.
+Overall Assessment: 2 = Resubmit next cycle: I think this paper needs substantial revisions that can be completed by the next ARR cycle.
+Ethical Concerns:
+There are no concerns with this submission
+
+Reproducibility: 2 = They would be hard pressed to reproduce the results: The contribution depends on data that are simply not available outside the author's institution or consortium and/or not enough details are provided.
+Datasets: 2 = Documentary: The new datasets will be useful to study or replicate the reported research, although for other purposes they may have limited interest or limited usability. (Still a positive rating)
+Software: 2 = Documentary: The new software will be useful to study or replicate the reported research, although for other purposes it may have limited interest or limited usability. (Still a positive rating)
+Knowledge Of Or Educated Guess At Author Identity: No
+Knowledge Of Paper: N/A, I do not know anything about the paper from outside sources
+Knowledge Of Paper Source: N/A, I do not know anything about the paper from outside sources
+Impact Of Knowledge Of Paper: N/A, I do not know anything about the paper from outside sources
+Reviewer Certification: I certify that the review I entered accurately reflects my assessment of the work. If you used any type of automated tool to help you craft your review, I hereby certify that its use was restricted to improving grammar and style, and the substance of the review is either my own work or the work of an acknowledged secondary reviewer.
+Publication Ethics Policy Compliance: I used a privacy-preserving tool exclusively for the use case(s) approved by PEC policy, such as language edits
+Add:
+About OpenReview
+Hosting a Venue
+All Venues
+Contact
+Sponsors
+Donate
+FAQ
+Terms of Use / Privacy Policy
+News
+OpenReview is a long-term project to advance science through improved peer review with legal nonprofit status. We gratefully acknowledge the support of the OpenReview Sponsors. © 2026 OpenReview
+

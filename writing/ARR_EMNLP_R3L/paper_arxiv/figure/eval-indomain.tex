@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering
+\small
+\adjustbox{max width=\linewidth}{%
+\begin{tabular}{l cc cc}
+\toprule
+& \multicolumn{2}{c}{\textbf{GSM8K-on-GSM8K}} & \multicolumn{2}{c}{\textbf{MATH-on-Math500}} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+\textbf{Method} & \texttt{<answer>} & \texttt{\textbackslash boxed\{\}} & \texttt{<answer>} & \texttt{\textbackslash boxed\{\}} \\
+\midrule
+Zero-shot     & 0.665 & 0.738 & 0.422 & 0.440 \\
+GRPO          & 0.814 & 0.798 & 0.481 & 0.493 \\
+Reflect-GRPO  & 0.822 & 0.830 & 0.505 & 0.498 \\
+Critique-GRPO & 0.846 & 0.842 & 0.518 & 0.512 \\
+R$^3$L        & \textbf{0.867} & \textbf{0.874} & \textbf{0.533} & \textbf{0.530} \\
+\bottomrule
+\end{tabular}%
+}
+\caption{In-domain training controls on Qwen2.5-1.5B-Instruct: train and evaluate on the same distribution. All methods improve over zero-shot under both formats.}
+\label{tab:format_indomain}
+\end{table}

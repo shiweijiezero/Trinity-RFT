@@ -1,0 +1,45 @@
+\begin{table}[t]
+\centering
+\small
+\adjustbox{max width=\linewidth}{%
+\begin{tabular}{ll ccc}
+\toprule
+\textbf{Model} & \textbf{Benchmark} & \texttt{\textbackslash boxed\{\}} & \texttt{<answer>} & \textbf{Gap} \\
+\midrule
+\multirow{6}{*}{\texttt{Qwen2.5-1.5B-Ins}}
+ & GSM8K         & 0.738 & 0.665 & -0.073 \\
+ & Math500       & 0.440 & 0.422 & -0.018 \\
+ & MinervaMath   & 0.118 & 0.132 & +0.015 \\
+ & OlympiadBench & 0.099 & 0.083 & -0.016 \\
+ & AMC23         & 0.300 & 0.150 & -0.150 \\
+ & DAPO          & 0.133 & 0.107 & -0.027 \\
+\midrule
+\multirow{6}{*}{\texttt{Qwen2.5-7B-Ins}}
+ & GSM8K         & 0.923 & 0.853 & -0.070 \\
+ & Math500       & 0.620 & 0.612 & -0.008 \\
+ & MinervaMath   & 0.239 & 0.235 & -0.004 \\
+ & OlympiadBench & 0.205 & 0.186 & -0.019 \\
+ & AMC23         & 0.575 & 0.575 &  0.000 \\
+ & DAPO          & 0.337 & 0.337 &  0.000 \\
+\midrule
+\multirow{6}{*}{\texttt{Llama-3.2-3B-Ins}}
+ & GSM8K         & 0.723 & 0.736 & +0.013 \\
+ & Math500       & 0.366 & 0.380 & +0.014 \\
+ & MinervaMath   & 0.114 & 0.099 & -0.015 \\
+ & OlympiadBench & 0.144 & 0.122 & -0.022 \\
+ & AMC23         & 0.200 & 0.175 & -0.025 \\
+ & DAPO          & 0.137 & 0.130 & -0.007 \\
+\midrule
+\multirow{6}{*}{\texttt{Qwen3-4B}}
+ & GSM8K         & 0.932 & 0.938 & +0.006 \\
+ & Math500       & 0.648 & 0.690 & +0.042 \\
+ & MinervaMath   & 0.254 & 0.283 & +0.029 \\
+ & OlympiadBench & 0.432 & 0.504 & +0.073 \\
+ & AMC23         & 0.625 & 0.600 & -0.025 \\
+ & DAPO          & 0.446 & 0.443 & -0.003 \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Zero-shot accuracy of the four backbones under both \texttt{\textbackslash boxed\{\}} and \texttt{<think>/<answer>} output formats on the full test sets. Gap = \texttt{<answer>} minus \texttt{\textbackslash boxed\{\}}.}
+\label{tab:format_zeroshot}
+\end{table}

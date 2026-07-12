@@ -1,0 +1,45 @@
+\begin{table*}[t]
+\centering
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{ll cccccc}
+\toprule
+\textbf{Model} & \textbf{Method} & \textbf{GSM8K} & \textbf{Math500} & \textbf{MinervaMath} & \textbf{Olympiad} & \textbf{AMC23} & \textbf{DAPO} \\
+\midrule
+\multicolumn{8}{l}{\emph{Evaluated under} \texttt{<think>/<answer>} \emph{format}} \\
+\midrule
+\multirow{5}{*}{\texttt{Qwen2.5-1.5B-Ins}}
+ & Zero-shot     & 0.665 & 0.422 & 0.132 & 0.083 & 0.150 & 0.107 \\
+ & GRPO          & 0.474 & 0.368 & 0.099 & 0.114 & 0.250 & 0.123 \\
+ & Reflect-GRPO  & 0.672 & 0.376 & 0.102 & 0.130 & 0.300 & 0.136 \\
+ & Critique-GRPO & \textbf{0.798} & 0.404 & 0.110 & 0.124 & 0.275 & 0.133 \\
+ & R$^3$L        & 0.721 & \textbf{0.424} & \textbf{0.125} & \textbf{0.151} & \textbf{0.325} & \textbf{0.156} \\
+\midrule
+\multirow{5}{*}{\texttt{Qwen2.5-7B-Ins}}
+ & Zero-shot     & 0.853 & 0.612 & 0.235 & 0.186 & 0.575 & 0.337 \\
+ & GRPO          & 0.846 & 0.572 & 0.239 & 0.277 & 0.675 & 0.393 \\
+ & Reflect-GRPO  & 0.765 & 0.532 & 0.194 & 0.250 & 0.550 & 0.396 \\
+ & Critique-GRPO & 0.678 & 0.522 & 0.152 & 0.170 & 0.300 & 0.390 \\
+ & R$^3$L        & \textbf{0.897} & \textbf{0.658} & \textbf{0.275} & \textbf{0.301} & \textbf{0.700} & \textbf{0.436} \\
+\midrule
+\multicolumn{8}{l}{\emph{Evaluated under} \texttt{\textbackslash boxed\{\}} \emph{format}} \\
+\midrule
+\multirow{5}{*}{\texttt{Qwen2.5-1.5B-Ins}}
+ & Zero-shot     & 0.738 & 0.440 & 0.118 & 0.099 & 0.300 & 0.133 \\
+ & GRPO          & 0.576 & 0.392 & 0.092 & 0.125 & 0.400 & 0.147 \\
+ & Reflect-GRPO  & 0.742 & 0.404 & 0.096 & 0.140 & 0.375 & 0.160 \\
+ & Critique-GRPO & \textbf{0.793} & 0.428 & 0.103 & 0.135 & 0.375 & 0.153 \\
+ & R$^3$L        & 0.788 & \textbf{0.446} & \textbf{0.114} & \textbf{0.162} & \textbf{0.425} & \textbf{0.173} \\
+\midrule
+\multirow{5}{*}{\texttt{Qwen2.5-7B-Ins}}
+ & Zero-shot     & 0.923 & 0.620 & 0.239 & 0.205 & 0.575 & 0.337 \\
+ & GRPO          & 0.915 & 0.584 & 0.246 & 0.285 & 0.650 & 0.383 \\
+ & Reflect-GRPO  & 0.846 & 0.544 & 0.162 & 0.195 & 0.350 & 0.392 \\
+ & Critique-GRPO & 0.872 & 0.550 & 0.205 & 0.264 & 0.550 & 0.407 \\
+ & R$^3$L        & \textbf{0.943} & \textbf{0.658} & \textbf{0.276} & \textbf{0.305} & \textbf{0.675} & \textbf{0.424} \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Post-RL-training performance on Qwen2.5-1.5B and Qwen2.5-7B after training on DAPO, evaluated under both output formats. Zero-shot reference rows are included for each (model, format) combination. \textbf{Bold} marks the best method per column within each (model, format) block.}
+\label{tab:format_posttraining}
+\end{table*}

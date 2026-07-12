@@ -1,0 +1,37 @@
+\begin{table*}[t]
+\centering
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l l cccc}
+\toprule
+\textbf{Setting} & \textbf{Metric} & \textbf{GRPO} & \textbf{Reflect-GRPO} & \textbf{Critique-GRPO} & \textbf{R$^3$L} \\
+\midrule
+\multirow{4}{*}{Qwen2.5-1.5B on ALFWorld}
+ & Total rollout turns / sample  & 114.4   & 146.8   & 208.0   & \textbf{75.2}  \\
+ & Total training tokens / sample & 44{,}141 & 52{,}400 & 36{,}200 & \textbf{22{,}300} \\
+ & Rollout time / step (s)       & 406.2   & 492.8   & 756.3   & \textbf{372.4} \\
+ & Train time / step (s)         & \textbf{87.6} & 109.4 & 94.2  & 103.8 \\
+\midrule
+\multirow{4}{*}{Qwen2.5-1.5B on DAPO}
+ & Total rollout turns / sample  & \textbf{10.2}    & 19.6    & 28.1    & 12.9    \\
+ & Total training tokens / sample & \textbf{16{,}400} & 27{,}600 & 17{,}300 & 18{,}000 \\
+ & Rollout time / step (s)       & 342.6   & 418.3   & 646.8   & \textbf{292.4} \\
+ & Train time / step (s)         & \textbf{54.8} & 73.6    & 59.2    & 87.4    \\
+\midrule
+\multirow{4}{*}{Qwen3-4B on ALFWorld}
+ & Total rollout turns / sample  & 81.6    & 108.0   & 153.6   & \textbf{58.8}  \\
+ & Total training tokens / sample & 70{,}176 & 83{,}900 & 50{,}600 & \textbf{26{,}900} \\
+ & Rollout time / step (s)       & 713.8   & 836.4   & 1356.8  & \textbf{670.4} \\
+ & Train time / step (s)         & \textbf{188.9} & 218.7 & 197.3 & 208.6 \\
+\midrule
+\multirow{4}{*}{Qwen3-4B on DAPO}
+ & Total rollout turns / sample  & \textbf{8.72}    & 16.6    & 25.12   & 11.24   \\
+ & Total training tokens / sample & 28{,}663 & 42{,}200 & 30{,}874 & \textbf{25{,}500} \\
+ & Rollout time / step (s)       & 1148.0  & 1392.6  & 2318.4  & \textbf{773.5} \\
+ & Train time / step (s)         & \textbf{121.3} & 146.8 & 129.6 & 225.8 \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Per-training-step cost breakdown on four representative model--task settings, measured on two 8-GPU H20 servers with asynchronous pipeline parallelism. Token counts are model-generated response tokens only (prompt tokens excluded). \textbf{Bold} marks the lowest value in each row.}
+\label{tab:compute_measurements}
+\end{table*}

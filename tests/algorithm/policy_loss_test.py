@@ -92,6 +92,28 @@ class VerlPolicyLossTest(unittest.TestCase):
         self.assertTrue(torch.allclose(loss, opmd_loss))
         self.assertTrue(torch.allclose(torch.tensor(metrics["opmd_loss"]), opmd_loss))
 
+    def test_opmd_clipped_is_policy_loss(self):
+        policy_loss_fn_cls = POLICY_LOSS_FN.get("opmd_clipped_is")
+        policy_loss_fn_args = policy_loss_fn_cls.default_args()
+        policy_loss_fn = policy_loss_fn_cls(**policy_loss_fn_args)
+        loss, metrics = policy_loss_fn(log_prob=self.logprob, **self.input_data.batch)
+
+        old_logprob = self.input_data.batch["old_log_probs"]
+        action_mask = self.input_data.batch["response_mask"]
+        advantages = self.input_data.batch["advantages"]
+        ratio = torch.exp(self.logprob - old_logprob)
+        clipped_ratio = torch.clamp(ratio, 0.8, 1.2)
+        token_losses = torch.maximum(
+            -advantages * ratio,
+            -advantages * clipped_ratio,
+        )
+        expected_loss = (token_losses * action_mask).sum() / action_mask.sum() / 2.0
+
+        self.assertTrue(torch.allclose(loss, expected_loss))
+        self.assertIn("is_clipfrac", metrics)
+        self.assertIn("importance_ratio_mean", metrics)
+        self.assertIn("old_policy_kl", metrics)
+
     def test_mix_policy_loss(self):
         policy_loss_fn_cls = POLICY_LOSS_FN.get("mix")
         policy_loss_fn_args = policy_loss_fn_cls.default_args()

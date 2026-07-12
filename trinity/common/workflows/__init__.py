@@ -43,6 +43,9 @@ from trinity.common.workflows.envs.R3L.alfworld.grpo_workflow import (
 from trinity.common.workflows.envs.R3L.alfworld.opmd_workflow import (
     OPMDBaselineAlfworldWorkflow,
 )
+from trinity.common.workflows.envs.R3L.alfworld.pivot_perturbation_workflow import (
+    PivotPerturbationAlfworldWorkflow,
+)
 from trinity.common.workflows.envs.R3L.alfworld.R3L_w_o_credit_workflow import (
     R3LAlfworldWoCreditWorkflow,
 )
@@ -198,6 +201,7 @@ __all__ = [
     "DAPOAlfworldWorkflow",
     "ReflectGRPOAlfworldWorkflow",
     "CritiqueGRPOAlfworldWorkflow",
+    "PivotPerturbationAlfworldWorkflow",
     # DAPO R3L workflows
     "R3LDapoWorkflow",
     "R3LDapoWoCreditWorkflow",

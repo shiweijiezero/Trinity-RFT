@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{ALFWorld} & \textbf{WebShop} & \textbf{ScienceWorld} & \textbf{DAPO} \\
+\midrule
+Qwen2.5-1.5B-Ins & 64.7\% & 23.7\% & 13.5\% & 16.4\% \\
+Llama3.2-3B-Ins & 12.8\% & 31.6\% & 9.2\% & 10.3\% \\
+Qwen2.5-7B-Ins & 73.9\% & 36.5\% & 19.6\% & 27.1\% \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Average reward improvement rate achieved by the Reflect-then-Retry mechanism.}
+\label{tab:retry_gain_stats}
+\vspace{-1.2em}
+\end{table}
