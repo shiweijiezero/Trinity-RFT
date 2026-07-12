@@ -98,3 +98,6 @@ wandb/
 
 # checkpoints
 checkpoints/
+
+# Local ALFWorld games and generated Trinity tasksets
+examples/R3L/alfworld/alfworld_data/

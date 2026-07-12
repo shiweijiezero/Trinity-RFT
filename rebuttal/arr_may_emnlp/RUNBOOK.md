@@ -25,11 +25,13 @@ pip install 'alfworld==0.4.2'
 ```
 
 This R3L workflow uses ALFWorld's TextWorld environment, not the THOR visual environment, so an
-X server and `DISPLAY` are not required. Download the ALFWorld games to shared CPFS storage and
-keep `ALFWORLD_DATA` exported on both nodes:
+X server and `DISPLAY` are not required. Keep the repository and ALFWorld data at the agreed
+shared CPFS paths, and export `ALFWORLD_DATA` on both nodes:
 
 ```bash
-export ALFWORLD_DATA=/mnt/cpfs/shiweijie/alfworld
+export REPO_ROOT=/mnt/cpfs/shiweijie/Trinity-RFT-Exp
+export ALFWORLD_DATA="$REPO_ROOT/examples/R3L/alfworld/alfworld_data"
+cd "$REPO_ROOT"
 mkdir -p "$ALFWORLD_DATA"
 alfworld-download --data-dir "$ALFWORLD_DATA"
 python examples/R3L/alfworld/get_alfworld_data.py
@@ -38,8 +40,10 @@ wc -l examples/R3L/alfworld/alfworld_data/test.jsonl
 ```
 
 The expected full taskset contains 3553 training games and 140 `valid_seen` evaluation games.
-Every generated JSONL record contains an absolute game path under `/mnt/cpfs`, so both Ray nodes
-must mount that path identically. Configure persistent outputs and WandB before launching:
+The raw `json_2.1.1` files and generated JSONL tasksets coexist under
+`examples/R3L/alfworld/alfworld_data`. Every JSONL record contains an absolute path under the
+shared repository, so both Ray nodes must mount it identically. Configure persistent outputs and
+WandB before launching:
 
 ```bash
 export TRINITY_CHECKPOINT_ROOT_DIR=/mnt/cpfs/shiweijie/checkpoints/r3l_rebuttal
