@@ -105,3 +105,23 @@ Reflection 中的错误会直接传播为错误的梯度更新。
 - 上述知识是否影响评审：不适用；审稿人未从外部来源了解本文。
 - 审稿人认证：审稿人确认其评审准确反映了本人对该工作的评价。若使用了任何自动化工具，其用途仅限于改善语法和文风，评审实质内容来自审稿人本人或已注明的第二审稿人。
 - 出版伦理政策合规：审稿人未使用任何生成式 AI 工具完成本评审。
+
+## 回复草稿
+
+感谢审稿人的细致评价和建设性建议。
+
+1. **关于 reflection 与 pivot localization 的可靠性**
+
+我们同意，模型预测的 pivot 并不总是与 oracle 完全一致，因此会在正文中更明确地说明识别规则：当存在多个问题时，`retry_from_step` 取根因首次显现、或最早可以通过修正决策改变最终结果的 turn；如果根因来自初始策略，则取 0。该依赖链也存在两层保护：格式错误或越界的 pivot 不会触发 retry；所有 retry 轨迹仍由环境 verifier 独立打分，只有经过验证的改进才用于 reflection/retry 辅助训练。因此，错误 pivot 主要会降低 restart 和 masking 的精度，而不会把失败 retry 当作成功样本。我们进一步补充了控制变量实验：固定原始失败轨迹、reflection guidance、模型和解码设置，只将 pivot 改为模型预测、提前一步、延后一步、从头开始和随机位置，成功率分别为 **[model]、[early]、[late]、[start]、[random]**。该实验直接衡量方法对定位误差的敏感性；我们会据此收紧相关表述，而不把现有条件成功率解释为完整的因果证明。
+
+2. **关于组件消融的耦合**
+
+我们认可 `w/o Reflect` 不是纯粹的 reflection-only 消融，因为移除 reflection 会同时移除 guidance synthesis、pivot detection 及其依赖的 credit masking。现有 `w/o Credit` 在保留完整 reflection/retry 的情况下只关闭 prefix masking，因此可以衡量 Pivotal Credit 的增量贡献；`w/o Positive` 则保留 reflection/retry 和 credit。我们会修改正文，不再将 `w/o Reflect` 的差值归因于 reflection 本身，而将其明确解释为移除整个 Reflect-then-Retry 路径及其依赖机制后的联合影响。上述 pivot perturbation 进一步单独检验了 localization 的作用，但我们不会声称现有消融已经实现完全正交的因果分解。
+
+3. **关于可验证奖励之外的适用范围**
+
+我们同意，当前实验证据仅覆盖具有可验证奖励的智能体与数学任务，尚不能支持开放式生成或主观 preference RLHF 场景中的经验性泛化结论。我们会收紧“适用于任何 preference signal”的表述，明确当前结论限于能够可靠验证 retry 质量的任务，并将主观奖励环境中的验证器可靠性与训练稳定性留作后续工作。
+
+4. **关于 retry trigger 的形式化定义**
+
+Retry 是确定性而非概率性的。对结构化 reflection 报告 $r$，仅当报告通过格式与边界检查，且 `trajectory_outcome` 属于 `failure` 或 `success_but_inefficient` 时触发 retry；`success` 不触发，格式无效或 pivot 越界时也不触发并退回基础轨迹。我们会在正文中加入这一规则，并补充实际 retry trigger rate **[trigger rate]**，使方法行为和真实 rollout 成本更加清楚、可复现。
