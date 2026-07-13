@@ -63,7 +63,11 @@ R³L 包含三个组成部分：
 
 感谢审稿人的积极评价和建设性建议。
 
+1. **关于 KL 与 importance sampling 的消融**
+
 关于 KL 与 importance sampling，我们补充了 Qwen2.5-1.5B-Instruct 在 ALFWorld 上的四组对照实验：R³L、R³L+KL、R³L+IS 和 R³L+KL+IS，最终结果分别为 **[R3L结果]、[R3L+KL结果]、[R3L+IS结果]、[R3L+KL+IS结果]**。我们想强调，R³L 的机制能够提高训练稳定性，并在该设置下不依赖 KL 和 IS 也能稳定训练。这并不意味着 KL 和 IS 不重要；二者仍然是通用且有效的稳定训练手段，也与 R³L 完全兼容。当训练本身没有发生不稳定或崩溃时，加入或不加入它们的性能差异 **[根据实验结果填写]**。我们会在论文中明确这一结论的适用范围。
+
+2. **关于模型规模与更强 baseline**
 
 关于模型规模，我们完全认同在更大、更强的模型上进一步验证 R³L 的必要性。受限于当前计算资源和较短的 rebuttal 周期，我们暂时无法在几天内可靠地完成这类训练。更新模型还会带来额外的基础设施要求。例如，Qwen3.5 采用 Gated DeltaNet 与 Gated Attention 结合的 hybrid architecture，目前 RL 训练基础设施对这类新架构的 kernel、分布式训练和稳定性支持仍不够成熟，需要经过谨慎验证后才能进行可信的比较。当前实验已覆盖 Qwen2.5-1.5B-Instruct、Qwen2.5-7B-Instruct、更新的 Qwen3-4B，以及跨架构的 Llama-3.2-3B-Instruct，并在三个智能体环境和六个数学 benchmark 上与 GSPO、Critique-GRPO 等强 baseline 进行了比较。
 
