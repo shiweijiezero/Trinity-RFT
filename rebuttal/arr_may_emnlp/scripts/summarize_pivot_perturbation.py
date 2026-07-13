@@ -55,27 +55,44 @@ def summarize(records: List[Dict], bootstrap_samples: int, seed: int) -> List[Di
     variants = list(records[0]["variants"])
     rows = []
     for variant in variants:
+        # Fixed-offset comparisons require the requested shift to be feasible.
+        # Otherwise, boundary clamping can make (for example) early_5 identical
+        # to start and would overstate the effective perturbation size.
+        paired_records = [
+            record
+            for record in records
+            if variant in record["variants"]
+            and not bool(record["variants"][variant].get("clipped", False))
+        ]
+        if not paired_records:
+            print(f"Skipping {variant}: no unclipped paired records.")
+            continue
         success = [
-            float(record["variants"][variant]["retry_success"]) for record in records
+            float(record["variants"][variant]["retry_success"])
+            for record in paired_records
         ]
         rewards = [
-            float(record["variants"][variant]["retry_reward"]) for record in records
+            float(record["variants"][variant]["retry_reward"])
+            for record in paired_records
         ]
         improvements = [
             float(record["variants"][variant]["reward_improvement"])
-            for record in records
+            for record in paired_records
         ]
         steps = [
-            float(record["variants"][variant]["retry_steps"]) for record in records
+            float(record["variants"][variant]["retry_steps"])
+            for record in paired_records
         ]
         success_delta = mean(success) - mean(
-            float(record["variants"]["model"]["retry_success"]) for record in records
+            float(record["variants"]["model"]["retry_success"])
+            for record in paired_records
         )
         reward_delta = mean(rewards) - mean(
-            float(record["variants"]["model"]["retry_reward"]) for record in records
+            float(record["variants"]["model"]["retry_reward"])
+            for record in paired_records
         )
         ci_low, ci_high = _bootstrap_delta(
-            records,
+            paired_records,
             variant,
             "retry_success",
             samples=bootstrap_samples,
@@ -84,7 +101,7 @@ def summarize(records: List[Dict], bootstrap_samples: int, seed: int) -> List[Di
         rows.append(
             {
                 "variant": variant,
-                "n": len(records),
+                "n": len(paired_records),
                 "success_rate": mean(success),
                 "mean_reward": mean(rewards),
                 "mean_reward_improvement": mean(improvements),

@@ -18,6 +18,15 @@ from trinity.common.workflows.envs.R3L.alfworld.R3L_workflow import (
 from trinity.common.workflows.workflow import WORKFLOWS, Task
 
 
+PIVOT_OFFSETS = {
+    "model": 0,
+    "early_2": -2,
+    "late_2": 2,
+    "early_5": -5,
+    "late_5": 5,
+}
+
+
 @WORKFLOWS.register_module("pivot_perturbation_alfworld_workflow")
 class PivotPerturbationAlfworldWorkflow(R3LAlfworldWorkflow):
     """Evaluate retry outcomes while changing only the restart pivot."""
@@ -40,7 +49,18 @@ class PivotPerturbationAlfworldWorkflow(R3LAlfworldWorkflow):
         )
         self.experiment_seed = int(args.get("experiment_seed", 2026))
         self.variants = list(
-            args.get("variants", ["model", "early", "late", "start", "random"])
+            args.get(
+                "variants",
+                [
+                    "model",
+                    "early_2",
+                    "late_2",
+                    "early_5",
+                    "late_5",
+                    "start",
+                    "random",
+                ],
+            )
         )
         self.save_trajectories = bool(args.get("save_trajectories", False))
 
@@ -68,8 +88,10 @@ class PivotPerturbationAlfworldWorkflow(R3LAlfworldWorkflow):
         random_pivot = random.Random(task_seed).randint(0, upper_bound)
         candidates = {
             "model": model_pivot,
-            "early": max(0, model_pivot - 1),
-            "late": min(upper_bound, model_pivot + 1),
+            "early_2": max(0, model_pivot - 2),
+            "late_2": min(upper_bound, model_pivot + 2),
+            "early_5": max(0, model_pivot - 5),
+            "late_5": min(upper_bound, model_pivot + 5),
             "start": 0,
             "random": random_pivot,
         }
@@ -175,6 +197,18 @@ class PivotPerturbationAlfworldWorkflow(R3LAlfworldWorkflow):
                         )
 
                 variant_result = copy.deepcopy(result_cache[tested_pivot])
+                requested_delta = PIVOT_OFFSETS.get(variant)
+                actual_delta = tested_pivot - model_pivot
+                variant_result.update(
+                    {
+                        "requested_delta": requested_delta,
+                        "actual_delta": actual_delta,
+                        "clipped": (
+                            requested_delta is not None
+                            and actual_delta != requested_delta
+                        ),
+                    }
+                )
                 record["variants"][variant] = variant_result
                 metrics[f"pivot_{variant}_success"] = float(
                     variant_result["retry_success"]

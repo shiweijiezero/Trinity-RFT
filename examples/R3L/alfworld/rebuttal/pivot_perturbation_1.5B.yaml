@@ -7,7 +7,7 @@ algorithm:
   algorithm_type: opmd_reweight_adv
   repeat_times: 1
 model:
-  model_path: /mnt/cpfs/shiweijie/hf_cache/qwen2.5-1.5b-ins
+  model_path: ${oc.env:R3L_PIVOT_MODEL_PATH}
   max_response_tokens: 512
   max_model_len: 20480
 cluster:
@@ -28,7 +28,6 @@ buffer:
         storage_type: file
         path: 'examples/R3L/alfworld/alfworld_data'
         split: 'test'
-        total_steps: 200
         format:
           prompt_key: 'task_id'
         rollout_args:
@@ -38,7 +37,7 @@ buffer:
         workflow_args:
           output_dir: 'rebuttal/arr_may_emnlp/results/pivot_perturbation_alfworld'
           experiment_seed: 2026
-          variants: ['model', 'early', 'late', 'start', 'random']
+          variants: ['model', 'early_2', 'late_2', 'early_5', 'late_5', 'start', 'random']
           save_trajectories: false
     default_eval_workflow_type: 'pivot_perturbation_alfworld_workflow'
 explorer:
