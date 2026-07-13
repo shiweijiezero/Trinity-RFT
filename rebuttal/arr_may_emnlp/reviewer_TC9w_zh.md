@@ -65,10 +65,10 @@ R³L 包含三个组成部分：
 
 > 关于 KL 与 importance sampling 的消融
 
-关于 KL 与 importance sampling，我们补充了 Qwen2.5-1.5B-Instruct 在 ALFWorld 上的四组对照实验：R³L、R³L+KL、R³L+IS 和 R³L+KL+IS，最终结果分别为 **[R3L结果]、[R3L+KL结果]、[R3L+IS结果]、[R3L+KL+IS结果]**。我们想强调，R³L 的机制能够提高训练稳定性，并在该设置下不依赖 KL 和 IS 也能稳定训练。这并不意味着 KL 和 IS 不重要；二者仍然是通用且有效的稳定训练手段，也与 R³L 完全兼容。当训练本身没有发生不稳定或崩溃时，加入或不加入它们的性能差异 **[根据实验结果填写]**。我们会在论文中明确这一结论的适用范围。
+感谢审稿人建议直接检验 KL 与 importance sampling 的作用。我们补充了 Qwen2.5-1.5B-Instruct 在 ALFWorld 上的四组对照实验：R³L、R³L+KL、R³L+IS 和 R³L+KL+IS，最终结果分别为 **[R3L结果]、[R3L+KL结果]、[R3L+IS结果]、[R3L+KL+IS结果]**。这些对照直接检验 KL/IS 是否是该设置下稳定训练的必要条件：R³L 在不使用 KL 和 IS 时仍能稳定训练，而 KL 和 IS 仍是与 R³L 完全兼容的通用稳定手段。当各设置均未发生训练崩溃时，加入或不加入二者的性能差异为 **[根据实验结果填写]**。修订版会据此限定结论范围，而不会将这一结果泛化为 KL 或 IS 在其他设置中不重要。
 
 > 关于模型规模与更强 baseline
 
-关于模型规模，我们完全认同在更大、更强的模型上进一步验证 R³L 的必要性。受限于当前计算资源和较短的 rebuttal 周期，我们暂时无法在几天内可靠地完成这类训练。更新模型还会带来额外的基础设施要求。例如，Qwen3.5 采用 Gated DeltaNet 与 Gated Attention 结合的 hybrid architecture，目前 RL 训练基础设施对这类新架构的 kernel、分布式训练和稳定性支持仍不够成熟，需要经过谨慎验证后才能进行可信的比较。当前实验已覆盖 Qwen2.5-1.5B-Instruct、Qwen2.5-7B-Instruct、更新的 Qwen3-4B，以及跨架构的 Llama-3.2-3B-Instruct，并在三个智能体环境和六个数学 benchmark 上与 GSPO、Critique-GRPO 等强 baseline 进行了比较。
+感谢审稿人对模型规模和 baseline 强度的关注。当前实验已经覆盖 Qwen2.5-1.5B-Instruct、Qwen2.5-7B-Instruct、更新的 Qwen3-4B，以及跨架构的 Llama-3.2-3B-Instruct，并在三个智能体环境和六个数学 benchmark 上与 GSPO、Critique-GRPO 等强 baseline 进行了比较。因此，现有证据已经跨越多个模型规模、模型代际和架构，但进一步扩展仍然有价值。受计算资源和 rebuttal 周期限制，我们无法在几天内完成充分验证的新一轮大规模训练。我们也对更新模型进行了初步尝试；以 Qwen3.5 为例，其 Gated DeltaNet 与 full-attention 结合的 hybrid architecture 对 kernel、分布式训练和稳定性支持提出了新的要求，而我们当前的 RL 基础设施尚未产生足够可靠的训练结果。与其报告未经充分验证的数字，我们会在后续工作中完成基础设施适配后再进行可信比较。
 
-此外，在论文提交之后，我们注意到一项独立的后续工作 [Agent Reinforcement Learning via Pivotal-Aware Self-Feedback Retry](https://arxiv.org/abs/2607.03702)（PivoARL，2026 年 7 月发布）。该工作同样通过结构化反思定位 pivotal error、从 pivot state 进行局部 retry、复用正确前缀，并采用 pivotal-aware credit assignment；其在 4 个智能体任务和 7 个搜索问答 benchmark 上报告了一致提升。虽然这不能替代我们自己的大规模模型实验，但这一独立工作对相近设计原则得到的结果，为 R³L 的核心思想提供了补充性的外部证据。
+此外，论文提交后出现的独立工作 [Agent Reinforcement Learning via Pivotal-Aware Self-Feedback Retry](https://arxiv.org/abs/2607.03702)（PivoARL，2026 年 7 月）采用了相近的设计原则：通过结构化 self-feedback 定位 pivotal error，从 pivotal state 局部 retry、复用前缀，并进行 pivotal-aware credit assignment。该工作在 4 个智能体任务和 7 个搜索问答 benchmark 上报告了一致提升。它不能替代我们自己的规模扩展实验，但为局部 retry 与 pivotal credit 这一核心设计提供了独立、互补的经验证据。
