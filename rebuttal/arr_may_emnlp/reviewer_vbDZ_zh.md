@@ -116,7 +116,7 @@ Reflection 中的错误会直接传播为错误的梯度更新。
 
 修订版将补充更明确的 pivot 规则：当存在多个问题时，`retry_from_step` 取根因首次显现、或最早可以通过修正决策改变最终结果的 turn；如果根因来自初始策略，则取 0。同时，表 11 中 correct/wrong pivot 的条件成功率只能说明相关性，当前“causally linked”的措辞确实过强。为直接测量定位误差敏感性，我们补充了控制变量实验：固定原始失败轨迹、reflection guidance、模型和解码设置，只将 pivot 改为模型预测、提前或延后 2 步、提前或延后 5 步、从头开始和随机位置，成功率分别为 **[model]、[early-2]、[late+2]、[early-5]、[late+5]、[start]、[random]**。其中 $\pm2$ 对应中等定位偏差，$\pm5$ 对应明显误诊。我们将根据该实验报告受控敏感性。
 
-2. **关于组件消融的耦合**
+> **关于组件消融的耦合**
 
 感谢审稿人进一步关注消融实验的归因边界。我们想澄清，论文已经在第 5.3 节正文和表 2 caption 中明确说明：Pivotal Credit 依赖 reflection 识别的 pivot，因此移除 Reflect-then-Retry 必然同时关闭 Credit。换言之，`w/o Reflect` 从未被作为 reflection-only 消融，而是衡量移除整个 Reflect-then-Retry 路径及其依赖机制后的联合影响。与此同时，现有 `w/o Credit` 在保留完整 reflection/retry 的情况下只关闭 prefix masking，可以单独衡量 Pivotal Credit 的增量贡献；`w/o Positive` 则保留 reflection/retry 和 credit。为避免进一步误读，我们会强化这一已有说明，并避免将 `w/o Reflect` 的差值表述为 reflection 本身的独立因果贡献。上述 pivot perturbation 还会单独检验 localization sensitivity，但我们不会将其解释为对 reflection、pivot selection 与 retry synthesis 的完全正交分解。
 
