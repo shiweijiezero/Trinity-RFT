@@ -112,7 +112,7 @@ Reflection 中的错误会直接传播为错误的梯度更新。
 
 1. **关于 reflection 与 pivot localization 的可靠性**
 
-我们同意，模型预测的 pivot 并不总是与 oracle 完全一致，但想澄清，这类误差不会不经验证地直接转化为“错误方向的梯度”。Pivotal Credit mask 的目的正是保护共享前缀：给定任意预测位置 $k$，retry 都会回滚并复用原轨迹的 $\tau_{<k}$，因此 base 与 retry 在该前缀上按构造完全相同；两条轨迹也使用同一个 mask，只更新实际发生分歧的后缀。环境 verifier 独立决定 base/retry 的 reward，失败 retry 不会被改标为成功，reflection/retry 辅助训练也只使用经过验证的改进。因此，pivot 偏早意味着保护不足，需要重新生成更长后缀，并可能将部分有效动作重新纳入更新；pivot 偏晚则意味着保护过度，可能复用真正的错误动作并遗漏相应学习信号。更准确的风险是降低 retry 成功率并造成不完整或噪声更大的信用分配，而不是 reflection 错误必然产生错误梯度。
+我们同意，模型预测的 pivot 并不总是与 oracle 完全一致，但想澄清，这类误差不会不经验证地直接转化为“错误方向的梯度”。Pivotal Credit mask 的目的是保护共享前缀：给定任意预测位置 $k$，retry 都会回滚并复用原轨迹的 $\tau_{<k}$，因此 base 与 retry 在该前缀上按构造完全相同；两条轨迹也使用同一个 mask，只更新实际发生分歧的后缀。环境 verifier 独立决定 base/retry 的 reward，失败 retry 不会被改标为成功，reflection/retry 辅助训练也只使用经过验证的改进。即使预测位置与 oracle 有偏差，训练过程仍然是良定义且经过验证的：pivot 偏早时，方法只是重新生成更长的后缀，逐渐退化为接近从头 rollout，增加计算但保留更大的纠错空间；pivot 偏晚时，方法复用更长前缀并进行范围更小的局部更新，可能降低 retry 的可恢复性。两种情况都不会改变环境 reward，也不会破坏被 mask 保护的实际共享前缀。因此，pivot 精度主要影响 rollout 成本和 retry 成功率，方法会随定位误差平滑退化，而不是必然产生错误梯度。
 
 我们会在正文中补充更明确的 pivot 规则：当存在多个问题时，`retry_from_step` 取根因首次显现、或最早可以通过修正决策改变最终结果的 turn；如果根因来自初始策略，则取 0。我们也同意，表 11 中 correct/wrong pivot 的条件成功率只能说明相关性，当前“causally linked”的措辞过强。为直接测量定位误差敏感性，我们补充了控制变量实验：固定原始失败轨迹、reflection guidance、模型和解码设置，只将 pivot 改为模型预测、提前一步、延后一步、从头开始和随机位置，成功率分别为 **[model]、[early]、[late]、[start]、[random]**。我们将根据该实验报告受控敏感性，而不把条件成功率本身解释为因果证明。
 
