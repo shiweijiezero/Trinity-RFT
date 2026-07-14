@@ -76,7 +76,7 @@ trainer:
   grad_clip: 1.0
   use_dynamic_bsz: true
   max_token_len_per_gpu: 10240
-  ulysses_sequence_parallel_size: 1
+  ulysses_sequence_parallel_size: 2
   trainer_config:
     trainer:
       max_actor_ckpt_to_keep: 1
