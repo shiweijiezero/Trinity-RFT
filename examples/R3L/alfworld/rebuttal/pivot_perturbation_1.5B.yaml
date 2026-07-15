@@ -37,7 +37,7 @@ buffer:
         workflow_args:
           output_dir: 'rebuttal/arr_may_emnlp/results/pivot_perturbation_alfworld'
           experiment_seed: 2026
-          variants: ['model', 'early_2', 'late_2', 'early_5', 'late_5', 'start', 'random']
+          variants: ['model', 'early_2', 'late_2', 'early_5', 'late_5', 'start']
           save_trajectories: false
     default_eval_workflow_type: 'pivot_perturbation_alfworld_workflow'
 explorer:

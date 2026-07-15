@@ -61,14 +61,24 @@ R³L 包含三个组成部分：
 
 ## 回复草稿
 
-感谢审稿人的积极评价和建设性建议。
+感谢审稿人对我们工作的积极评价，也感谢您提出关于 KL、importance sampling 和模型规模的具体建议。很抱歉这么晚才回复。我们的实验资源比较有限，但仍尽力在 rebuttal 周期内完成了相关的补充实验。
 
 > 关于 KL 与 importance sampling 的消融
 
-感谢审稿人建议直接检验 KL 与 importance sampling 的作用。我们补充了 Qwen2.5-1.5B-Instruct 在 ALFWorld 上的四组对照实验：R³L、R³L+KL、R³L+IS 和 R³L+KL+IS，最终结果分别为 **[R3L结果]、[R3L+KL结果]、[R3L+IS结果]、[R3L+KL+IS结果]**。这些对照直接检验 KL/IS 是否是该设置下稳定训练的必要条件：R³L 在不使用 KL 和 IS 时仍能稳定训练，而 KL 和 IS 仍是与 R³L 完全兼容的通用稳定手段。当各设置均未发生训练崩溃时，加入或不加入二者的性能差异为 **[根据实验结果填写]**。修订版会据此限定结论范围，而不会将这一结果泛化为 KL 或 IS 在其他设置中不重要。
+感谢审稿人建议直接检验 KL 与 importance sampling（IS）的作用。我们使用 Qwen2.5-1.5B-Instruct，在 ALFWorld 的相同设置下补充了四组对照：
+
+| Method | R³L | R³L+KL | R³L+IS | R³L+KL+IS |
+|---|---:|---:|---:|---:|
+| Final score | 0.928 | 0.927 | 0.928 | 0.929 |
+
+我们还对照检查了 gradient norm、entropy、KL 和 IS clip fraction。
+
+从训练过程来看，几组实验都比较稳定。IS clip fraction 均维持在 0.004 左右，说明 importance ratio 很少触发裁剪；gradient norm 均在 0.12 附近，KL 也没有出现明显异常。entropy loss 方面，KL-only 组最低，约为 0.008，其余几组在 0.5 左右。尽管部分训练指标存在差异，但这些差异并没有进一步反映在最终得分上。
+
+更直接地说，我们想检查的是：去掉这两个常用 safeguard 后，R³L 是否仍然不会崩溃。结果中，不使用 KL 和 IS 的 R³L 得分为 0.928，gradient norm、entropy 和 KL 曲线也保持正常；重新加入 KL、IS 或两者后，最终得分分别为 0.927、0.928 和 0.929。因此，至少在当前设置下，R³L 不需要依赖 KL 和 IS 才能维持稳定训练。较低的 IS clip fraction 也说明这里的 policy lag 很小；更强 off-policy 程度下是否仍然如此，还需要单独验证。
 
 > 关于模型规模与更强 baseline
 
-感谢审稿人对模型规模和 baseline 强度的关注。当前实验已经覆盖 Qwen2.5-1.5B-Instruct、Qwen2.5-7B-Instruct、更新的 Qwen3-4B，以及跨架构的 Llama-3.2-3B-Instruct，并在三个智能体环境和六个数学 benchmark 上与 GSPO、Critique-GRPO 等强 baseline 进行了比较。因此，现有证据已经跨越多个模型规模、模型代际和架构，但进一步扩展仍然有价值。受计算资源和 rebuttal 周期限制，我们无法在几天内完成充分验证的新一轮大规模训练。我们也对更新模型进行了初步尝试；以 Qwen3.5 为例，其 Gated DeltaNet 与 full-attention 结合的 hybrid architecture 对 kernel、分布式训练和稳定性支持提出了新的要求，而我们当前的 RL 基础设施尚未产生足够可靠的训练结果。与其报告未经充分验证的数字，我们会在后续工作中完成基础设施适配后再进行可信比较。
+感谢审稿人对模型规模和 baseline 强度的关注。当前实验覆盖 Qwen2.5-1.5B-Instruct、Qwen2.5-7B-Instruct、更新的 Qwen3-4B，以及跨架构的 Llama-3.2-3B-Instruct，并在三个智能体环境和六个数学 benchmark 上与 GSPO、Critique-GRPO 等 baseline 进行了统一协议下的比较。具体来说，在 Qwen3-4B 上，R³L 在 ALFWorld 达到 0.962，而此前最好的 Critique-GRPO 为 0.942；在 GSM8K 和 Math500 上，R³L 分别达到 0.948 和 0.753，相比之下 GRPO 和 GSPO 分别为 0.934 和 0.722。
 
-此外，论文提交后出现的独立工作 [Agent Reinforcement Learning via Pivotal-Aware Self-Feedback Retry](https://arxiv.org/abs/2607.03702)（PivoARL，2026 年 7 月）采用了相近的设计原则：通过结构化 self-feedback 定位 pivotal error，从 pivotal state 局部 retry、复用前缀，并进行 pivotal-aware credit assignment。该工作在 4 个智能体任务和 7 个搜索问答 benchmark 上报告了一致提升。它不能替代我们自己的规模扩展实验，但为局部 retry 与 pivotal credit 这一核心设计提供了独立、互补的经验证据。
+我们也认可，这些结果不能替代大于 7B 模型上的直接验证。然后更大模型的训练成本还会明显增加。以当前设置为例，即使 1.5B 模型的一次完整训练也需要约 25 小时。受训练预算限制，我们暂时无法补充一组充分收敛且公平可比的更大模型实验。因此，我们目前将结论限定在 1.5B–7B 模型上，并在后续工作中继续验证更大规模模型上的效果。

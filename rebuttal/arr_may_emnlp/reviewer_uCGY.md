@@ -122,3 +122,130 @@ Impact Of Knowledge Of Paper: N/A, I do not know anything about the paper from o
 Reviewer Certification: I certify that the review I entered accurately reflects my assessment of the work. If you used any type of automated tool to help you craft your review, I hereby certify that its use was restricted to improving grammar and style, and the substance of the review is either my own work or the work of an acknowledged secondary reviewer.
 
 Publication Ethics Policy Compliance: I used a privacy-preserving tool exclusively for the use case(s) approved by PEC policy, such as language edits
+
+## Author Response
+
+Thank you for carefully checking our experiments, theory, and implementation, and for recognizing the main contributions. We apologize for the late response. With limited resources, we prioritized fair additional experiments and rechecked the formulas and implementation issues raised in the review.
+
+> W1: Multi-seed variance and stability
+
+The main tables report single runs and therefore do not show across-seed variation. We added a three-seed comparison using Qwen2.5-1.5B-Instruct on ALFWorld. All runs use the same training budget, evaluation set, and checkpoint selection rule:
+
+| Method | Seed 0 | Seed 1 | Seed 2 | Mean ± std |
+|---|---|---|---|---|
+| R³L | 0.928 | 0.926 | 0.929 | 0.928 ± 0.002 |
+| GRPO | 0.720 | 0.725 | 0.722 | 0.722 ± 0.003 |
+
+> W2: Role of the theoretical analysis
+
+Thank you for pointing out the unclear connection between theory and experiments. There are two questions: why amplify positive signals, and why use $\alpha=3$. Gradient dominance addresses only the first: rarer positive samples or stronger negative advantages require greater positive weight. It does not determine a fixed $\alpha$, because the positive-sample ratio, advantage ratio, and gradient magnitudes change during training.
+
+Nor is $\alpha=3$ derived from this condition. At $p=0.25$ and $|\bar{A}^{-}|/\bar{A}^{+}=2$, the formula gives $\alpha_{\min}=6$, so we will remove the incorrect claim that “$\alpha=3$ covers most practical ranges.” We chose 3 from the sensitivity results: it is best on WebShop, ScienceWorld, and Math500 and close to the best on ALFWorld, GSM8K, and OlympiadBench. We will therefore present the theory as intuition for Positive Amplification, and 3 as a robust shared setting rather than a theoretical optimum or convergence guarantee.
+
+> W3: Adding back KL and importance sampling
+
+Thank you for suggesting a direct test of KL and importance sampling (IS). Using Qwen2.5-1.5B-Instruct on ALFWorld with the same setup, we ran four controlled experiments:
+
+| Method | R³L | R³L+KL | R³L+IS | R³L+KL+IS |
+|---|---|---|---|---|
+| Final score | 0.928 | 0.927 | 0.928 | 0.929 |
+
+All four runs remain stable. The gradient norm stays around 0.12, KL shows no abnormal behavior, and the IS clip fraction stays around 0.004, so clipping is rarely activated. The KL-only run has the lowest entropy loss, around 0.008, while the others are around 0.5; these differences do not affect the final score.
+
+This experiment does not claim that KL and IS are generally unnecessary. It tests whether R³L relies on them for stability. Without either, R³L reaches 0.928 with no gradient spikes, entropy collapse, or clear policy drift; adding either or both gives 0.927–0.929. Because we synchronize every step and observe only a 0.004 clip fraction, policy lag is small. The result is therefore limited to the current ALFWorld setup, not stronger off-policy settings.
+
+> W4: Fairness of mathematical guidance and pivot sensitivity
+
+Thank you for raising the concern about ground-truth information in mathematical guidance. Because these tasks lack environmental error feedback, reflection uses the ground-truth final answer as a reference, but receives no reference CoT, standard solution, or intermediate derivation. A rule-based audit finds direct final-answer leakage in 3% of the guidance; such samples can be detected and removed before retry or training. We also support a stricter mode that returns only `correct` or `incorrect` without the answer.
+
+All methods use the same final answer to compute rewards, but not in the same way: GRPO, GSPO, and RAFT use only the scalar reward, while R³L also uses final-answer-level information for reflection and retry synthesis. We will state this additional guided-exploration signal explicitly. R³L never accesses ground-truth CoT, and guidance is removed from distilled RL trajectories and is unavailable at evaluation.
+
+The conditional success rates in Table 11 show correlation only, so we will remove “causally linked.” We also perturbed the pivot using the step-400 checkpoint of Qwen2.5-1.5B-Instruct on ALFWorld. We fixed each failed trajectory and its guidance and changed only $k$ to $k\pm2$, $k\pm5$, or step 0; out-of-range shifts were excluded. Retry success rate is the fraction of failed base rollouts with valid reflections whose retry receives a successful reward.
+
+| Restart position | Predicted pivot $k$ | $k-2$ | $k+2$ | $k-5$ | $k+5$ | From start ($k=0$) |
+|---|---|---|---|---|---|---|
+| Retry success rate | 0.66 | 0.65 | 0.63 | 0.63 | 0.60 | 0.61 |
+
+With a $\pm2$ shift, retry success remains 0.63–0.65, close to 0.66 at the predicted pivot. It falls to 0.60 at $+5$, while retrying from step 0 reaches 0.61. R³L therefore tolerates small errors, but late localization is more harmful because an incorrect prefix may already be retained.
+
+> W5: Baselines below zero-shot performance
+
+These are RL-trained results, not zero-shot scores. All mathematical models are trained on DAPO and then evaluated on datasets such as GSM8K, so cross-distribution forgetting also applies. Under the same `<think>/<answer>` format, Qwen2.5-7B scores 0.853 zero-shot on GSM8K, while the DAPO-trained results are:
+
+| Setting | Zero-shot | GRPO | Reflect-GRPO | Critique-GRPO |
+|---|---|---|---|---|
+| GSM8K | 0.853 | 0.846 | 0.765 | 0.678 |
+
+To separate training failure from distribution transfer, we added matched-distribution training:
+
+| Training set | Evaluation set | Zero-shot | GRPO | Reflect-GRPO | Critique-GRPO | R³L |
+|---|---|---|---|---|---|---|
+| GSM8K | GSM8K | 0.665 | 0.814 | 0.822 | 0.846 | 0.867 |
+| MATH | Math500 | 0.422 | 0.481 | 0.505 | 0.518 | 0.533 |
+
+All methods outperform zero-shot in both in-domain comparisons. The degradation in Table 13 therefore mainly reflects transfer from DAPO to other benchmarks, not a failure to learn on the training distribution.
+
+All methods use learning rate $10^{-6}$, global batch size 96, group size 8, synchronization interval 1, at most 20 epochs, and the same early-stopping rules. We use each baseline's recommended method-specific parameters but do not run an exhaustive search for every method in all 27 settings. We will clarify that the unified protocol controls budget and implementation differences, not that every baseline received per-task exhaustive tuning.
+
+> W6: Inconsistency in the Positive Amplification rule
+
+Thank you for identifying this inconsistency. This is our typo: the amplified advantage of a maximum-reward trajectory should be $\alpha$, not 1. Let $s(\tau)=R(\tau)-\bar R$:
+
+$$
+\\hat A(\\tau)=
+\\begin{cases}
+\\alpha, & R(\\tau)\\ge 1.0,\\\\
+\\alpha s(\\tau), & R(\\tau)<1.0\\ \\text{and}\\ s(\\tau)\\ge 0,\\\\
+s(\\tau), & s(\\tau)<0.
+\\end{cases}
+$$
+
+Thus, a trajectory with reward 1 receives $\alpha$, other non-negative advantages are multiplied by $\alpha$, and negative advantages remain unchanged.
+
+> W7: Result framing and coupled ablations
+
+Thank you for pointing out these potentially misleading statements. The abstract's 52% gain is relative to GRPO, although Critique-GRPO outperforms R³L in that Qwen2.5-1.5B-Instruct GSM8K setting. We therefore recomputed gains against the strongest baseline in each setting: R³L ranks first in 25 of 27 settings, ties for first in one, and ranks second in one. Its median and mean improvements are 4.5% and 4.8%. We will use these statistics in the abstract.
+
+The `w/o Reflect` row is also not reflection-only. Because Credit uses the predicted pivot, removing reflection removes both retry and pivot-dependent Credit. The drop from 0.928 to 0.894 measures this full path, not reflection alone. `w/o Credit` instead keeps reflection and retry and removes only the prefix mask, measuring Credit's incremental effect.
+
+To separate restart position from guidance, we added two full runs with Qwen2.5-1.5B-Instruct on ALFWorld, both controlled against `w/o Credit`. `From start` keeps guidance but retries from step 0; `No guidance` keeps the predicted pivot but removes guidance.
+
+| Variant | Final score |
+|---|---|
+| R³L | 0.928 |
+| w/o Credit | 0.914 |
+| w/o Credit + From start | 0.908 |
+| w/o Credit + No guidance | 0.903 |
+| w/o Reflect | 0.894 |
+
+The comparisons measure prefix masking (0.928 to 0.914), predicted-pivot restart (0.914 to 0.908), and guidance (0.914 to 0.903). These conditional gains are not additive, but they avoid inferring individual effects from `w/o Reflect`, which denotes removal of the full Reflect-then-Retry path.
+
+> W8: Model scale and empirical scope
+
+Our experiments cover Qwen2.5-1.5B-Instruct, Qwen2.5-7B-Instruct, the newer Qwen3-4B, and the cross-architecture Llama-3.2-3B-Instruct. On Qwen3-4B, R³L reaches 0.962 on ALFWorld versus 0.942 for Critique-GRPO, and 0.948 and 0.753 on GSM8K and Math500 versus 0.934 for GRPO and 0.722 for GSPO. Across nine Llama-3.2-3B settings, R³L ranks first in five and second in four. These results extend to a newer backbone and another architecture, but not directly beyond 7B.
+
+Even one full 1.5B run takes roughly 25 hours in our setup, and our rebuttal budget did not allow a sufficiently converged, fairly comparable larger-model run. We therefore limit our empirical conclusions to 1.5B–7B and leave larger-scale validation for future work.
+
+All current experiments also rely on verifiable rewards; open-ended or subjective RLHF and cold-start settings with weak reflection remain untested. We will remove broad claims such as “applicable to any preference signal.”
+
+> Retry trigger rate and rollout cost
+
+We also recorded retry trigger rate. The model decides through reflection, while the system only validates the output format and pivot. The rate therefore measures the model's retry decisions at each checkpoint, not a fixed hyperparameter. For Qwen2.5-1.5B-Instruct on ALFWorld:
+
+| Training step | Rollout reward | Retry trigger rate |
+|---|---|---|
+| 0 | 0.01 | 0.55 |
+| 50 | 0.03 | 0.65 |
+| 100 | 0.08 | 0.80 |
+| 150 | 0.50 | 0.78 |
+| 200 | 0.80 | 0.35 |
+| 250 | 0.87 | 0.13 |
+| 300 | 0.90 | 0.10 |
+| 350 | 0.91 | 0.08 |
+| 400 | 0.91 | 0.07 |
+
+As success improves, both retries and actual rollout volume decrease. We will add token statistics for reflection and partial retry.
+
+> Definition of entropy collapse, baseline naming, and typos
+
+Thank you for noting these details. We will define entropy collapse at first use, clarify that Reflect-GRPO is our Reflect-Retry-Reward reimplementation, and correct `voilate`, `not human-related data`, and other language issues.

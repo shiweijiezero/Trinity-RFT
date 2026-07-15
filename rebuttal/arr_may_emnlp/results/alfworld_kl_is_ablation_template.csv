@@ -1,5 +1,5 @@
 variant,kl,is,final_score,best_score,stable,max_grad_norm,mean_clipfrac,config_path,commit,notes
-R3L,no,no,,,,,,examples/R3L/alfworld/rebuttal/r3l_1.5B_no_kl_no_is_seed0.yaml,,
+R3L,no,no,0.928,,,,,examples/R3L/alfworld/opmd_R3L_1.5B.yaml,,
 R3L+KL,yes,no,,,,,,examples/R3L/alfworld/rebuttal/r3l_1.5B_kl_only_seed0.yaml,,
 R3L+IS,no,yes,,,,,,examples/R3L/alfworld/rebuttal/r3l_1.5B_is_only_seed0.yaml,,
 R3L+KL+IS,yes,yes,,,,,,examples/R3L/alfworld/rebuttal/r3l_1.5B_kl_is_seed0.yaml,,

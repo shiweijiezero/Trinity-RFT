@@ -123,3 +123,140 @@ R³L 是一种基于 GRPO、面向大语言模型推理和智能体任务的强�
 - 上述知识是否影响评审：不适用；审稿人未从外部来源了解本文。
 - 审稿人认证：审稿人确认其评审准确反映了本人对该工作的评价。若使用了任何自动化工具，其用途仅限于改善语法和文风，评审实质内容来自审稿人本人或已注明的第二审稿人。
 - 出版伦理政策合规：审稿人仅在 PEC 政策允许的场景中使用了保护隐私的工具，例如语言编辑。
+
+## 回复草稿
+
+感谢审稿人认真检查了实验、理论和实现中的细节，也感谢您对本文主要贡献的认可。抱歉直到现在才回复。受实验资源限制，我们优先完成了 rebuttal 周期内能够公平比较的补充实验，并重新核对了您指出的公式和实现问题。
+
+> W1：多 seed 方差与稳定性
+
+原稿主表中的结果都是 single-run，确实看不出不同 seed 下的方差。我们补充了 Qwen2.5-1.5B-Instruct 在 ALFWorld 上的 3-seed 对照，几组实验使用相同的训练预算、评测集和 checkpoint 选择规则：
+
+| Method | Seed 0 | Seed 1 | Seed 2 | Mean ± std |
+|---|---:|---:|---:|---:|
+| R³L | 0.928 | 0.926 | 0.929 | 0.928 ± 0.002 |
+| GRPO | 0.720 | 0.725 | 0.722 | 0.722 ± 0.003 |
+
+> W2：理论结果的定位
+
+感谢审稿人指出这里的理论分析和实验设置之间没有讲清楚。
+
+这里其实是两件事：为什么要放大正向信号，以及为什么实验里取 $\alpha=3$。Gradient dominance 解释的是前一件事。当 batch 中的正向样本更少，或者负 advantage 更强时，正向样本需要更大的权重。但它不能直接给出一个固定的 $\alpha$，因为正向样本比例、advantage ratio 和梯度大小都在训练过程中不断变化。
+
+$\alpha=3$ 也不是由这个条件推出来的。当 $p=0.25$、$|\bar{A}^{-}|/\bar{A}^{+}=2$ 时，公式给出的 $\alpha_{\min}$ 是 6。因此，“$\alpha=3$ covers most practical ranges”这句话不成立，我们会删掉。
+
+实验里使用 3，主要依据是 sensitivity results。六个任务中，$\alpha=3$ 在 WebShop、ScienceWorld 和 Math500 上最好，在 ALFWorld、GSM8K 和 OlympiadBench 上也接近各自的最好结果。我们能得出的结论是，3 作为统一设置在这些任务上比较稳健，而不是它在理论上或每个任务上都最优。
+
+这部分会改成对 Positive Amplification 的解释，不再写成 convergence guarantee。
+
+> W3：重新加入 KL 和 importance sampling
+
+感谢审稿人建议直接检验 KL 与 importance sampling（IS）的作用。我们使用 Qwen2.5-1.5B-Instruct，在 ALFWorld 的相同设置下补充了四组对照：
+
+| Method | R³L | R³L+KL | R³L+IS | R³L+KL+IS |
+|---|---:|---:|---:|---:|
+| Final score | 0.928 | 0.927 | 0.928 | 0.929 |
+
+我们还对照检查了 gradient norm、entropy、KL 和 IS clip fraction。几组实验的 gradient norm 都在 0.12 附近；两个加入 IS 的变体中，clip fraction 均维持在 0.004 左右，说明 importance ratio 很少触发裁剪；加入 KL 的变体也没有出现 KL 异常。entropy loss 方面，KL-only 组最低，约为 0.008，其余几组在 0.5 左右。尽管部分训练指标存在差异，但这些差异没有进一步反映在 final score 上。
+
+这组实验不是为了说明 KL 和 IS 没有用，而是想检验 R³L 是否必须依赖它们才能稳定训练。没有加入 KL 和 IS 的 R³L 最终得分为 0.928，训练中也没有出现 gradient spike、entropy collapse 或明显的 policy drift；加入两者后的得分仍在 0.927--0.929。也就是说，在当前设置下，即使不使用 KL 和 IS，R³L 仍然可以稳定训练。
+
+这里采用每步同步，behavior policy 和 learner policy 之间的 lag 比较小；IS clip fraction 只有 0.004，也说明 correction 很少被真正触发。因此，这个结果只说明 R³L 在当前 ALFWorld 设置下不依赖 KL 和 IS 才能避免崩溃，不代表更强 off-policy 设置下也不需要它们。
+
+> W4：数学 guidance 的公平性与 pivot 敏感性
+
+感谢审稿人关注数学 guidance 是否会带来额外的 ground-truth 信息。数学任务中没有 environment feedback，因此 reflection 确实会使用 ground-truth final answer 作为参考。这里提供的只有 final answer，不包含 reference CoT、标准解题过程或任何中间推导，所以模型无法直接复制一条正确的 reasoning path。
+
+我们也用规则检查了生成的 guidance，其中直接泄露 ground-truth final answer 的比例为 3%。这类样本可以在进入 retry 和训练数据之前被自动识别并移除。实现中还支持更严格的 binary feedback：只向 reflection 返回 correct 或 incorrect，不提供 final answer。
+
+所有方法都使用同一个 ground-truth final answer 计算 reward，但使用方式并不完全相同。GRPO、GSPO 和 RAFT 只使用 scalar reward；R³L 还会在 reflection 和 retry synthesis 中使用 final-answer-level 的参考信息。这部分是 guided exploration 所使用的额外信号，我们会在论文中直接说明，而不会把它写成与普通 sampling baseline 完全相同的信息条件。同时，R³L 并不访问 ground-truth CoT，final answer 的直接泄露也可以通过上述规则检查过滤。Guidance 只用于生成 retry，进入 RL 的 distillation trajectory 会移除 guidance，评测时也不提供 guidance。
+
+表 11 中 correct/wrong pivot 对应的成功率只能说明相关性，因此我们会删除 “causally linked” 的表述。我们另外使用 Qwen2.5-1.5B-Instruct 在 ALFWorld 上的 step 400 checkpoint 补充了 pivot perturbation，主要想检验 R³L 的 retry gain 是否依赖非常精确的 pivot，还是在存在小幅定位偏差时仍然能够保留。实验保持失败轨迹和 reflection guidance 不变，只把模型预测的 $k$ 改为 $k\pm2$、$k\pm5$ 或第 0 步，因此不会把 guidance quality 的差异混入比较。超出轨迹边界的样本不计入对应 offset。表中的 Retry success rate 是指：在 base rollout 失败且 reflection 有效的轨迹中，retry 最终完成任务并获得成功 reward 的比例。
+
+| Restart position | Predicted pivot $k$ | $k-2$ | $k+2$ | $k-5$ | $k+5$ | From start ($k=0$) |
+|---|---:|---:|---:|---:|---:|---:|
+| Retry success rate | 0.66 | 0.65 | 0.63 | 0.63 | 0.60 | 0.61 |
+
+在 $\pm2$ 的偏差下，retry success 仍为 0.63--0.65，与默认的 0.66 比较接近；偏差扩大到 $+5$ 后才下降到 0.60。从第 0 步重新开始为 0.61，也低于默认设置。这个结果说明 retry gain 不依赖逐步完全准确的 pivot，但也不是对任意误差都不敏感，尤其是偏晚定位时，保留下来的错误 prefix 会明显影响 retry。
+
+> W5：低于 zero-shot 的 baseline
+
+这些数字确实是 RL 训练后的结果，不是 zero-shot。这里所有 math 模型都在 DAPO 上训练，然后直接评测 GSM8K 等其他数据集，因此会同时受到 cross-distribution forgetting 的影响。例如在相同的 `<think>/<answer>` 格式下，Qwen2.5-7B 的 GSM8K zero-shot 为 0.853，而 DAPO 训练后的结果如下：
+
+| Setting | Zero-shot | GRPO | Reflect-GRPO | Critique-GRPO |
+|---|---:|---:|---:|---:|
+| GSM8K | 0.853 | 0.846 | 0.765 | 0.678 |
+
+为了区分训练本身的问题和分布迁移的问题，我们进一步补充了 matched-distribution training：
+
+| Train / Eval | Zero-shot | GRPO | Reflect-GRPO | Critique-GRPO | R³L |
+|---|---:|---:|---:|---:|---:|
+| GSM8K / GSM8K | 0.665 | 0.814 | 0.822 | 0.846 | 0.867 |
+| MATH / Math500 | 0.422 | 0.481 | 0.505 | 0.518 | 0.533 |
+
+在这两组 in-domain 对照中，所有方法都高于 zero-shot。因此，表 13 中的下降主要出现在 DAPO 训练后迁移到其他 benchmark 的设置，而不是这些 baseline 在对应训练分布上都无法学习。
+
+在 tuning budget 上，我们对所有方法统一使用学习率 $10^{-6}$、global batch size 96、group size 8、sync interval 1 和最多 20 epochs，并按相同的 reward plateau/collapse 规则 early stop。各 baseline 使用原方法建议的特定参数，但没有针对 27 个设置分别做大规模搜索。我们会把这一点写清楚：统一协议能够控制训练预算和实现差异，但不代表每个 baseline 都完成了逐任务的 exhaustive tuning。
+
+> W6：Positive Amplification 规则不一致
+
+感谢审稿人仔细发现这里的不一致。这确实是我们的笔误，最大回报轨迹的 amplified advantage 应该设为 $\alpha$，而不是 1。令 $s(\tau)=R(\tau)-\bar R$，完整规则为：
+
+\[
+\hat A(\tau)=
+\begin{cases}
+\alpha, & R(\tau)\ge 1.0,\\
+\alpha s(\tau), & R(\tau)<1.0\ \text{and}\ s(\tau)\ge 0,\\
+s(\tau), & s(\tau)<0.
+\end{cases}
+\]
+
+也就是说，reward 达到 1 的轨迹设为 $\alpha$；其余非负 advantage 乘以 $\alpha$；负 advantage 保持不变。
+
+> W7：结果表述与消融耦合
+
+感谢审稿人提醒我们这两处表述容易造成误解。摘要中的 52% 是相对 GRPO 计算的，但对应的 Qwen2.5-1.5B-Instruct 在 GSM8K 上的实验中，Critique-GRPO 实际上高于 R³L，因此用这个数字概括整体结果并不合适。我们重新按每个设置中最强的 baseline 统计：R³L 在 27 个设置中取得 25 个最优、1 个并列最优和 1 个第二，相对最强 baseline 的中位增益为 4.5%，平均增益为 4.8%。摘要会改用这组结果。
+
+`w/o Reflect` 这一行也不能理解为只移除了 reflection。Credit 需要 reflection 预测的 pivot，因此关闭 reflection 后，整条 retry 路径和依赖 pivot 的 Credit 都会一起消失。0.928 到 0.894 表示的是这条完整路径的贡献，不能全部算在 reflection 上。相比之下，`w/o Credit` 保留相同的 reflection 和 retry，只关闭 prefix mask，因此可以单独观察 Credit 带来的变化。
+
+为了进一步把 restart position 和 language guidance 分开，我们使用 Qwen2.5-1.5B-Instruct 在 ALFWorld 上补充了两个完整训练的对照。两组都以 `w/o Credit` 为基础：`From start` 保留 guidance，但所有 retry 都从第 0 步开始；`No guidance` 保留预测的 pivot，但 retry 时不再提供 guidance。
+
+| Variant | Final score |
+|---|---:|
+| R³L | 0.928 |
+| w/o Credit | 0.914 |
+| w/o Credit + From start | 0.908 |
+| w/o Credit + No guidance | 0.903 |
+| w/o Reflect | 0.894 |
+
+三组比较分别对应 prefix masking（0.928 到 0.914）、从预测 pivot 开始 retry（0.914 到 0.908）和 language guidance（0.914 到 0.903）。这些差值是在各自控制条件下观察到的增量，不能简单相加，但可以避免再用 `w/o Reflect` 的结果倒推单个组件的贡献。`w/o Reflect` 仍保留在表中，只表示完整 Reflect-then-Retry 路径被移除。
+
+> W8：模型规模与经验适用范围
+
+当前实验覆盖 Qwen2.5-1.5B-Instruct、Qwen2.5-7B-Instruct、更新的 Qwen3-4B，以及跨架构的 Llama-3.2-3B-Instruct。具体来说，Qwen3-4B 上 R³L 在 ALFWorld 达到 0.962，而 Critique-GRPO 为 0.942；在 GSM8K 和 Math500 上，R³L 分别达到 0.948 和 0.753，对应的 GRPO 和 GSPO 分别为 0.934 和 0.722。Llama-3.2-3B 的 9 个设置中，R³L 有 5 个取得最优，其余 4 个均为第二。这些结果说明收益能够延伸到更新的 backbone 和另一种模型架构，但确实不能替代大于 7B 模型上的直接验证。
+
+更大模型的训练成本还会明显增加。以当前设置为例，即使 1.5B 模型的一次完整训练也需要约 25 小时，受训练预算限制，我们暂时无法补充一组充分收敛且公平可比的更大模型实验。因此，我们目前把经验结论限定在 1.5B–7B 模型上，并把更大模型的效果保留为后续需要直接验证的问题。
+
+另外，目前所有实验都依赖可靠的可验证 reward。开放式或主观 RLHF，以及 reflection 能力较弱时的 cold start，都还没有在本文中得到验证。我们会相应删掉 “适用于任何 preference signal” 这类过宽的表述。
+
+> Retry trigger rate 与 rollout 开销
+
+我们也记录了 retry trigger rate 的变化。是否 retry 由模型自己在 reflection 中判断，系统只检查输出格式和 pivot 是否有效，因此 trigger rate 反映的是当前 checkpoint 上模型选择 retry 的比例，而不是固定超参数。以 Qwen2.5-1.5B-Instruct 在 ALFWorld 上的实验为例：
+
+| Training step | Rollout reward | Retry trigger rate |
+|---:|---:|---:|
+| 0 | 0.01 | 0.55 |
+| 50 | 0.03 | 0.65 |
+| 100 | 0.08 | 0.80 |
+| 150 | 0.50 | 0.78 |
+| 200 | 0.80 | 0.35 |
+| 250 | 0.87 | 0.13 |
+| 300 | 0.90 | 0.10 |
+| 350 | 0.91 | 0.08 |
+| 400 | 0.91 | 0.07 |
+
+模型成功率提高后，retry 和实际 rollout 数量都会随之减少。我们会据此补充 reflection 和 partial retry 的 token 统计。
+
+> Entropy collapse 定义、baseline 命名与拼写
+
+感谢审稿人对这些表述细节的提醒。正文会在 entropy collapse 第一次出现时给出明确定义，并说明 Reflect-GRPO 是对 Reflect-Retry-Reward 的复现。`voilate` 和 `not human-related data` 等拼写与语法问题也会一并修正。

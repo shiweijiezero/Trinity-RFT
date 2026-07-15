@@ -4,7 +4,6 @@ import copy
 import hashlib
 import json
 import os
-import random
 import re
 from pathlib import Path
 from typing import Dict, List
@@ -47,7 +46,6 @@ class PivotPerturbationAlfworldWorkflow(R3LAlfworldWorkflow):
                 "rebuttal/arr_may_emnlp/results/pivot_perturbation_alfworld",
             )
         )
-        self.experiment_seed = int(args.get("experiment_seed", 2026))
         self.variants = list(
             args.get(
                 "variants",
@@ -58,7 +56,6 @@ class PivotPerturbationAlfworldWorkflow(R3LAlfworldWorkflow):
                     "early_5",
                     "late_5",
                     "start",
-                    "random",
                 ],
             )
         )
@@ -84,8 +81,6 @@ class PivotPerturbationAlfworldWorkflow(R3LAlfworldWorkflow):
 
     def _variant_pivots(self, model_pivot: int, total_steps: int) -> Dict[str, int]:
         upper_bound = max(total_steps - 1, 0)
-        task_seed = int(self._task_key(), 16) + self.experiment_seed
-        random_pivot = random.Random(task_seed).randint(0, upper_bound)
         candidates = {
             "model": model_pivot,
             "early_2": max(0, model_pivot - 2),
@@ -93,7 +88,6 @@ class PivotPerturbationAlfworldWorkflow(R3LAlfworldWorkflow):
             "early_5": max(0, model_pivot - 5),
             "late_5": min(upper_bound, model_pivot + 5),
             "start": 0,
-            "random": random_pivot,
         }
         unknown = [variant for variant in self.variants if variant not in candidates]
         if unknown:
@@ -104,7 +98,6 @@ class PivotPerturbationAlfworldWorkflow(R3LAlfworldWorkflow):
         record: Dict = {
             "task_id": str(self.task.task_id),
             "game_file": self.game_file_path,
-            "experiment_seed": self.experiment_seed,
             "variants": {},
         }
         metrics = {

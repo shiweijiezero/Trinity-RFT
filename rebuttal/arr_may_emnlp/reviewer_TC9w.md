@@ -61,3 +61,23 @@ Impact Of Knowledge Of Paper: N/A, I do not know anything about the paper from o
 Reviewer Certification: I certify that the review I entered accurately reflects my assessment of the work. If you used any type of automated tool to help you craft your review, I hereby certify that its use was restricted to improving grammar and style, and the substance of the review is either my own work or the work of an acknowledged secondary reviewer.
 
 Publication Ethics Policy Compliance: I used a privacy-preserving tool exclusively for the use case(s) approved by PEC policy, such as language edits
+
+## Author Response
+
+Thank you for the positive assessment and the suggestions on KL, importance sampling, and model scale. We apologize for the late response. Despite limited resources, we completed the most relevant additional experiments during the rebuttal period.
+
+> Ablation of KL and importance sampling
+
+Thank you for suggesting a direct test of KL and importance sampling (IS). Using Qwen2.5-1.5B-Instruct on ALFWorld with the same setup, we ran four controlled experiments:
+
+| Method | R³L | R³L+KL | R³L+IS | R³L+KL+IS |
+|---|---|---|---|---|
+| Final score | 0.928 | 0.927 | 0.928 | 0.929 |
+
+All four runs remained stable. The gradient norm stayed around 0.12, KL showed no abnormal behavior, and the IS clip fraction stayed around 0.004, meaning clipping was rarely activated. The KL-only run had the lowest entropy loss, around 0.008, while the others were around 0.5. These differences did not affect the final score. In particular, R³L reached 0.928 without KL or IS and showed normal gradient norm, entropy, and KL curves. Thus, in this setting, R³L does not rely on either safeguard to avoid collapse. The low clip fraction also indicates small policy lag; stronger off-policy settings require separate validation.
+
+> Model scale and stronger baselines
+
+Thank you for raising model scale and baseline strength. Our experiments cover Qwen2.5-1.5B-Instruct, Qwen2.5-7B-Instruct, the newer Qwen3-4B, and the cross-architecture Llama-3.2-3B-Instruct, with GSPO, Critique-GRPO, and other baselines evaluated under the same protocol across three agent environments and six mathematical benchmarks. On Qwen3-4B, R³L reaches 0.962 on ALFWorld versus 0.942 for Critique-GRPO. On GSM8K and Math500, it reaches 0.948 and 0.753, versus 0.934 for GRPO and 0.722 for GSPO, respectively.
+
+These results do not replace direct validation above 7B. Even one full 1.5B run takes roughly 25 hours in our setup, and our rebuttal budget did not allow a sufficiently converged, fairly comparable larger-model run. We therefore limit our conclusions to the 1.5B–7B range and leave larger-scale evaluation for future work.
